@@ -1,0 +1,69 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}City Pages{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>City Pages</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">City SEO Pages</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Generate location-specific SEO pages at scale for every city Sanish serves.</p>
+  </div>
+
+  <!-- 3 CTA cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Single Page -->
+    <a href="{% url 'city_page_create' %}"
+       class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8 flex flex-col items-center text-center gap-4
+              hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200 group">
+      <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Create Single Page</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Manually craft a high-quality page for a flagship city with full control over content.</p>
+      </div>
+      <span class="btn-primary mt-auto">Get Started →</span>
+    </a>
+
+    <!-- Bulk Import -->
+    <a href="{% url 'city_page_bulk_import' %}"
+       class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8 flex flex-col items-center text-center gap-4
+              hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200">
+      <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/30 dark:to-emerald-900/10 flex items-center justify-center">
+        <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Bulk CSV / Excel Import</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Upload a spreadsheet of cities to auto-generate dozens of pages in one click. Preview before committing.</p>
+      </div>
+      <span class="btn-secondary mt-auto" style="border-color:#10b981;color:#10b981;">Import →</span>
+    </a>
+
+    <!-- Manage Templates -->
+    <a href="{% url 'page_template_list' %}"
+       class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8 flex flex-col items-center text-center gap-4
+              hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200">
+      <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10 flex items-center justify-center">
+        <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Manage Templates</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Create reusable templates for each product type (Laminates, HPL, Veneer…) with {{city}} placeholders.</p>
+      </div>
+      <span class="btn-secondary mt-auto" style="border-color:#8b5cf6;color:#8b5cf6;">Manage →</span>
+    </a>
+  </div>
+
+  <!-- All pages link -->
+  <div class="text-center">
+    <a href="{% url 'city_page_list' %}" class="btn-ghost text-sm">View all city pages →</a>
+  </div>
+</div>
+{% endblock %}

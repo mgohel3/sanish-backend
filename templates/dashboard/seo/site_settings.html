@@ -1,0 +1,200 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Site Settings{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>Site Settings</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6" x-data="{ tab: 'brand' }">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Site Settings</h1>
+    <p class="text-xs text-gray-400">Controls logo, contact, social media, map and header/footer content served to the frontend.</p>
+  </div>
+
+  <!-- Tab strip -->
+  <div class="flex gap-1 p-1 bg-gray-100 dark:bg-[#1A1725] rounded-2xl">
+    {% for tab_key, tab_label in tabs %}
+    <button type="button" @click="tab = '{{ tab_key }}'"
+      :class="tab === '{{ tab_key }}' ? 'bg-white dark:bg-[#23202E] shadow text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+      class="flex-1 py-2 px-3 text-[12px] font-semibold rounded-xl transition-all">
+      {{ tab_label }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- ── Brand ─────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'brand'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Brand Identity</h2>
+        <div><label class="form-label">Site Name</label>
+          <input type="text" name="site_name" value="{{ s.site_name }}" class="form-input" placeholder="Sanish Laminates"/></div>
+        <div><label class="form-label">Tagline</label>
+          <input type="text" name="tagline" value="{{ s.tagline }}" class="form-input" placeholder="Premium Decorative Surface Solutions"/></div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Logos & Favicon</h2>
+        <p class="form-hint">Enter a path (e.g. <code>/assets/img/logo/black-logo.svg</code>) or a full CDN URL. Use the Media Library to upload files first.</p>
+        <div><label class="form-label">Dark Logo URL <span class="form-hint">(used on light backgrounds / main header)</span></label>
+          <input type="text" name="logo_dark_url" value="{{ s.logo_dark_url }}" class="form-input font-mono text-sm"/>
+          {% if s.logo_dark_url %}<img src="{{ s.logo_dark_url }}" alt="dark logo preview" class="mt-2 h-10 object-contain bg-gray-50 rounded p-1 border border-gray-100" onerror="this.style.display='none'"/>{% endif %}
+        </div>
+        <div><label class="form-label">Light Logo URL <span class="form-hint">(used on dark backgrounds / footer)</span></label>
+          <input type="text" name="logo_light_url" value="{{ s.logo_light_url }}" class="form-input font-mono text-sm"/>
+          {% if s.logo_light_url %}<img src="{{ s.logo_light_url }}" alt="light logo preview" class="mt-2 h-10 object-contain bg-gray-800 rounded p-1 border border-gray-700" onerror="this.style.display='none'"/>{% endif %}
+        </div>
+        <div><label class="form-label">Favicon URL</label>
+          <input type="text" name="favicon_url" value="{{ s.favicon_url }}" class="form-input font-mono text-sm" placeholder="/favicon.ico"/></div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Header Bar</h2>
+        <div><label class="form-label">Top-bar Badge Text</label>
+          <input type="text" name="topbar_badge" value="{{ s.topbar_badge }}" class="form-input" placeholder="Premium Surface Manufacturing"/></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">CTA Button Label</label>
+            <input type="text" name="header_cta_label" value="{{ s.header_cta_label }}" class="form-input" placeholder="Download Catalogue"/></div>
+          <div><label class="form-label">CTA Button URL</label>
+            <input type="text" name="header_cta_url" value="{{ s.header_cta_url }}" class="form-input" placeholder="#"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Contact ───────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'contact'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Phone & Email</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Primary Phone</label>
+            <input type="text" name="phone_primary" value="{{ s.phone_primary }}" class="form-input" placeholder="+91 7027 777 032"/></div>
+          <div><label class="form-label">Secondary Phone <span class="form-hint">(optional)</span></label>
+            <input type="text" name="phone_secondary" value="{{ s.phone_secondary }}" class="form-input"/></div>
+          <div><label class="form-label">Primary Email</label>
+            <input type="email" name="email_primary" value="{{ s.email_primary }}" class="form-input" placeholder="info@sanishlaminate.com"/></div>
+          <div><label class="form-label">Secondary Email <span class="form-hint">(optional)</span></label>
+            <input type="email" name="email_secondary" value="{{ s.email_secondary }}" class="form-input"/></div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Address</h2>
+        <div><label class="form-label">Address Line 1</label>
+          <input type="text" name="address_line1" value="{{ s.address_line1 }}" class="form-input"/></div>
+        <div><label class="form-label">Address Line 2</label>
+          <input type="text" name="address_line2" value="{{ s.address_line2 }}" class="form-input"/></div>
+        <div class="grid grid-cols-3 gap-4">
+          <div><label class="form-label">City</label>
+            <input type="text" name="city" value="{{ s.city }}" class="form-input"/></div>
+          <div><label class="form-label">State</label>
+            <input type="text" name="state" value="{{ s.state }}" class="form-input"/></div>
+          <div><label class="form-label">Pincode</label>
+            <input type="text" name="pincode" value="{{ s.pincode }}" class="form-input"/></div>
+        </div>
+        <div><label class="form-label">Working Hours</label>
+          <input type="text" name="working_hours" value="{{ s.working_hours }}" class="form-input" placeholder="Mon–Sat: 9 AM – 6 PM"/></div>
+      </div>
+    </div>
+
+    <!-- ── Social ────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'social'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Social Media Links</h2>
+        <p class="form-hint">Enter full URLs. Leave blank to hide the icon.</p>
+        <div><label class="form-label">Instagram</label>
+          <input type="url" name="instagram_url" value="{{ s.instagram_url }}" class="form-input" placeholder="https://instagram.com/..."/></div>
+        <div><label class="form-label">Facebook</label>
+          <input type="url" name="facebook_url" value="{{ s.facebook_url }}" class="form-input" placeholder="https://facebook.com/..."/></div>
+        <div><label class="form-label">YouTube</label>
+          <input type="url" name="youtube_url" value="{{ s.youtube_url }}" class="form-input" placeholder="https://youtube.com/..."/></div>
+        <div><label class="form-label">Pinterest</label>
+          <input type="url" name="pinterest_url" value="{{ s.pinterest_url }}" class="form-input" placeholder="https://pinterest.com/..."/></div>
+        <div><label class="form-label">LinkedIn</label>
+          <input type="url" name="linkedin_url" value="{{ s.linkedin_url }}" class="form-input" placeholder="https://linkedin.com/..."/></div>
+        <div><label class="form-label">Twitter / X</label>
+          <input type="url" name="twitter_url" value="{{ s.twitter_url }}" class="form-input" placeholder="https://x.com/..."/></div>
+        <div><label class="form-label">WhatsApp Number <span class="form-hint">(with country code, no spaces)</span></label>
+          <input type="text" name="whatsapp_number" value="{{ s.whatsapp_number }}" class="form-input font-mono" placeholder="+917027777032"/></div>
+      </div>
+    </div>
+
+    <!-- ── Map ───────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'map'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Google Maps Embed</h2>
+        <p class="form-hint">Go to Google Maps → Share → Embed a map → copy the <code>src="..."</code> value from the iframe.</p>
+        <div><label class="form-label">Map Embed URL</label>
+          <textarea name="map_embed_url" rows="4" class="form-input font-mono text-xs resize-y">{{ s.map_embed_url }}</textarea></div>
+        {% if s.map_embed_url %}
+        <div class="rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 aspect-video">
+          <iframe src="{{ s.map_embed_url }}" width="100%" height="100%" style="border:0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        {% endif %}
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Latitude <span class="form-hint">(for JSON-LD schema)</span></label>
+            <input type="number" step="any" name="map_lat" value="{{ s.map_lat|default:'' }}" class="form-input font-mono"/></div>
+          <div><label class="form-label">Longitude</label>
+            <input type="number" step="any" name="map_lng" value="{{ s.map_lng|default:'' }}" class="form-input font-mono"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Footer ────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'footer'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Footer Copy</h2>
+        <div><label class="form-label">Footer Description</label>
+          <textarea name="footer_description" rows="3" class="form-input resize-none">{{ s.footer_description }}</textarea></div>
+        <div><label class="form-label">Copyright Text</label>
+          <input type="text" name="footer_copyright" value="{{ s.footer_copyright }}" class="form-input"/></div>
+        <div><label class="form-label">Newsletter Invite Text</label>
+          <input type="text" name="footer_newsletter_text" value="{{ s.footer_newsletter_text }}" class="form-input"/></div>
+      </div>
+    </div>
+
+    <!-- ── Email / SMTP ──────────────────────────────────────────────────── -->
+    <div x-show="tab === 'email'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Outgoing Mail Server (SMTP)</h2>
+        <p class="form-hint">Used to send an email notification whenever a website form or the inquiry popup is submitted. Leave blank to use the server's env-configured mail settings instead.</p>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="col-span-2"><label class="form-label">SMTP Host</label>
+            <input type="text" name="smtp_host" value="{{ s.smtp_host }}" class="form-input font-mono" placeholder="smtp.gmail.com"/></div>
+          <div><label class="form-label">Port</label>
+            <input type="number" name="smtp_port" value="{{ s.smtp_port }}" class="form-input font-mono" placeholder="587"/></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">SMTP Username</label>
+            <input type="text" name="smtp_username" value="{{ s.smtp_username }}" class="form-input" autocomplete="off"/></div>
+          <div><label class="form-label">SMTP Password</label>
+            <input type="password" name="smtp_password" value="{{ s.smtp_password }}" class="form-input" autocomplete="new-password"/>
+            <p class="form-hint">For Gmail, use an <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" class="underline">App Password</a>, not your normal password.</p>
+          </div>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+          <input type="checkbox" name="smtp_use_tls" {% if s.smtp_use_tls %}checked{% endif %} class="rounded"/>
+          Use TLS
+        </label>
+        <div><label class="form-label">From Email</label>
+          <input type="email" name="smtp_from_email" value="{{ s.smtp_from_email }}" class="form-input" placeholder="no-reply@sanishlaminate.com"/></div>
+        <div><label class="form-label">Notify Emails <span class="form-hint">(comma-separated)</span></label>
+          <input type="text" name="smtp_notify_emails" value="{{ s.smtp_notify_emails }}" class="form-input" placeholder="info@sanishlaminate.com, karyaweb2025@gmail.com"/></div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-3">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Send Test Email</h2>
+        <p class="form-hint">Saves the settings above, then sends a test email so you can confirm your SMTP configuration actually works.</p>
+        <div class="flex items-center gap-3">
+          <input type="email" name="test_email_to" class="form-input" placeholder="you@example.com"/>
+          <button type="submit" name="action" value="test_email" class="btn-secondary whitespace-nowrap">Send Test Email</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit" name="action" value="save" class="btn-primary">Save Site Settings</button>
+      <span class="text-xs text-gray-400">Changes reflect on the frontend immediately after the Next.js cache revalidates (or on next request in dev mode).</span>
+    </div>
+  </form>
+</div>
+{% endblock %}

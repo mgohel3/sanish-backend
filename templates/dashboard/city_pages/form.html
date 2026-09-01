@@ -1,0 +1,264 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if page %}Edit{% else %}New{% endif %} City Page{% endblock %}
+{% block breadcrumbs %}
+  <span class="text-gray-300">/</span><a href="{% url 'city_page_list' %}" class="hover:text-accent">City Pages</a>
+  <span class="text-gray-300">/</span><span>{% if page %}{{ page }}{% else %}New{% endif %}</span>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+{% endblock %}
+
+{% block content %}
+<form method="post"
+      x-data="{
+        faqs: {{ page.faqs|default:'[]'|safe }},
+        whyUs: {{ page.why_choose_us|default:'[]'|safe }},
+        testimonials: {{ page.testimonials|default:'[]'|safe }},
+        metaTitle: '{{ page.seo_title|default:'' }}',
+        metaDesc:  '{{ page.meta_description|default:'' }}',
+        templateId: '{{ page.template_id|default:'' }}',
+        addFaq() { this.faqs.push({q:'',a:''}); },
+        removeFaq(i) { this.faqs.splice(i,1); },
+        addWhyUs() { this.whyUs.push({title:'',desc:''}); },
+        removeWhyUs(i) { this.whyUs.splice(i,1); },
+      }"
+      @submit="
+        document.getElementById('faqs_json').value = JSON.stringify(faqs);
+        document.getElementById('why_choose_us_json').value = JSON.stringify(whyUs);
+        document.getElementById('testimonials_json').value = JSON.stringify(testimonials);
+      "
+      class="space-y-6">
+  {% csrf_token %}
+  <input type="hidden" name="faqs_json" id="faqs_json"/>
+  <input type="hidden" name="why_choose_us_json" id="why_choose_us_json"/>
+  <input type="hidden" name="testimonials_json" id="testimonials_json"/>
+
+  <!-- Top bar -->
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if page %}Edit City Page{% else %}New City Page{% endif %}</h1>
+    <div class="flex items-center gap-3">
+      <select name="status" class="form-input form-select w-auto">
+        <option value="draft"     {% if not page or page.status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="published" {% if page.status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+      {% if page %}
+      <a href="{% url 'city_page_preview' page.pk %}" target="_blank" rel="noopener"
+         class="btn-secondary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </a>
+      {% else %}
+      <span class="btn-secondary opacity-50 cursor-not-allowed flex items-center gap-1.5" title="Save as Draft first to preview">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </span>
+      {% endif %}
+      <button type="submit" class="btn-primary">Save Page</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
+
+      <!-- Template + City -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Page Setup</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="form-label">Template *</label>
+            <select name="template" x-model="templateId" required class="form-input form-select">
+              {% for tpl in templates %}<option value="{{ tpl.pk }}" {% if selected_template.pk == tpl.pk %}selected{% endif %}>{{ tpl.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">City *</label>
+            <input type="text" name="city" value="{{ page.city|default:'' }}" required class="form-input" placeholder="Ahmedabad"/>
+          </div>
+          <div>
+            <label class="form-label">State</label>
+            <input type="text" name="state" value="{{ page.state|default:'' }}" class="form-input" placeholder="Gujarat"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content (with override toggle pattern) -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-5" x-data="{ overrideH1: {{ page.h1_title|yesno:'true,false' }}, overrideHero: {{ page.hero_heading|yesno:'true,false' }}, overrideContent: {{ page.main_content|yesno:'true,false' }} }">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Page Content</h2>
+
+        <!-- H1 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0">H1 / Page Title</label>
+            <button type="button" @click="overrideH1 = !overrideH1" class="text-xs text-accent hover:underline" x-text="overrideH1 ? '⬤ Override active' : '◯ Using template default'"></button>
+          </div>
+          <input type="text" name="h1_title"
+                 value="{{ page.h1_title|default:'' }}"
+                 :placeholder="overrideH1 ? 'Override H1…' : '{{ resolved.h1_title|default:'(from template)' }}'"
+                 :class="overrideH1 ? 'border-accent ring-1 ring-accent/20' : 'opacity-60'"
+                 class="form-input"/>
+          <p class="form-hint">Template: <em>{{ resolved.h1_title|default:'(set template first)' }}</em></p>
+        </div>
+
+        <!-- Hero Heading -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0">Hero Heading</label>
+            <button type="button" @click="overrideHero = !overrideHero" class="text-xs text-accent hover:underline" x-text="overrideHero ? '⬤ Override active' : '◯ Using template default'"></button>
+          </div>
+          <input type="text" name="hero_heading" value="{{ page.hero_heading|default:'' }}"
+                 :class="overrideHero ? 'border-accent ring-1 ring-accent/20' : 'opacity-60'"
+                 class="form-input"/>
+        </div>
+
+        <!-- Hero Description -->
+        <div>
+          <label class="form-label">Hero Description</label>
+          <textarea name="hero_description" rows="3" class="form-input resize-none">{{ page.hero_description|default:'' }}</textarea>
+        </div>
+
+        <!-- Main Content -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0">Main Content</label>
+            <button type="button" @click="overrideContent = !overrideContent" class="text-xs text-accent hover:underline" x-text="overrideContent ? '⬤ Override active' : '◯ Using template default'"></button>
+          </div>
+          <textarea name="main_content" id="main_content_editor" class="form-input min-h-[200px]"
+                    :class="overrideContent ? 'border-accent ring-1 ring-accent/20' : 'opacity-60'">{{ page.main_content|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <!-- FAQs -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">FAQs</h2>
+          <button type="button" @click="addFaq()" class="btn-ghost py-1 px-3 text-xs">+ Add FAQ</button>
+        </div>
+        <div class="space-y-4">
+          <template x-for="(faq, i) in faqs" :key="i">
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-500">FAQ <span x-text="i+1"></span></span>
+                <button type="button" @click="removeFaq(i)" class="text-red-400 hover:text-red-600 text-xs">Remove</button>
+              </div>
+              <input type="text" x-model="faq.q" placeholder="Question…" class="form-input"/>
+              <textarea x-model="faq.a" rows="2" placeholder="Answer…" class="form-input resize-none"></textarea>
+            </div>
+          </template>
+          <p x-show="faqs.length === 0" class="text-xs text-gray-400 text-center py-4">No FAQs yet.</p>
+        </div>
+      </div>
+
+      <!-- Why Choose Us -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Why Choose Us</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Supports <code class="bg-surface-100 dark:bg-dark-700 px-1 py-0.5 rounded text-[10px]">{{city}}</code>, <code class="bg-surface-100 dark:bg-dark-700 px-1 py-0.5 rounded text-[10px]">{{state}}</code>, <code class="bg-surface-100 dark:bg-dark-700 px-1 py-0.5 rounded text-[10px]">{{product}}</code> placeholders</p>
+          </div>
+          <button type="button" @click="addWhyUs()" class="btn-ghost py-1 px-3 text-xs flex-shrink-0">+ Add Card</button>
+        </div>
+        <div class="space-y-3">
+          <template x-for="(item, i) in whyUs" :key="i">
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-500">Card <span x-text="i+1"></span></span>
+                <button type="button" @click="removeWhyUs(i)" class="text-red-400 hover:text-red-600 text-xs">Remove</button>
+              </div>
+              <input type="text" x-model="item.title" placeholder="Title (e.g. Fast Delivery)" class="form-input"/>
+              <textarea x-model="item.desc" rows="2" placeholder="Description — use {{city}} for city name" class="form-input resize-none"></textarea>
+            </div>
+          </template>
+          <p x-show="whyUs.length === 0" class="text-xs text-gray-400 text-center py-4">No cards yet. Click + Add Card.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: SEO + schema -->
+    <div class="space-y-6">
+
+      <!-- SEO -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO</h2>
+        <!-- Snippet preview -->
+        <div class="p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 border border-gray-100 dark:border-dark-600 text-sm">
+          <p class="text-[11px] text-gray-400 mb-1">Snippet Preview</p>
+          <p class="text-[#1a0dab] dark:text-blue-400 font-medium truncate" x-text="metaTitle || 'Page title…'"></p>
+          <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2" x-text="metaDesc || 'Meta description…'"></p>
+        </div>
+        <div>
+          <label class="form-label">SEO Title <span class="normal-case font-normal text-gray-400 ml-1" x-text="'(' + metaTitle.length + '/60)'"></span></label>
+          <input type="text" name="seo_title" x-model="metaTitle" class="form-input"/>
+        </div>
+        <div>
+          <label class="form-label">Meta Description <span class="normal-case font-normal text-gray-400 ml-1" x-text="'(' + metaDesc.length + '/160)'"></span></label>
+          <textarea name="meta_description" x-model="metaDesc" rows="3" class="form-input resize-none"></textarea>
+        </div>
+        <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ page.meta_keywords|default:'' }}" class="form-input"/></div>
+        <div><label class="form-label">Canonical URL</label><input type="url" name="canonical_url" value="{{ page.canonical_url|default:'' }}" class="form-input" placeholder="https://…"/></div>
+
+        <!-- Schema Type -->
+        <div>
+          <label class="form-label">Schema Type</label>
+          <select name="schema_type" class="form-input form-select">
+            {% for val,label in schema_choices %}
+            <option value="{{ val }}" {% if page.schema_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- OG fields -->
+        <details class="text-sm">
+          <summary class="cursor-pointer text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium">Open Graph / Twitter</summary>
+          <div class="mt-3 space-y-3">
+            <div><label class="form-label">OG Title</label><input type="text" name="og_title" value="{{ page.og_title|default:'' }}" class="form-input"/></div>
+            <div><label class="form-label">OG Description</label><textarea name="og_description" rows="2" class="form-input resize-none">{{ page.og_description|default:'' }}</textarea></div>
+            <div><label class="form-label">Twitter Title</label><input type="text" name="twitter_title" value="{{ page.twitter_title|default:'' }}" class="form-input"/></div>
+            <div><label class="form-label">Twitter Description</label><textarea name="twitter_description" rows="2" class="form-input resize-none">{{ page.twitter_description|default:'' }}</textarea></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Related Products -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Related Products</h2>
+        <select name="related_products" multiple class="form-input h-36">
+          {% for p in products %}<option value="{{ p.pk }}" {% if p in page.related_products.all %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+        <p class="form-hint">Hold Ctrl/Cmd to select multiple</p>
+      </div>
+
+      <!-- Phase 2 stubs -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">SEO Analysis <span class="badge badge-yellow ml-2">Phase 2</span></h2>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
+            <span class="text-sm">SEO Score Indicator</span><span class="text-xs text-gray-400">Coming soon</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
+            <span class="text-sm">Missing SEO Alerts</span><span class="text-xs text-gray-400">Coming soon</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
+            <span class="text-sm">Internal Linking Suggestions</span><span class="text-xs text-gray-400">Coming soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  ClassicEditor.create(document.querySelector('#main_content_editor'), {
+    toolbar: ['heading','|','bold','italic','link','bulletedList','numberedList','|','blockQuote','undo','redo'],
+  });
+</script>
+{% endblock %}

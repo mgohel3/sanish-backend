@@ -1,0 +1,30 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Dealers{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Leads</span><span class="text-gray-300">/</span><span>Dealers</span>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between"><h1 class="text-xl font-bold text-gray-900 dark:text-white">Dealers</h1><a href="{% url 'dealer_create' %}" class="btn-primary">+ Add Dealer</a></div>
+  <form method="get" class="flex gap-3 items-end flex-wrap">
+    <div class="flex-1 min-w-[160px]"><label class="form-label">Search</label><input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Name or city…"/></div>
+    <div class="min-w-[120px]"><label class="form-label">State</label><input type="text" name="state" value="{{ state }}" class="form-input" placeholder="Gujarat"/></div>
+    <button type="submit" class="btn-primary">Filter</button>
+  </form>
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>City / State</th><th>Phone</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for d in dealers %}
+        <tr>
+          <td><p class="font-medium">{{ d.name }}</p><p class="text-xs text-gray-400">{{ d.contact }}</p></td>
+          <td class="text-sm">{{ d.city }}, {{ d.state }}</td>
+          <td class="text-sm">{{ d.phone }}</td>
+          <td>{% if d.status == 'active' %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Inactive</span>{% endif %}</td>
+          <td class="text-right"><a href="{% url 'dealer_edit' d.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="py-12 text-center text-gray-400">No dealers.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

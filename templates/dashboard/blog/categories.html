@@ -1,0 +1,50 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Blog Categories & Tags{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'blog_list' %}" class="hover:text-accent">Blog</a><span class="text-gray-300">/</span><span>Categories & Tags</span>{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Categories -->
+  <div class="space-y-4">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Blog Categories</h2>
+    <form method="post" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex gap-3">
+      {% csrf_token %}<input type="hidden" name="action" value="add_category"/>
+      <input type="text" name="name" required class="form-input flex-1" placeholder="Category name…"/>
+      <button type="submit" class="btn-primary">Add</button>
+    </form>
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Slug</th><th class="text-right">Del</th></tr></thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td class="font-medium">{{ cat.name }}</td>
+            <td class="font-mono text-xs text-gray-500">{{ cat.slug }}</td>
+            <td class="text-right"><form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_category"/><input type="hidden" name="id" value="{{ cat.pk }}"/><button type="submit" class="text-red-400 hover:text-red-600 text-xs p-1">✕</button></form></td>
+          </tr>
+          {% empty %}<tr><td colspan="3" class="py-8 text-center text-gray-400">No categories</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <div class="space-y-4">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tags</h2>
+    <form method="post" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex gap-3">
+      {% csrf_token %}<input type="hidden" name="action" value="add_tag"/>
+      <input type="text" name="name" required class="form-input flex-1" placeholder="Tag name…"/>
+      <button type="submit" class="btn-primary">Add</button>
+    </form>
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex flex-wrap gap-2">
+      {% for tag in tags %}
+      <span class="badge badge-blue">
+        {{ tag.name }}
+        <form method="post" class="inline ml-1">{% csrf_token %}<input type="hidden" name="action" value="delete_tag"/><input type="hidden" name="id" value="{{ tag.pk }}"/><button type="submit" class="text-blue-400 hover:text-red-500">✕</button></form>
+      </span>
+      {% empty %}<p class="text-sm text-gray-400">No tags yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

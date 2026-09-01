@@ -1,0 +1,87 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Global SEO Settings{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>Global Settings</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+  <h1 class="text-xl font-bold text-gray-900 dark:text-white">Global SEO Settings</h1>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Meta -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Site Meta</h2>
+      <div><label class="form-label">Site Meta Title</label><input type="text" name="site_meta_title" value="{{ settings.site_meta_title }}" class="form-input"/></div>
+      <div><label class="form-label">Site Meta Description</label><textarea name="site_meta_description" rows="3" class="form-input resize-none">{{ settings.site_meta_description }}</textarea></div>
+      <div><label class="form-label">Site Keywords</label><input type="text" name="site_keywords" value="{{ settings.site_keywords }}" class="form-input"/></div>
+    </div>
+
+    <!-- Robots.txt -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">robots.txt</h2>
+      <textarea name="robots_txt" rows="8" class="form-input font-mono text-xs resize-y">{{ settings.robots_txt }}</textarea>
+      <p class="form-hint">Served at <code>/api/robots.txt</code></p>
+    </div>
+
+    <!-- Analytics / Pixels -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Analytics & Pixels</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div><label class="form-label">Google Analytics 4 (G-...)</label><input type="text" name="ga4_code" value="{{ settings.ga4_code }}" class="form-input font-mono" placeholder="G-XXXXXXXXXX"/></div>
+        <div><label class="form-label">Google Tag Manager (GTM-...)</label><input type="text" name="gtm_code" value="{{ settings.gtm_code }}" class="form-input font-mono" placeholder="GTM-XXXXXXX"/></div>
+        <div><label class="form-label">Facebook Pixel ID</label><input type="text" name="fb_pixel_code" value="{{ settings.fb_pixel_code }}" class="form-input font-mono"/></div>
+        <div><label class="form-label">Microsoft Clarity ID</label><input type="text" name="clarity_code" value="{{ settings.clarity_code }}" class="form-input font-mono"/></div>
+      </div>
+    </div>
+
+    <!-- SEO Health (live) -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO Health</h2>
+        <a href="{% url 'seo_health' %}" class="btn-secondary text-xs">Open Full Report →</a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a href="{% url 'seo_health' %}" class="flex items-start gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-emerald-800 dark:text-emerald-200">SEO Coverage Report</p>
+            <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">See which products, categories, and blog posts are missing meta title, description, or OG image.</p>
+          </div>
+        </a>
+        <a href="{% url 'seo_redirects' %}" class="flex items-start gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+          <div class="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-blue-800 dark:text-blue-200">Redirect Manager</p>
+            <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Add 301/302 redirects for moved pages. Bulk import via CSV supported.</p>
+          </div>
+        </a>
+        <a href="{% url 'seo_schema' %}" class="flex items-start gap-3 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+          <div class="w-8 h-8 rounded-xl bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-purple-800 dark:text-purple-200">Schema.org Generator</p>
+            <p class="text-xs text-purple-600 dark:text-purple-400 mt-0.5">Generate JSON-LD for LocalBusiness, Product, FAQ, Organization, Article, Breadcrumb.</p>
+          </div>
+        </a>
+        <a href="{% url 'site_settings' %}" class="flex items-start gap-3 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+          <div class="w-8 h-8 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-orange-800 dark:text-orange-200">Site Settings</p>
+            <p class="text-xs text-orange-600 dark:text-orange-400 mt-0.5">Manage logo, contact info, social media links, map embed, header & footer copy.</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary">Save SEO Settings</button>
+  </form>
+</div>
+{% endblock %}

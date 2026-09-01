@@ -1,0 +1,53 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Blog{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Blog</span>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Blog Posts</h1>
+    <div class="flex gap-2">
+      <a href="{% url 'blog_categories' %}" class="btn-ghost">Categories & Tags</a>
+      <a href="{% url 'blog_post_create' %}" class="btn-primary">+ New Post</a>
+    </div>
+  </div>
+
+  <form method="get" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex flex-wrap gap-3 items-end">
+    <div class="flex-1 min-w-[180px]"><label class="form-label">Search</label><input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Title…"/></div>
+    <div class="min-w-[140px]">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input form-select">
+        <option value="">All</option>
+        <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">Filter</button>
+    <a href="{% url 'blog_list' %}" class="btn-ghost">Clear</a>
+  </form>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead><tr><th>Title</th><th>Author</th><th>Status</th><th>Created</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for post in posts %}
+        <tr>
+          <td>
+            <p class="font-medium text-gray-800 dark:text-white">{{ post.title }}</p>
+            <p class="text-xs text-gray-400 font-mono">/blog/{{ post.slug }}/</p>
+          </td>
+          <td class="text-sm">{{ post.author.get_full_name|default:post.author.username|default:"—" }}</td>
+          <td>{% if post.status == 'published' %}<span class="badge badge-green">Published</span>{% else %}<span class="badge badge-yellow">Draft</span>{% endif %}</td>
+          <td class="text-xs text-gray-400">{{ post.created|date:"d M Y" }}</td>
+          <td class="text-right">
+            <a href="{% url 'blog_post_edit' post.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
+            <form method="post" action="{% url 'blog_post_delete' post.pk %}" class="inline" onsubmit="return confirm('Delete?')">{% csrf_token %}<button type="submit" class="btn-ghost py-1.5 px-3 text-xs text-red-400">Delete</button></form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="py-12 text-center text-gray-400">No posts yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

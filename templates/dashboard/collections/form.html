@@ -1,0 +1,52 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if collection %}Edit{% else %}New{% endif %} Collection{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'collection_list' %}" class="hover:text-accent">Collections</a><span class="text-gray-300">/</span><span>{% if collection %}{{ collection.name }}{% else %}New{% endif %}</span>{% endblock %}
+{% block content %}
+<form method="post" class="max-w-2xl space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between"><h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if collection %}Edit Collection{% else %}New Collection{% endif %}</h1><button type="submit" class="btn-primary">Save</button></div>
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div><label class="form-label">Name *</label><input type="text" name="name" value="{{ collection.name|default:'' }}" required class="form-input"/></div>
+    <div><label class="form-label">Description</label><textarea name="description" rows="3" class="form-input resize-none">{{ collection.description|default:'' }}</textarea></div>
+    <div><label class="form-label">Status</label>
+      <select name="status" class="form-input form-select">
+        <option value="draft" {% if not collection or collection.status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="published" {% if collection.status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+    </div>
+  </div>
+  <!-- Mega Menu -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Header Mega Menu</h2>
+    <p class="form-hint">Enabled collections appear as image thumbnails in the Products mega menu.</p>
+    <div class="flex items-center gap-3">
+      <input type="checkbox" name="show_in_mega_menu" id="show_in_mega_menu" value="1" class="w-4 h-4 rounded" {% if collection.show_in_mega_menu %}checked{% endif %}/>
+      <label for="show_in_mega_menu" class="form-label mb-0 cursor-pointer">Show in mega menu collections grid</label>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Accent Colour</label>
+        <div class="flex gap-2 items-center">
+          <input type="color" value="{{ collection.mega_accent_color|default:'#7B9EC4' }}"
+            class="w-10 h-10 rounded border border-gray-200 cursor-pointer"
+            oninput="document.getElementById('mega_accent_color').value=this.value"/>
+          <input type="text" id="mega_accent_color" name="mega_accent_color"
+            value="{{ collection.mega_accent_color|default:'#7B9EC4' }}"
+            class="form-input font-mono" maxlength="7" placeholder="#7B9EC4"/>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Position <span class="form-hint">(lower = first)</span></label>
+        <input type="number" name="mega_position" value="{{ collection.mega_position|default:0 }}" class="form-input" min="0"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO</h2>
+    <div><label class="form-label">SEO Title</label><input type="text" name="seo_title" value="{{ collection.seo_title|default:'' }}" class="form-input"/></div>
+    <div><label class="form-label">Meta Description</label><textarea name="meta_description" rows="3" class="form-input resize-none">{{ collection.meta_description|default:'' }}</textarea></div>
+    <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ collection.meta_keywords|default:'' }}" class="form-input"/></div>
+  </div>
+</form>
+{% endblock %}

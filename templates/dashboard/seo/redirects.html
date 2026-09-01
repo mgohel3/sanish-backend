@@ -1,0 +1,81 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Redirect Manager{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>Redirects</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Redirect Manager</h1>
+    <div class="flex gap-2">
+      <label class="btn-secondary cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Import CSV
+        <form method="post" id="csv-form" enctype="multipart/form-data" class="hidden">
+          {% csrf_token %}<input type="hidden" name="action" value="bulk_csv"/>
+          <input type="file" name="csv_file" accept=".csv" @change="document.getElementById('csv-form').submit()"/>
+        </form>
+      </label>
+    </div>
+  </div>
+
+  <!-- Add redirect -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Add Redirect</h2>
+    <form method="post" class="flex flex-wrap gap-3 items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add"/>
+      <div class="flex-1 min-w-[200px]">
+        <label class="form-label">Source Path</label>
+        <input type="text" name="source_path" required class="form-input font-mono" placeholder="/old-page/"/>
+      </div>
+      <div class="flex-1 min-w-[200px]">
+        <label class="form-label">Destination Path</label>
+        <input type="text" name="destination_path" required class="form-input font-mono" placeholder="/new-page/"/>
+      </div>
+      <div class="w-32">
+        <label class="form-label">Type</label>
+        <select name="type" class="form-input form-select">
+          <option value="301">301</option>
+          <option value="302">302</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">Add</button>
+    </form>
+  </div>
+
+  <!-- Redirects table -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Type</th>
+          <th>Active</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in redirects %}
+        <tr>
+          <td class="font-mono text-xs">{{ r.source_path }}</td>
+          <td class="font-mono text-xs text-gray-500">{{ r.destination_path }}</td>
+          <td><span class="badge {% if r.type == '301' %}badge-blue{% else %}badge-yellow{% endif %}">{{ r.type }}</span></td>
+          <td>{% if r.active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Inactive</span>{% endif %}</td>
+          <td class="text-right">
+            <form method="post" class="inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete"/>
+              <input type="hidden" name="redirect_id" value="{{ r.pk }}"/>
+              <button type="submit" class="btn-ghost py-1 px-3 text-xs text-red-400" onclick="return confirm('Delete?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="py-8 text-center text-gray-400">No redirects configured.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

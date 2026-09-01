@@ -1,0 +1,31 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Collections{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Collections</span>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Collections</h1>
+    <a href="{% url 'collection_create' %}" class="btn-primary">+ New Collection</a>
+  </div>
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>Slug</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for col in collections %}
+        <tr>
+          <td class="font-medium">{{ col.name }}</td>
+          <td class="font-mono text-xs text-gray-500">{{ col.slug }}</td>
+          <td>{% if col.status == 'published' %}<span class="badge badge-green">Published</span>{% else %}<span class="badge badge-yellow">Draft</span>{% endif %}</td>
+          <td class="text-right">
+            <a href="{% url 'collection_edit' col.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
+            <form method="post" action="{% url 'collection_delete' col.pk %}" class="inline" onsubmit="return confirm('Delete?')">{% csrf_token %}<button type="submit" class="btn-ghost py-1.5 px-3 text-xs text-red-400">Delete</button></form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-12 text-center text-gray-400">No collections yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

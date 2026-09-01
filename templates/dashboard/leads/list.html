@@ -1,0 +1,84 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Inquiries{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Leads</span><span class="text-gray-300">/</span><span>Inquiries</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Inquiries</h1>
+    <div class="flex gap-2">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="export_csv"/>
+        <button type="submit" class="btn-ghost text-xs">Export CSV</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Type tabs -->
+  <div class="flex gap-1 bg-surface-100 dark:bg-dark-800 p-1 rounded-2xl w-fit">
+    <a href="?type=all{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'all' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">All</a>
+    <a href="?type=contact{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'contact' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Contact</a>
+    <a href="?type=dealer{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'dealer' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Dealer</a>
+    <a href="?type=architect{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'architect' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Architect</a>
+  </div>
+
+  <!-- Filters row -->
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <input type="hidden" name="type" value="{{ tab }}"/>
+    <div class="flex-1 min-w-[160px]"><label class="form-label">Search</label><input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Name or email…"/></div>
+    <div class="min-w-[140px]">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input form-select">
+        <option value="">All</option>
+        {% for val,label in STATUS_CHOICES %}<option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">Filter</button>
+  </form>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>Contact</th><th>Type</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th></tr>
+      </thead>
+      <tbody>
+        {% for inq in inquiries %}
+        <tr x-data="{ expanded: false }">
+          <td>
+            <div>
+              <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
+              <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
+              <button @click="expanded = !expanded" class="text-xs text-accent hover:underline mt-0.5" x-text="expanded ? 'Hide message' : 'View message'"></button>
+              <div x-show="expanded" x-transition class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300">
+                {{ inq.message|default:"(no message)" }}
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-blue">{{ inq.get_type_display }}</span></td>
+          <td class="text-sm text-gray-500">{{ inq.city }}</td>
+          <td>
+            {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
+            {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
+            {% elif inq.status == 'qualified' %}<span class="badge badge-green">Qualified</span>
+            {% else %}<span class="badge badge-gray">Closed</span>{% endif %}
+          </td>
+          <td class="text-xs text-gray-400">{{ inq.created|date:"d M Y" }}</td>
+          <td class="text-right">
+            <form method="post" class="flex items-center justify-end gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_status"/>
+              <input type="hidden" name="pk" value="{{ inq.pk }}"/>
+              <select name="status" class="form-input form-select text-xs w-28 py-1">
+                {% for val,label in STATUS_CHOICES %}<option value="{{ val }}" {% if inq.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn-primary text-xs py-1 px-3">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-12 text-center text-gray-400">No inquiries.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

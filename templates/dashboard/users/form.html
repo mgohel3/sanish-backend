@@ -1,0 +1,26 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if edit_user %}Edit{% else %}New{% endif %} User{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'user_list' %}" class="hover:text-accent">Users</a><span class="text-gray-300">/</span><span>{% if edit_user %}{{ edit_user.username }}{% else %}New{% endif %}</span>{% endblock %}
+{% block content %}
+<form method="post" class="max-w-xl space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between"><h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if edit_user %}Edit User{% else %}New User{% endif %}</h1><button type="submit" class="btn-primary">Save</button></div>
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    {% if not edit_user %}<div><label class="form-label">Username *</label><input type="text" name="username" required class="form-input"/></div>{% endif %}
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="form-label">First Name</label><input type="text" name="first_name" value="{{ edit_user.first_name|default:'' }}" class="form-input"/></div>
+      <div><label class="form-label">Last Name</label><input type="text" name="last_name" value="{{ edit_user.last_name|default:'' }}" class="form-input"/></div>
+    </div>
+    <div><label class="form-label">Email</label><input type="email" name="email" value="{{ edit_user.email|default:'' }}" class="form-input"/></div>
+    <div>
+      <label class="form-label">Role</label>
+      <select name="role" class="form-input form-select">
+        {% for val,label in role_choices %}<option value="{{ val }}" {% if edit_user.role == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div><label class="form-label">Password {% if edit_user %}<span class="text-gray-400 font-normal normal-case">(leave blank to keep current)</span>{% endif %}</label>
+    <input type="password" name="password" class="form-input" autocomplete="new-password"/>
+    </div>
+  </div>
+</form>
+{% endblock %}

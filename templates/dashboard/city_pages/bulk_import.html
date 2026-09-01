@@ -1,0 +1,128 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Bulk Import City Pages{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'city_page_index' %}" class="hover:text-accent">City Pages</a><span class="text-gray-300">/</span><span>Bulk Import</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Bulk Import City Pages</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload a CSV or XLSX file to generate dozens of city pages at once. Review the preview before committing.</p>
+  </div>
+
+  {% if not preview_rows %}
+  <!-- Upload form -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8"
+       x-data="{ dragging: false }"
+       @dragover.prevent="dragging = true"
+       @dragleave.prevent="dragging = false"
+       @drop.prevent="dragging = false; $refs.fileInput.files = $event.dataTransfer.files; $refs.uploadForm.submit()">
+    <form method="post" enctype="multipart/form-data" id="uploadForm" x-ref="uploadForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="preview"/>
+      <div :class="dragging && 'border-accent bg-accent/5'"
+           class="border-2 border-dashed border-gray-200 dark:border-dark-600 rounded-2xl p-12 text-center transition-colors">
+        <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        <p class="text-gray-600 dark:text-gray-300 font-medium mb-1">Drop your CSV or Excel file here</p>
+        <p class="text-sm text-gray-400 mb-4">or click to browse</p>
+        <label class="btn-primary cursor-pointer">
+          Browse File
+          <input type="file" name="import_file" accept=".csv,.xlsx" required class="hidden" x-ref="fileInput"
+                 @change="$refs.uploadForm.submit()"/>
+        </label>
+      </div>
+    </form>
+
+    <!-- Download template -->
+    <div class="mt-6 p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 flex items-center gap-4">
+      <svg class="w-8 h-8 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Download Template File</p>
+        <p class="text-xs text-gray-400">city_pages_template.csv with required columns: city, state, product_type</p>
+      </div>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="download_template"/>
+        <button type="submit" class="btn-secondary text-xs py-2">Download →</button>
+      </form>
+    </div>
+
+    <div class="mt-6">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Required Columns</h3>
+      <div class="overflow-x-auto">
+        <table class="data-table text-xs">
+          <thead><tr><th>Column</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono">city</td><td><span class="badge badge-red">Yes</span></td><td>City name (e.g. Ahmedabad)</td></tr>
+            <tr><td class="font-mono">state</td><td><span class="badge badge-gray">No</span></td><td>State (e.g. Gujarat)</td></tr>
+            <tr><td class="font-mono">product_type</td><td><span class="badge badge-red">Yes</span></td><td>Must match a PageTemplate's product_type_label</td></tr>
+            <tr><td class="font-mono">h1_title</td><td><span class="badge badge-gray">No</span></td><td>Override H1 title</td></tr>
+            <tr><td class="font-mono">meta_description</td><td><span class="badge badge-gray">No</span></td><td>Override meta description</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Preview table -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Preview — {{ preview_rows|length }} rows</h2>
+        {% if has_errors %}
+        <p class="text-sm text-red-500 mt-0.5">⚠ Some rows have errors and will be skipped.</p>
+        {% else %}
+        <p class="text-sm text-emerald-500 mt-0.5">✓ All rows look good — ready to commit.</p>
+        {% endif %}
+      </div>
+      <a href="{% url 'city_page_bulk_import' %}" class="btn-ghost text-sm">← Start Over</a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="data-table text-xs">
+        <thead>
+          <tr>
+            <th>Row</th><th>City</th><th>State</th><th>Product Type</th><th>Slug</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in preview_rows %}
+          <tr class="{% if row.errors %}bg-red-50 dark:bg-red-900/10{% endif %}">
+            <td class="font-mono">{{ row.row }}</td>
+            <td>{{ row.city }}</td>
+            <td>{{ row.state }}</td>
+            <td>{{ row.product }}</td>
+            <td class="font-mono">/{{ row.slug }}/</td>
+            <td>
+              {% if row.errors %}
+              <div class="text-red-500">
+                {% for err in row.errors %}<p>{{ err }}</p>{% endfor %}
+              </div>
+              {% else %}
+              <span class="badge badge-green">Ready</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="commit"/>
+      <input type="hidden" name="raw_rows" value="{{ raw_rows }}"/>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="btn-primary">
+          Commit & Create Pages
+        </button>
+        <a href="{% url 'city_page_bulk_import' %}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

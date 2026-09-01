@@ -1,0 +1,75 @@
+name: sanish
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sanish}
+      POSTGRES_USER: ${POSTGRES_USER:-sanish}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sanish} -d ${POSTGRES_DB:-sanish}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media:/app/media
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ../../sanish-next
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://staging.sanishlaminate.com/api}
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/auth:/etc/nginx/auth:ro
+      - media:/var/www/media:ro
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    depends_on:
+      - backend
+      - frontend
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: >
+      /bin/sh -c 'trap exit TERM; while :; do
+      certbot renew --webroot -w /var/www/certbot --quiet;
+      sleep 12h & wait $${!}; done'
+
+volumes:
+  pgdata:
+  media:
+  certbot-conf:
+  certbot-www:

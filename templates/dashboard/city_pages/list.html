@@ -1,0 +1,157 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}All City Pages{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'city_page_index' %}" class="hover:text-accent">City Pages</a><span class="text-gray-300">/</span><span>All Pages</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6"
+     x-data="{
+       selected: [],
+       allIds: [{% for page in city_pages %}{{ page.pk }}{% if not forloop.last %},{% endif %}{% endfor %}],
+       get allSelected() { return this.allIds.length > 0 && this.selected.length === this.allIds.length; },
+       toggleAll(checked) { this.selected = checked ? [...this.allIds] : []; },
+       toggle(id, checked) { checked ? this.selected.push(id) : this.selected = this.selected.filter(x => x !== id); }
+     }">
+
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">City Pages</h1>
+    <div class="flex gap-2">
+      <a href="{% url 'city_page_bulk_import' %}" class="btn-secondary">Bulk Import</a>
+      <a href="{% url 'city_page_create' %}" class="btn-primary">+ New Page</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex flex-wrap gap-3 items-end">
+    <div class="flex-1 min-w-[160px]">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="City or slug…" class="form-input"/>
+    </div>
+    <div class="min-w-[180px]">
+      <label class="form-label">Template</label>
+      <select name="template" class="form-input form-select">
+        <option value="">All</option>
+        {% for tpl in templates %}<option value="{{ tpl.pk }}" {% if template_id == tpl.pk|stringformat:'s' %}selected{% endif %}>{{ tpl.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="min-w-[120px]">
+      <label class="form-label">State</label>
+      <input type="text" name="state" value="{{ state }}" placeholder="Gujarat…" class="form-input"/>
+    </div>
+    <div class="min-w-[120px]">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input form-select">
+        <option value="">All</option>
+        <option value="draft"     {% if status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="published" {% if status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">Filter</button>
+    <a href="{% url 'city_page_list' %}" class="btn-ghost">Clear</a>
+  </form>
+
+  <!-- Bulk action form wraps the table -->
+  <form method="post" id="bulkForm" action="{% url 'city_page_list' %}">
+    {% csrf_token %}
+    <input type="hidden" name="bulk_action" id="bulkAction" value="">
+
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="w-10">
+              <input type="checkbox"
+                     class="w-4 h-4 rounded accent-accent cursor-pointer"
+                     :checked="allSelected"
+                     :indeterminate="selected.length > 0 && !allSelected"
+                     @change="toggleAll($event.target.checked)"/>
+            </th>
+            <th>City / State</th>
+            <th>Template</th>
+            <th>Slug</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for page in city_pages %}
+          <tr :class="selected.includes({{ page.pk }}) ? 'bg-accent/5 dark:bg-accent/10' : ''">
+            <td>
+              <input type="checkbox"
+                     name="page_ids"
+                     value="{{ page.pk }}"
+                     class="w-4 h-4 rounded accent-accent cursor-pointer"
+                     :checked="selected.includes({{ page.pk }})"
+                     @change="toggle({{ page.pk }}, $event.target.checked)"/>
+            </td>
+            <td>
+              <p class="font-medium text-gray-800 dark:text-white">{{ page.city }}</p>
+              <p class="text-xs text-gray-400">{{ page.state }}</p>
+            </td>
+            <td class="text-sm">{{ page.template.name }}</td>
+            <td class="font-mono text-xs text-gray-500">/{{ page.slug }}/</td>
+            <td>
+              {% if page.status == 'published' %}<span class="badge badge-green">Published</span>
+              {% else %}<span class="badge badge-yellow">Draft</span>{% endif %}
+            </td>
+            <td class="text-xs text-gray-400">{{ page.updated|date:"d M Y" }}</td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'city_page_edit' page.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
+                <form method="post" action="{% url 'city_page_delete' page.pk %}" onsubmit="return confirm('Delete this city page?')">
+                  {% csrf_token %}<button type="submit" class="btn-ghost py-1.5 px-3 text-xs text-red-400">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="py-12 text-center text-gray-400">No city pages yet. <a href="{% url 'city_page_create' %}" class="text-accent underline">Create one?</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <!-- Floating bulk action bar -->
+  <div x-show="selected.length > 0"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 translate-y-4"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 translate-y-0"
+       x-transition:leave-end="opacity-0 translate-y-4"
+       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+              bg-gray-900 dark:bg-[#1a1726] text-white rounded-2xl shadow-2xl
+              px-5 py-3 flex items-center gap-4 min-w-[360px]">
+
+    <span class="text-sm font-medium tabular-nums">
+      <span x-text="selected.length"></span> selected
+    </span>
+
+    <div class="flex-1 h-px bg-white/10"></div>
+
+    <button type="button"
+            class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 transition-colors"
+            @click="if(selected.length){ document.getElementById('bulkAction').value='publish'; document.getElementById('bulkForm').submit() }">
+      Publish
+    </button>
+    <button type="button"
+            class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 transition-colors"
+            @click="if(selected.length){ document.getElementById('bulkAction').value='draft'; document.getElementById('bulkForm').submit() }">
+      Set Draft
+    </button>
+    <button type="button"
+            class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-400 transition-colors"
+            @click="if(selected.length && confirm('Delete ' + selected.length + ' page(s)? This cannot be undone.')){ document.getElementById('bulkAction').value='delete'; document.getElementById('bulkForm').submit() }">
+      Delete
+    </button>
+
+    <button type="button"
+            class="ml-1 text-white/40 hover:text-white transition-colors"
+            @click="selected = []">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+</div>
+{% endblock %}

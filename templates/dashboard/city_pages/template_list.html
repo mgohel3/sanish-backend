@@ -1,0 +1,37 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Page Templates{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'city_page_index' %}" class="hover:text-accent">City Pages</a><span class="text-gray-300">/</span><span>Templates</span>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Page Templates</h1>
+      <p class="text-sm text-gray-500 mt-1">Reusable content templates with {{city}}, {{state}}, {{product}} placeholders.</p>
+    </div>
+    <a href="{% url 'page_template_create' %}" class="btn-primary">+ New Template</a>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    {% for tpl in templates %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 flex flex-col gap-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-semibold text-gray-800 dark:text-white">{{ tpl.name }}</h3>
+          <p class="text-xs text-gray-400 mt-0.5">{{ tpl.product_type_label }}</p>
+        </div>
+        <span class="badge badge-blue">{{ tpl.city_pages.count }} pages</span>
+      </div>
+      <p class="text-xs text-gray-500 font-mono bg-surface-50 dark:bg-dark-700 px-3 py-1.5 rounded-xl">{{ tpl.url_pattern }}</p>
+      <div class="flex gap-2 mt-auto">
+        <a href="{% url 'page_template_edit' tpl.pk %}" class="btn-ghost text-xs flex-1 justify-center">Edit Template</a>
+        <a href="{% url 'city_page_create' %}?template={{ tpl.pk }}" class="btn-secondary text-xs flex-1 justify-center">+ Page</a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-3 text-center py-12 text-gray-400">
+      <p>No templates yet.</p>
+      <a href="{% url 'page_template_create' %}" class="text-accent underline mt-2 inline-block">Create your first template</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "dashboard/preview/base_preview.html" %}
+
+{% block seo_panel %}
+<p style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#6B6B80; margin-bottom:12px; font-family:'Plus Jakarta Sans',sans-serif;">SEO Details</p>
+
+<div style="background:#F8FAFF; border:1px solid rgba(30,30,46,0.08); border-radius:12px; padding:12px; margin-bottom:12px;">
+  <p style="font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:#6B6B80; margin-bottom:6px; font-family:'Plus Jakarta Sans',sans-serif;">Google Snippet</p>
+  <p style="color:#1a0dab; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ product.meta_title|default:product.name }}</p>
+  <p style="color:#006621; font-size:11px; margin-top:2px;">sanishlaminate.com/products/{{ product.slug }}</p>
+  <p style="color:#4d5156; font-size:11px; margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ product.meta_description|default:"No meta description set." }}</p>
+</div>
+
+{% with t=product.meta_title|default:"" %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(30,30,46,0.06); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">Meta Title</span>
+  <span style="font-weight:600; {% if t|length > 60 %}color:#ef4444;{% elif t|length > 50 %}color:#f59e0b;{% else %}color:#10b981;{% endif %}">{{ t|length }}/60</span>
+</div>
+{% endwith %}
+{% with d=product.meta_description|default:"" %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(30,30,46,0.06); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">Meta Desc</span>
+  <span style="font-weight:600; {% if d|length > 160 %}color:#ef4444;{% elif d|length > 140 %}color:#f59e0b;{% else %}color:#10b981;{% endif %}">{{ d|length }}/160</span>
+</div>
+{% endwith %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">SKU</span>
+  <span style="font-weight:600; font-family:monospace; color:var(--text-primary);">{{ product.sku }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO / PRODUCT DETAIL ═══════════════════════════════════════════ -->
+<section style="padding:80px 0; background:var(--bg-primary);">
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px;">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:32px; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:var(--text-secondary);">
+      <a href="/" style="color:var(--text-secondary); text-decoration:none;">Home</a>
+      <span style="opacity:0.4;">›</span>
+      <a href="/surface-explorer" style="color:var(--text-secondary); text-decoration:none;">Products</a>
+      <span style="opacity:0.4;">›</span>
+      <a href="#" style="color:var(--text-secondary); text-decoration:none;">{{ product.category.name }}</a>
+      <span style="opacity:0.4;">›</span>
+      <span style="color:var(--accent-blue); font-weight:500;">{{ product.name }}</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1.1fr 1fr; gap:64px; align-items:start;">
+
+      <!-- Image gallery -->
+      <div>
+        {% if product.product_images.all %}
+        <!-- Primary image -->
+        <div style="border-radius:24px; overflow:hidden; background:var(--bg-secondary); aspect-ratio:4/3; margin-bottom:12px;">
+          <img src="{{ product.product_images.first.asset.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;"/>
+        </div>
+        <!-- Thumbnails -->
+        {% if product.product_images.count > 1 %}
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+          {% for pi in product.product_images.all %}
+          {% if not forloop.first %}
+          <div style="border-radius:14px; overflow:hidden; background:var(--bg-secondary); aspect-ratio:1; border:2px solid transparent;">
+            <img src="{{ pi.asset.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;"/>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div style="border-radius:24px; background:var(--bg-secondary); aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; border:2px dashed rgba(30,30,46,0.12);">
+          <div style="text-align:center;">
+            <div style="font-size:40px; margin-bottom:8px;">◈</div>
+            <p style="font-size:13px; color:var(--text-secondary); font-family:'Plus Jakarta Sans',sans-serif;">No images uploaded yet</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Product info -->
+      <div>
+        <!-- Eyebrow -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+          <span class="eyebrow">{{ product.category.name }}</span>
+          {% if product.collection %}
+          <span style="width:4px; height:4px; border-radius:50%; background:var(--accent-blue); opacity:0.4;"></span>
+          <span class="eyebrow" style="color:var(--accent-orange);">{{ product.collection.name }}</span>
+          {% endif %}
+          <span style="font-family:monospace; font-size:11px; color:var(--text-secondary); margin-left:4px;">{{ product.sku }}</span>
+        </div>
+
+        <!-- Name -->
+        <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:clamp(1.6rem,3vw,2.5rem); font-weight:700; color:var(--text-primary); line-height:1.2; margin-bottom:24px;">
+          {{ product.name }}
+        </h1>
+
+        {% if product.description %}
+        <div class="prose-content" style="margin-bottom:28px;">
+          {{ product.description|safe|truncatewords_html:60 }}
+        </div>
+        {% endif %}
+
+        <!-- Short description -->
+        {% if product.short_description %}
+        <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; line-height:1.7; color:var(--text-secondary); margin-bottom:28px;">{{ product.short_description }}</p>
+        {% endif %}
+
+        <!-- Features -->
+        {% if product.features %}
+        <div style="margin-bottom:28px;">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-secondary); margin-bottom:14px;">Key Features</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            {% for feat in product.features %}
+            <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-primary); font-family:'Plus Jakarta Sans',sans-serif;">
+              <svg width="14" height="14" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ feat }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- CTAs -->
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+          <a href="/contact-us" class="btn-pill btn-pill-primary">Request Sample</a>
+          <a href="/contact-us" class="btn-pill btn-pill-ghost">Get Quote</a>
+        </div>
+
+        {% if product.pdf_catalog %}
+        <a href="{{ product.pdf_catalog.url }}" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--accent-blue); font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; text-decoration:none; letter-spacing:0.04em;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download PDF Catalogue
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ DESCRIPTION + SPECS TABS ═══════════════════════════════════════ -->
+<section style="padding:80px 0; background:var(--bg-secondary);">
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px;">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start;">
+
+      <!-- Full Description -->
+      {% if product.description %}
+      <div>
+        <div class="section-sep"></div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:600; color:var(--text-primary); margin-bottom:20px;">About This Surface</h2>
+        <div class="prose-content">{{ product.description|safe }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Technical Specs -->
+      {% if product.tech_specs %}
+      <div>
+        <div class="section-sep" style="background:var(--accent-orange);"></div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:600; color:var(--text-primary); margin-bottom:20px;">Technical Specifications</h2>
+        <div style="background:white; border-radius:20px; overflow:hidden; border:1px solid var(--color-border-subtle);">
+          {% for key, val in product.tech_specs.items %}
+          <div style="display:flex; border-bottom:1px solid var(--color-border-subtle); last:border-0;">
+            <div style="padding:14px 20px; width:45%; background:var(--bg-secondary); font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-secondary); flex-shrink:0;">{{ key }}</div>
+            <div style="padding:14px 20px; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:600; color:var(--text-primary);">{{ val }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ RELATED PRODUCTS ════════════════════════════════════════════════ -->
+{% if product.related_products.all %}
+<section style="padding:80px 0; background:var(--bg-primary);">
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px;">
+    <div style="margin-bottom:40px;">
+      <div class="section-sep"></div>
+      <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:2rem; font-weight:600; color:var(--text-primary);">You May Also Like</h2>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:20px;">
+      {% for rp in product.related_products.all %}
+      <div class="card-elevated" style="background:white; border:1px solid var(--color-border-subtle);">
+        {% if rp.primary_image %}
+        <div style="aspect-ratio:4/3; overflow:hidden; background:var(--bg-secondary);">
+          <img src="{{ rp.primary_image.url }}" alt="{{ rp.name }}" style="width:100%; height:100%; object-fit:cover;"/>
+        </div>
+        {% else %}
+        <div style="aspect-ratio:4/3; background:var(--bg-secondary); display:flex; align-items:center; justify-content:center;">
+          <span style="font-size:28px; opacity:0.3;">◈</span>
+        </div>
+        {% endif %}
+        <div style="padding:16px 18px;">
+          <div class="eyebrow" style="margin-bottom:4px;">{{ rp.category.name }}</div>
+          <h3 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">{{ rp.name }}</h3>
+          <span style="font-size:11px; color:var(--text-secondary); font-family:'Plus Jakarta Sans',sans-serif;">{{ rp.sku }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ══ CTA BAND ════════════════════════════════════════════════════════ -->
+<section style="padding:80px 0; background:linear-gradient(135deg, #1E1E2E 0%, #2D2A3E 100%); position:relative; overflow:hidden;">
+  <div class="ambient-orb" style="width:400px; height:400px; top:-100px; right:-50px; background:rgba(123,158,196,0.10);"></div>
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px; position:relative; z-index:2; text-align:center;">
+    <div class="eyebrow" style="color:rgba(123,158,196,0.8); margin-bottom:16px;">Ready to Order?</div>
+    <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:2.25rem; font-weight:700; color:white; margin-bottom:14px;">Get a Sample of {{ product.name }}</h2>
+    <p style="font-size:16px; color:rgba(255,255,255,0.6); max-width:480px; margin:0 auto 36px; line-height:1.7;">Request samples, pricing, and technical support from our team.</p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <a href="/contact-us" class="btn-pill btn-pill-primary">Request a Sample</a>
+      <a href="/surface-explorer" style="display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:12px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; text-decoration:none; letter-spacing:0.08em; text-transform:uppercase;">
+        View All Products
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

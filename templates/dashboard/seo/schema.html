@@ -1,0 +1,43 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Schema Generator{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>Schema Generator</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+  <h1 class="text-xl font-bold text-gray-900 dark:text-white">JSON-LD Schema Generator</h1>
+
+  <form method="post" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="form-label">Schema Type</label>
+      <select name="schema_type" class="form-input form-select">
+        {% for t in schema_types %}<option value="{{ t }}" {% if schema_type == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div><label class="form-label">City</label><input type="text" name="city" value="{{ city|default:'' }}" class="form-input" placeholder="Ahmedabad"/></div>
+      <div><label class="form-label">State</label><input type="text" name="state" value="{{ state|default:'' }}" class="form-input" placeholder="Gujarat"/></div>
+      <div><label class="form-label">Product</label><input type="text" name="product" value="{{ product|default:'' }}" class="form-input" placeholder="Laminates"/></div>
+    </div>
+    <div><label class="form-label">Title / Headline</label><input type="text" name="title" value="{{ title|default:'' }}" class="form-input"/></div>
+    <div><label class="form-label">Page URL</label><input type="url" name="page_url" value="{{ page_url|default:'' }}" class="form-input" placeholder="https://…"/></div>
+    <button type="submit" class="btn-primary">Generate Schema</button>
+  </form>
+
+  {% if schema_json %}
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6"
+       x-data="{ copied: false }">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Generated JSON-LD</h2>
+      <button type="button"
+              @click="navigator.clipboard.writeText($refs.schema.textContent); copied = true; setTimeout(() => copied=false, 2000)"
+              class="btn-ghost py-1 px-3 text-xs">
+        <span x-text="copied ? '✓ Copied!' : 'Copy'"></span>
+      </button>
+    </div>
+    <pre x-ref="schema" class="text-xs font-mono bg-surface-50 dark:bg-dark-700 rounded-2xl p-4 overflow-x-auto whitespace-pre text-gray-700 dark:text-gray-300">{{ schema_json }}</pre>
+    <p class="form-hint mt-3">Paste this in a <code>&lt;script type="application/ld+json"&gt;</code> tag in your page's &lt;head&gt;.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

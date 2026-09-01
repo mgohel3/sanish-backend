@@ -1,0 +1,79 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if category %}Edit{% else %}New{% endif %} Category{% endblock %}
+{% block breadcrumbs %}
+  <span class="text-gray-300">/</span><a href="{% url 'category_list' %}" class="hover:text-accent">Categories</a>
+  <span class="text-gray-300">/</span><span>{% if category %}{{ category.name }}{% else %}New{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if category %}Edit Category{% else %}New Category{% endif %}</h1>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div>
+      <label class="form-label">Name *</label>
+      <input type="text" name="name" value="{{ category.name|default:'' }}" required class="form-input"/>
+    </div>
+    <div>
+      <label class="form-label">Description</label>
+      <textarea name="description" rows="3" class="form-input resize-none">{{ category.description|default:'' }}</textarea>
+    </div>
+    <div>
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input form-select">
+        <option value="draft"     {% if category.status == 'draft' or not category %}selected{% endif %}>Draft</option>
+        <option value="published" {% if category.status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Mega Menu -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Header Mega Menu</h2>
+    <p class="form-hint">Controls how this category appears in the Products mega menu of the site header.</p>
+    <div>
+      <label class="form-label">Mega Menu Column</label>
+      <select name="mega_group" class="form-input form-select">
+        <option value="none"     {% if not category or category.mega_group == 'none' %}selected{% endif %}>Not in mega menu</option>
+        <option value="finishes" {% if category.mega_group == 'finishes' %}selected{% endif %}>Surface Finishes column</option>
+        <option value="panels"   {% if category.mega_group == 'panels' %}selected{% endif %}>Panels &amp; Décor column</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Icon Character <span class="form-hint">(single emoji / Unicode)</span></label>
+        <input type="text" name="mega_icon" value="{{ category.mega_icon|default:'◈' }}" class="form-input" maxlength="10" placeholder="◈"/>
+      </div>
+      <div>
+        <label class="form-label">Position <span class="form-hint">(lower = first)</span></label>
+        <input type="number" name="mega_position" value="{{ category.mega_position|default:0 }}" class="form-input" min="0"/>
+      </div>
+    </div>
+    <div>
+      <label class="form-label">Mega Menu Short Description <span class="form-hint">(max 120 chars)</span></label>
+      <input type="text" name="mega_description" value="{{ category.mega_description|default:'' }}" class="form-input" maxlength="120" placeholder="e.g. Mirror-like premium surfaces"/>
+    </div>
+  </div>
+
+  <!-- SEO -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO</h2>
+    <div>
+      <label class="form-label">SEO Title</label>
+      <input type="text" name="seo_title" value="{{ category.seo_title|default:'' }}" class="form-input"/>
+    </div>
+    <div>
+      <label class="form-label">Meta Description</label>
+      <textarea name="meta_description" rows="3" class="form-input resize-none">{{ category.meta_description|default:'' }}</textarea>
+    </div>
+    <div>
+      <label class="form-label">Meta Keywords</label>
+      <input type="text" name="meta_keywords" value="{{ category.meta_keywords|default:'' }}" class="form-input"/>
+    </div>
+  </div>
+</form>
+{% endblock %}

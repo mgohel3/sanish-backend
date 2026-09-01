@@ -1,0 +1,166 @@
+[
+  {
+    "model": "catalog.category",
+    "pk": 1,
+    "fields": {
+      "name": "Decorative Laminates",
+      "slug": "decorative-laminates",
+      "description": "Premium decorative laminates for walls, furniture and surfaces.",
+      "banner_image": null,
+      "seo_title": "Decorative Laminates — Sanish Laminate",
+      "meta_description": "Explore Sanish's premium range of decorative laminates. Pastel tones, matte finishes and luxury textures for every space.",
+      "meta_keywords": "decorative laminates, wall laminates, furniture laminates, sanish",
+      "og_image": null,
+      "status": "published",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.category",
+    "pk": 2,
+    "fields": {
+      "name": "High Pressure Laminates",
+      "slug": "high-pressure-laminates",
+      "description": "Durable HPL for high-traffic commercial and residential surfaces.",
+      "banner_image": null,
+      "seo_title": "High Pressure Laminates — Sanish Laminate",
+      "meta_description": "Industrial-grade high pressure laminates with superior scratch and heat resistance.",
+      "meta_keywords": "high pressure laminates, HPL, commercial laminates",
+      "og_image": null,
+      "status": "published",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.collection",
+    "pk": 1,
+    "fields": {
+      "name": "Pastel Luxe Collection",
+      "slug": "pastel-luxe",
+      "description": "A curated palette of soft pastels and warm neutrals that define the Sanish signature look.",
+      "seo_title": "Pastel Luxe Collection — Sanish Laminate",
+      "meta_description": "The Pastel Luxe Collection by Sanish — soft hues, premium textures, editorial interiors.",
+      "meta_keywords": "pastel laminates, luxury laminates, sanish collection",
+      "og_image": null,
+      "status": "published",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 1,
+    "fields": {
+      "name": "Blush Travertine Matte",
+      "sku": "BTM-001",
+      "slug": "blush-travertine-matte",
+      "category": 1,
+      "collection": 1,
+      "description": "<p>A sophisticated warm blush travertine laminate with a premium matte finish. Ideal for feature walls, wardrobes and kitchen cabinets. The texture mimics natural stone while remaining easy to clean and maintain.</p>",
+      "features": ["Scratch-resistant surface", "Easy to clean", "Available in 8ft sheets", "Heat-resistant up to 120°C", "Zero formaldehyde emission"],
+      "tech_specs": {"Thickness": "0.8mm", "Sheet Size": "2440mm × 1220mm", "Surface": "Matte", "Core": "Kraft paper", "Finish": "Anti-fingerprint"},
+      "pdf_catalog": null,
+      "meta_title": "Blush Travertine Matte Laminate — Sanish",
+      "meta_description": "Blush Travertine Matte by Sanish — premium decorative laminate with natural stone texture in warm pastel tones.",
+      "meta_keywords": "blush laminate, travertine laminate, matte laminate, sanish",
+      "og_image": null,
+      "status": "published",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 2,
+    "fields": {
+      "name": "Onyx Noir HPL",
+      "sku": "ONH-001",
+      "slug": "onyx-noir-hpl",
+      "category": 2,
+      "collection": null,
+      "description": "<p>Deep charcoal high pressure laminate with a subtle grain pattern. Engineered for commercial countertops, office furniture and high-traffic surfaces. Class 1 fire rating.</p>",
+      "features": ["Class 1 fire rating", "Impact-resistant", "Anti-bacterial surface", "15-year colour warranty", "Hygienic for food-safe surfaces"],
+      "tech_specs": {"Thickness": "1.2mm", "Sheet Size": "3050mm × 1300mm", "Surface": "Satin", "Impact Resistance": "≥ IP4", "Fire Rating": "Class 1"},
+      "pdf_catalog": null,
+      "meta_title": "Onyx Noir HPL — Sanish Laminate",
+      "meta_description": "Onyx Noir High Pressure Laminate — premium commercial surface with Class 1 fire rating and impact resistance.",
+      "meta_keywords": "HPL, high pressure laminate, onyx laminate, commercial laminate",
+      "og_image": null,
+      "status": "published",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "pages.pagetemplate",
+    "pk": 1,
+    "fields": {
+      "name": "Laminates in City",
+      "product_type_label": "Laminates",
+      "url_pattern": "laminates-in-{city}",
+      "default_h1": "Best Laminates in {{city}}, {{state}}",
+      "default_hero_heading": "Premium Laminates for {{city}} Homes & Offices",
+      "default_hero_desc": "Transform your interiors with Sanish's curated collection of decorative laminates. Available to order and deliver across {{city}}, {{state}}.",
+      "default_main_content": "<p>Looking for premium <strong>laminates in {{city}}</strong>? Sanish Laminate offers a complete range of decorative laminates, high-pressure laminates, and surface solutions crafted for the discerning homeowner and architect in {{city}}.</p><p>Our laminates combine Italian-inspired aesthetics with Indian craftsmanship — suitable for modular kitchens, wardrobe shutters, feature walls, office furniture and more.</p><h2>Why Choose Sanish Laminates in {{city}}?</h2><ul><li>500+ designs including pastels, metallics, and naturals</li><li>Zero formaldehyde, eco-certified materials</li><li>Fast delivery across {{state}}</li><li>Supported by authorised dealers in {{city}}</li></ul>",
+      "why_choose_us": [
+        {"title": "500+ Designs", "desc": "From soft pastels to bold metallics — find your perfect finish."},
+        {"title": "Eco Certified", "desc": "Zero formaldehyde, safe for families and the planet."},
+        {"title": "Fast Delivery", "desc": "Order today, delivered to your door in {{city}}."},
+        {"title": "Expert Support", "desc": "Our team helps you choose the right finish for your project."}
+      ],
+      "faqs": [
+        {"q": "Where can I buy Sanish laminates in {{city}}?", "a": "Sanish laminates are available through authorised dealers across {{city}}. Use our dealer locator to find the nearest outlet."},
+        {"q": "What is the price of laminates in {{city}}?", "a": "Sanish laminate prices start from ₹45 per sq ft. Contact your local dealer in {{city}} for current pricing and bulk discounts."},
+        {"q": "Do you deliver laminates to {{city}}?", "a": "Yes, we deliver across {{state}} including {{city}}. Order online or through a local dealer."}
+      ],
+      "default_schema_type": "LocalBusiness",
+      "created": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "pages.citypage",
+    "pk": 1,
+    "fields": {
+      "template": 1,
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "slug": "laminates-in-ahmedabad",
+      "status": "published",
+      "h1_title": "Best Laminates in Ahmedabad, Gujarat",
+      "hero_heading": "Premium Laminates for Ahmedabad Homes & Offices",
+      "hero_description": null,
+      "main_content": null,
+      "why_choose_us": null,
+      "faqs": null,
+      "testimonials": [],
+      "seo_title": "Laminates in Ahmedabad — Sanish Laminate | Buy Online",
+      "meta_description": "Buy premium laminates in Ahmedabad from Sanish. 500+ designs, eco-certified, fast delivery across Gujarat. Find dealers near you.",
+      "meta_keywords": "laminates ahmedabad, buy laminates ahmedabad, sanish laminates gujarat",
+      "canonical_url": "https://sanishlaminate.com/laminates-in-ahmedabad/",
+      "og_title": "Laminates in Ahmedabad — Sanish Laminate",
+      "og_description": "Premium decorative laminates for Ahmedabad. 500+ designs, zero formaldehyde, dealer support across Gujarat.",
+      "og_image": null,
+      "twitter_title": "",
+      "twitter_description": "",
+      "schema_type": "LocalBusiness",
+      "created": "2025-01-01T00:00:00Z",
+      "updated": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "seo.globalseo",
+    "pk": 1,
+    "fields": {
+      "site_meta_title": "Sanish Laminate — Premium Decorative Laminates & Surfaces",
+      "site_meta_description": "Explore Sanish's premium collection of decorative laminates, HPL, and surface solutions. Italian-inspired design, Indian craftsmanship.",
+      "site_keywords": "sanish laminate, decorative laminates, HPL, surface solutions, interior laminates",
+      "robots_txt": "User-agent: *\nAllow: /\nSitemap: https://api.sanishlaminate.com/sitemap.xml",
+      "ga4_code": "",
+      "gtm_code": "",
+      "fb_pixel_code": "",
+      "clarity_code": ""
+    }
+  }
+]

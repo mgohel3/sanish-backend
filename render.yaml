@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: sanish-backend
+    env: python
+    region: singapore
+    plan: starter
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "sanish-backend.onrender.com,api.sanishlaminate.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://sanishlaminate.com,https://www.sanishlaminate.com"
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sanish-db
+          property: connectionString
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        value: sanish-media
+      - key: R2_ENDPOINT_URL
+        sync: false
+
+databases:
+  - name: sanish-db
+    databaseName: sanish
+    user: sanish
+    plan: starter
+    region: singapore

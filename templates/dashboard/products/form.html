@@ -1,0 +1,330 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if product %}Edit{% else %}New{% endif %} Product{% endblock %}
+{% block breadcrumbs %}
+  <span class="text-gray-300">/</span><a href="{% url 'product_list' %}" class="hover:text-accent">Products</a>
+  <span class="text-gray-300">/</span><span>{% if product %}{{ product.name }}{% else %}New{% endif %}</span>
+{% endblock %}
+
+{% block extra_head %}
+<!-- CKEditor 5 -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data"
+      x-data="{
+        features: {{ product.features|default:'[]'|safe }},
+        specs: {{ product.tech_specs|default:'{}'|safe }},
+        specKeys: Object.keys({{ product.tech_specs|default:'{}'|safe }}),
+        specVals: Object.values({{ product.tech_specs|default:'{}'|safe }}),
+        images: [{% for pi in current_images %}{ id: {{ pi.asset.pk }}, url: '{{ pi.asset.url|escapejs }}', title: '{{ pi.asset.title|escapejs }}' }{% if not forloop.last %},{% endif %}{% endfor %}],
+        setFeatured(i) { const item = this.images.splice(i, 1)[0]; this.images.unshift(item); },
+        removeImage(i) { this.images.splice(i, 1); },
+        addFeature() { this.features.push(''); },
+        removeFeature(i) { this.features.splice(i,1); },
+        addSpec() { this.specKeys.push(''); this.specVals.push(''); },
+        removeSpec(i) { this.specKeys.splice(i,1); this.specVals.splice(i,1); },
+        get featuresJson() { return JSON.stringify(this.features.filter(f=>f.trim())); },
+        get specsJson() {
+          const o={};
+          this.specKeys.forEach((k,i) => { if(k.trim()) o[k]=this.specVals[i]||''; });
+          return JSON.stringify(o);
+        },
+      }"
+      @submit="
+        document.getElementById('features_json').value = featuresJson;
+        document.getElementById('specs_json').value = specsJson;
+        $el.querySelectorAll('input[name=image_ids]').forEach(el => el.remove());
+        images.forEach(img => {
+          const inp = document.createElement('input');
+          inp.type = 'hidden'; inp.name = 'image_ids'; inp.value = img.id;
+          $el.appendChild(inp);
+        });
+      "
+      class="space-y-6">
+  {% csrf_token %}
+
+  <!-- Hidden fields -->
+  <input type="hidden" name="features_json" id="features_json"/>
+  <input type="hidden" name="specs_json"    id="specs_json"/>
+
+  <!-- Top bar: save/status -->
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+        {% if product %}Edit Product{% else %}New Product{% endif %}
+      </h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <select name="status" class="form-input form-select w-auto">
+        <option value="draft"     {% if product.status == 'draft' or not product %}selected{% endif %}>Draft</option>
+        <option value="published" {% if product.status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+      {% if product %}
+      <a href="{% url 'product_preview' product.pk %}" target="_blank" rel="noopener"
+         class="btn-secondary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </a>
+      {% else %}
+      <span class="btn-secondary opacity-50 cursor-not-allowed flex items-center gap-1.5" title="Save as Draft first to preview">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </span>
+      {% endif %}
+      <button type="submit" class="btn-primary">Save Product</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <!-- Left: main info -->
+    <div class="xl:col-span-2 space-y-6">
+
+      <!-- Basic Info -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Basic Info</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Product Name *</label>
+            <input type="text" name="name" value="{{ product.name|default:'' }}" required class="form-input" placeholder="e.g. Sanish Premium Matte"/>
+          </div>
+          <div>
+            <label class="form-label">SKU *</label>
+            <input type="text" name="sku" value="{{ product.sku|default:'' }}" required class="form-input" placeholder="e.g. SPM-001"/>
+          </div>
+          <div>
+            <label class="form-label">Category *</label>
+            <select name="category" required class="form-input form-select">
+              {% for cat in categories %}<option value="{{ cat.pk }}" {% if product.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Collection</label>
+            <select name="collection" class="form-input form-select">
+              <option value="">None</option>
+              {% for col in collections %}<option value="{{ col.pk }}" {% if product.collection_id == col.pk %}selected{% endif %}>{{ col.name }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Short Description -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-2"
+           x-data="{ sd: '{{ product.short_description|default:''|escapejs }}' }">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Short Description</h2>
+          <span class="text-xs text-gray-400" x-text="sd.length + '/300'"></span>
+        </div>
+        <textarea name="short_description" x-model="sd" rows="2"
+                  class="form-input resize-none"
+                  maxlength="300"
+                  placeholder="One-line summary shown on product cards and quick-view modal…">{{ product.short_description|default:'' }}</textarea>
+        <p class="form-hint">Displayed on the product listing card, quick-view modal, and product detail page. Keep it under 160 characters for best display.</p>
+      </div>
+
+      <!-- Description -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Description</h2>
+        <textarea name="description" id="description_editor" class="form-input min-h-[200px]">{{ product.description|default:'' }}</textarea>
+      </div>
+
+      <!-- Features -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Features</h2>
+          <button type="button" @click="addFeature()" class="btn-ghost py-1 px-3 text-xs">+ Add</button>
+        </div>
+        <div class="space-y-2">
+          <template x-for="(feat, i) in features" :key="i">
+            <div class="flex gap-2 items-center">
+              <input type="text" x-model="features[i]" class="form-input flex-1" placeholder="Feature description…"/>
+              <button type="button" @click="removeFeature(i)" class="text-red-400 hover:text-red-600 p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </template>
+          <p x-show="features.length === 0" class="text-xs text-gray-400 text-center py-4">No features yet. Click + Add.</p>
+        </div>
+      </div>
+
+      <!-- Tech Specs -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Technical Specs</h2>
+          <button type="button" @click="addSpec()" class="btn-ghost py-1 px-3 text-xs">+ Add Spec</button>
+        </div>
+        <div class="space-y-2">
+          <template x-for="(key, i) in specKeys" :key="i">
+            <div class="flex gap-2 items-center">
+              <input type="text" x-model="specKeys[i]" class="form-input w-40" placeholder="Key (e.g. Thickness)"/>
+              <span class="text-gray-400">→</span>
+              <input type="text" x-model="specVals[i]" class="form-input flex-1" placeholder="Value (e.g. 0.8mm)"/>
+              <button type="button" @click="removeSpec(i)" class="text-red-400 hover:text-red-600 p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </template>
+          <p x-show="specKeys.length === 0" class="text-xs text-gray-400 text-center py-4">No specs yet. Click + Add Spec.</p>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
+           x-data="{
+             metaTitle: '{{ product.meta_title|default:'' }}',
+             metaDesc:  '{{ product.meta_description|default:'' }}',
+           }">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO Settings</h2>
+
+        <!-- Live snippet preview -->
+        <div class="p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 border border-gray-100 dark:border-dark-600">
+          <p class="text-xs text-gray-400 mb-2 font-medium">Google Snippet Preview</p>
+          <p class="text-[#1a0dab] dark:text-blue-400 text-base font-medium truncate" x-text="metaTitle || 'Product title appears here'"></p>
+          <p class="text-[#006621] text-xs">https://sanishlaminate.com/products/{{ product.slug|default:'product-slug' }}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2" x-text="metaDesc || 'Meta description appears here…'"></p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="form-label">
+              Meta Title
+              <span class="normal-case font-normal text-gray-400 ml-1" x-text="'(' + metaTitle.length + '/60)'"></span>
+            </label>
+            <input type="text" name="meta_title" x-model="metaTitle" class="form-input"
+                   :class="metaTitle.length > 60 && 'border-red-400 focus:border-red-400'"
+                   placeholder="Leave blank to use product name"/>
+          </div>
+          <div>
+            <label class="form-label">
+              Meta Description
+              <span class="normal-case font-normal text-gray-400 ml-1" x-text="'(' + metaDesc.length + '/160)'"></span>
+            </label>
+            <textarea name="meta_description" x-model="metaDesc" rows="3" class="form-input resize-none"
+                      :class="metaDesc.length > 160 && 'border-red-400'"
+                      placeholder="Concise description for search engines…"></textarea>
+          </div>
+          <div>
+            <label class="form-label">Meta Keywords</label>
+            <input type="text" name="meta_keywords" value="{{ product.meta_keywords|default:'' }}" class="form-input" placeholder="laminate, wall panels, sanish…"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: images & relations -->
+    <div class="space-y-6">
+
+      <!-- Image gallery -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Product Images</h2>
+        <div id="image-gallery" class="space-y-2">
+          <template x-for="(img, i) in images" :key="img.id">
+            <div class="flex items-center gap-2 p-2 rounded-xl group transition-colors"
+                 :class="i === 0 ? 'bg-accent/10 ring-1 ring-accent/30' : 'bg-surface-50 dark:bg-dark-700'">
+              <img :src="img.url" class="w-12 h-12 rounded-xl object-cover flex-shrink-0"/>
+              <div class="flex-1 min-w-0">
+                <span class="text-xs text-gray-500 truncate block" x-text="img.title"></span>
+                <span x-show="i === 0" class="text-[10px] font-semibold text-accent uppercase tracking-wide">Featured</span>
+              </div>
+              <!-- Set featured star (hidden on first item) -->
+              <button type="button" x-show="i !== 0" @click="setFeatured(i)"
+                      class="text-gray-300 hover:text-accent p-1 transition-colors" title="Set as featured">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
+                </svg>
+              </button>
+              <!-- Filled star on featured item -->
+              <span x-show="i === 0" class="text-accent p-1">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
+                </svg>
+              </span>
+              <!-- Remove button -->
+              <button type="button" @click="removeImage(i)"
+                      class="text-gray-300 hover:text-red-500 p-1 transition-colors" title="Remove">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </template>
+          <p x-show="images.length === 0" class="text-xs text-gray-400 text-center py-4">No images yet.</p>
+        </div>
+        <div class="mt-3">
+          <label class="btn-secondary w-full justify-center cursor-pointer text-center block" id="image-upload-label">
+            <input type="file" id="image-upload-input" multiple accept="image/*" class="hidden"/>
+            <span id="image-upload-label-text">+ Upload Images</span>
+          </label>
+          <p class="form-hint text-center">Or pick from <a href="{% url 'media_library' %}" target="_blank" class="text-accent underline">Media Library</a></p>
+        </div>
+      </div>
+
+      <!-- PDF Catalog -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">PDF Catalog</h2>
+        {% if product.pdf_catalog %}
+        <div class="flex items-center gap-2 p-3 rounded-xl bg-surface-50 dark:bg-dark-700 mb-3">
+          <svg class="w-8 h-8 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7zm5 1l4 4h-4V4z"/></svg>
+          <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ product.pdf_catalog.title }}</span>
+        </div>
+        {% endif %}
+        <label class="btn-secondary w-full justify-center cursor-pointer text-center block">
+          <input type="file" name="pdf_catalog_file" accept=".pdf" class="hidden"/>
+          {{ product.pdf_catalog|yesno:"Replace PDF,Upload PDF" }}
+        </label>
+      </div>
+
+      <!-- Related Products -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Related Products</h2>
+        <select name="related_products" multiple class="form-input h-40">
+          {% for p in all_products %}
+          <option value="{{ p.pk }}" {% if p in product.related_products.all %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">Hold Ctrl/Cmd to select multiple</p>
+      </div>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  ClassicEditor.create(document.querySelector('#description_editor'), {
+    toolbar: ['heading','|','bold','italic','link','bulletedList','numberedList','|','blockQuote','insertTable','undo','redo'],
+  });
+
+  document.getElementById('image-upload-input').addEventListener('change', async function () {
+    const files = Array.from(this.files);
+    if (!files.length) return;
+    const label = document.getElementById('image-upload-label-text');
+    label.textContent = 'Uploading…';
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await fetch("{% url 'media_upload_ajax' %}", {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          body: fd,
+        });
+        if (!res.ok) { console.error('Upload failed', await res.text()); continue; }
+        const data = await res.json();
+        const alpineData = Alpine.$data(document.querySelector('[x-data]'));
+        alpineData.images.push({ id: data.id, url: data.url, title: data.title });
+      } catch (e) { console.error('Upload error', e); }
+    }
+    label.textContent = '+ Upload Images';
+    this.value = '';
+  });
+</script>
+{% endblock %}

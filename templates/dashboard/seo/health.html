@@ -1,0 +1,197 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}SEO Health{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>SEO Health</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">SEO Health Report</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Live scan of all published content — no external tools needed.</p>
+    </div>
+    <a href="{% url 'seo_global' %}" class="btn-secondary">Global SEO Settings →</a>
+  </div>
+
+  <!-- Overall score banner -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+    <div class="flex flex-col md:flex-row items-center gap-8">
+      <!-- Donut -->
+      <div class="relative flex-shrink-0">
+        <svg class="w-28 h-28 -rotate-90" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F3F4F6" stroke-width="3.5"/>
+          <circle cx="18" cy="18" r="15.9" fill="none"
+            stroke="{% if overall >= 80 %}#10B981{% elif overall >= 50 %}#F59E0B{% else %}#EF4444{% endif %}"
+            stroke-width="3.5"
+            stroke-dasharray="{{ overall }},100"
+            stroke-linecap="round"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center rotate-0">
+          <span class="text-[26px] font-bold {% if overall >= 80 %}text-emerald-600{% elif overall >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">{{ overall }}%</span>
+        </div>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-1">
+          {% if overall >= 80 %}Good — Keep it up!{% elif overall >= 50 %}Needs Improvement{% else %}Critical — Action Required{% endif %}
+        </h2>
+        <p class="text-sm text-gray-500 mb-4">Average SEO coverage across products, categories, collections, and blog posts. Each content item is checked for: SEO title, meta description, meta keywords, and OG image.</p>
+        <!-- Score pills -->
+        <div class="flex flex-wrap gap-3">
+          {% for label, avg, total in scores %}
+          <div class="flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-100 dark:border-white/5 bg-surface-50 dark:bg-dark-700">
+            <div class="w-2 h-2 rounded-full {% if avg >= 80 %}bg-emerald-400{% elif avg >= 50 %}bg-amber-400{% else %}bg-red-400{% endif %}"></div>
+            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ label }}</span>
+            <span class="text-xs font-bold {% if avg >= 80 %}text-emerald-600{% elif avg >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">{{ avg }}%</span>
+            <span class="text-xs text-gray-400">({{ total }})</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products with SEO issues -->
+  {% if product_issues %}
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        Products with Missing SEO
+        <span class="ml-2 badge badge-red">{{ product_issues|length }}</span>
+      </h2>
+      <a href="{% url 'product_list' %}" class="text-xs text-accent hover:underline">View all →</a>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-50 dark:border-white/5">
+          <th class="text-left px-6 py-3">Product</th>
+          <th class="text-left px-6 py-3">Score</th>
+          <th class="text-left px-6 py-3">Missing</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50 dark:divide-white/5">
+        {% for item in product_issues %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-white/3">
+          <td class="px-6 py-3 font-medium text-gray-900 dark:text-white text-sm">{{ item.name }}</td>
+          <td class="px-6 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-16 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                <div class="h-full rounded-full {% if item.score >= 80 %}bg-emerald-400{% elif item.score >= 50 %}bg-amber-400{% else %}bg-red-400{% endif %}" style="width:{{ item.score }}%"></div>
+              </div>
+              <span class="text-xs font-semibold {% if item.score >= 80 %}text-emerald-600{% elif item.score >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">{{ item.score }}%</span>
+            </div>
+          </td>
+          <td class="px-6 py-3">
+            {% for f in item.missing %}<span class="badge badge-yellow mr-1 text-[10px]">{{ f }}</span>{% endfor %}
+          </td>
+          <td class="px-6 py-3 text-right"><a href="{{ item.edit_url }}" class="text-xs text-accent hover:underline">Fix →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Categories & Collections -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% if cat_issues %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Categories Missing SEO <span class="badge badge-red ml-2">{{ cat_issues|length }}</span></h2>
+      </div>
+      <ul class="divide-y divide-gray-50 dark:divide-white/5">
+        {% for item in cat_issues %}
+        <li class="px-6 py-3 flex items-center justify-between text-sm">
+          <span class="text-gray-900 dark:text-white">{{ item.name }}</span>
+          <a href="{{ item.edit_url }}" class="text-xs text-accent hover:underline">Fix →</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if col_issues %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Collections Missing SEO <span class="badge badge-red ml-2">{{ col_issues|length }}</span></h2>
+      </div>
+      <ul class="divide-y divide-gray-50 dark:divide-white/5">
+        {% for item in col_issues %}
+        <li class="px-6 py-3 flex items-center justify-between text-sm">
+          <span class="text-gray-900 dark:text-white">{{ item.name }}</span>
+          <a href="{{ item.edit_url }}" class="text-xs text-accent hover:underline">Fix →</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Blog issues -->
+  {% if blog_issues %}
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Blog Posts Missing SEO <span class="badge badge-yellow ml-2">{{ blog_issues|length }}</span></h2>
+    </div>
+    <ul class="divide-y divide-gray-50 dark:divide-white/5">
+      {% for item in blog_issues %}
+      <li class="px-6 py-3 flex items-center justify-between text-sm">
+        <div>
+          <span class="text-gray-900 dark:text-white">{{ item.name }}</span>
+          <span class="ml-2">{% for f in item.missing %}<span class="badge badge-yellow text-[10px] mr-0.5">{{ f }}</span>{% endfor %}</span>
+        </div>
+        <a href="{{ item.edit_url }}" class="text-xs text-accent hover:underline">Fix →</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Content quality alerts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% if no_image_products %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Products with No Images
+          <span class="badge badge-red ml-2">{{ no_image_products|length }}</span>
+        </h2>
+      </div>
+      <ul class="divide-y divide-gray-50 dark:divide-white/5">
+        {% for p in no_image_products %}
+        <li class="px-6 py-3 flex items-center justify-between text-sm">
+          <span class="text-gray-900 dark:text-white">{{ p }}</span>
+          <a href="/cms/products/{{ p.pk }}/" class="text-xs text-accent hover:underline">Add Image →</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if no_desc_products %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-white/5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Products with No Description
+          <span class="badge badge-yellow ml-2">{{ no_desc_products|length }}</span>
+        </h2>
+      </div>
+      <ul class="divide-y divide-gray-50 dark:divide-white/5">
+        {% for p in no_desc_products %}
+        <li class="px-6 py-3 flex items-center justify-between text-sm">
+          <span class="text-gray-900 dark:text-white">{{ p }}</span>
+          <a href="/cms/products/{{ p.pk }}/" class="text-xs text-accent hover:underline">Add Description →</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not product_issues and not cat_issues and not blog_issues and not no_image_products and not no_desc_products %}
+  <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-10 text-center">
+    <div class="text-4xl mb-3">✓</div>
+    <h2 class="text-lg font-bold text-emerald-700 dark:text-emerald-300 mb-1">All content is SEO-complete!</h2>
+    <p class="text-sm text-emerald-600 dark:text-emerald-400">Every published product, category, collection, and blog post has SEO title, meta description, keywords, and OG image filled in.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

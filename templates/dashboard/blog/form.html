@@ -1,0 +1,93 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if post %}Edit{% else %}New{% endif %} Blog Post{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'blog_list' %}" class="hover:text-accent">Blog</a><span class="text-gray-300">/</span><span>{% if post %}{{ post.title|truncatechars:30 }}{% else %}New Post{% endif %}</span>{% endblock %}
+{% block extra_head %}<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>{% endblock %}
+
+{% block content %}
+<form method="post" class="space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if post %}Edit Post{% else %}New Blog Post{% endif %}</h1>
+    <div class="flex gap-3">
+      <select name="status" class="form-input form-select w-auto">
+        <option value="draft" {% if not post or post.status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="published" {% if post.status == 'published' %}selected{% endif %}>Published</option>
+      </select>
+      {% if post %}
+      <a href="{% url 'blog_post_preview' post.pk %}" target="_blank" rel="noopener"
+         class="btn-secondary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </a>
+      {% else %}
+      <span class="btn-secondary opacity-50 cursor-not-allowed flex items-center gap-1.5" title="Save as Draft first to preview">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        Preview
+      </span>
+      {% endif %}
+      <button type="submit" class="btn-primary">Save Post</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <div><label class="form-label">Title *</label><input type="text" name="title" value="{{ post.title|default:'' }}" required class="form-input text-lg font-semibold" placeholder="Post title…"/></div>
+        <div><label class="form-label">Content</label><textarea name="content" id="content_editor" class="form-input min-h-[300px]">{{ post.content|default:'' }}</textarea></div>
+      </div>
+      <!-- SEO -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
+           x-data="{ metaTitle: '{{ post.seo_title|default:'' }}', metaDesc: '{{ post.meta_description|default:'' }}' }">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO</h2>
+        <div class="p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 text-sm">
+          <p class="text-[11px] text-gray-400 mb-1">Snippet Preview</p>
+          <p class="text-[#1a0dab] dark:text-blue-400 font-medium truncate" x-text="metaTitle || 'Post title…'"></p>
+          <p class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-text="metaDesc || 'Meta description…'"></p>
+        </div>
+        <div><label class="form-label">SEO Title <span class="normal-case font-normal text-gray-400 ml-1" x-text="'('+metaTitle.length+'/60)'"></span></label><input type="text" name="seo_title" x-model="metaTitle" class="form-input"/></div>
+        <div><label class="form-label">Meta Description <span class="normal-case font-normal text-gray-400 ml-1" x-text="'('+metaDesc.length+'/160)'"></span></label><textarea name="meta_description" x-model="metaDesc" rows="3" class="form-input resize-none"></textarea></div>
+        <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ post.meta_keywords|default:'' }}" class="form-input"/></div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Organisation</h2>
+        <div>
+          <label class="form-label">Categories</label>
+          <div class="space-y-1 max-h-40 overflow-y-auto p-2 rounded-xl bg-surface-50 dark:bg-dark-700">
+            {% for cat in categories %}
+            <label class="flex items-center gap-2 text-sm cursor-pointer hover:text-accent">
+              <input type="checkbox" name="categories" value="{{ cat.pk }}" {% if post and cat in post.categories.all %}checked{% endif %} class="rounded accent-accent"/>
+              {{ cat.name }}
+            </label>
+            {% empty %}<p class="text-xs text-gray-400">No categories. <a href="{% url 'blog_categories' %}" class="text-accent underline">Create one.</a></p>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Tags</label>
+          <select name="tags" multiple class="form-input h-28">
+            {% for tag in tags %}<option value="{{ tag.pk }}" {% if post and tag in post.tags.all %}selected{% endif %}>{{ tag.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="auto_faq_schema" {% if post.auto_faq_schema %}checked{% endif %} class="rounded accent-accent"/>
+            <span class="text-sm">Auto FAQ Schema</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>ClassicEditor.create(document.querySelector('#content_editor'),{toolbar:['heading','|','bold','italic','link','bulletedList','numberedList','|','blockQuote','insertTable','imageUpload','undo','redo']});</script>
+{% endblock %}

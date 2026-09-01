@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Django
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+*.log
+
+# Env (contains secrets)
+.env
+.env.*
+!.env.example
+
+# Tailwind standalone binary / build output
+tailwindcss-linux-x64
+static/css/output.css
+
+# Deploy secrets
+deploy/.env
+deploy/nginx/auth/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

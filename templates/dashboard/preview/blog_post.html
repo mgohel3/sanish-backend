@@ -1,0 +1,161 @@
+{% extends "dashboard/preview/base_preview.html" %}
+
+{% block seo_panel %}
+<p style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#6B6B80; margin-bottom:12px; font-family:'Plus Jakarta Sans',sans-serif;">SEO Details</p>
+
+<div style="background:#F8FAFF; border:1px solid rgba(30,30,46,0.08); border-radius:12px; padding:12px; margin-bottom:12px;">
+  <p style="font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:#6B6B80; margin-bottom:6px; font-family:'Plus Jakarta Sans',sans-serif;">Google Snippet</p>
+  <p style="color:#1a0dab; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ post.seo_title|default:post.title }}</p>
+  <p style="color:#006621; font-size:11px; margin-top:2px;">sanishlaminate.com/blog/{{ post.slug }}</p>
+  <p style="color:#4d5156; font-size:11px; margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ post.meta_description|default:"No meta description set." }}</p>
+</div>
+
+{% with t=post.seo_title|default:"" %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(30,30,46,0.06); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">SEO Title</span>
+  <span style="font-weight:600; {% if t|length > 60 %}color:#ef4444;{% elif t|length > 50 %}color:#f59e0b;{% else %}color:#10b981;{% endif %}">{{ t|length }}/60</span>
+</div>
+{% endwith %}
+{% with d=post.meta_description|default:"" %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(30,30,46,0.06); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">Meta Desc</span>
+  <span style="font-weight:600; {% if d|length > 160 %}color:#ef4444;{% elif d|length > 140 %}color:#f59e0b;{% else %}color:#10b981;{% endif %}">{{ d|length }}/160</span>
+</div>
+{% endwith %}
+{% with c=post.content|default:""|striptags %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px;">
+  <span style="color:#6B6B80;">Word count</span>
+  <span style="font-weight:600; color:var(--text-primary);">{{ c|wordcount }} words</span>
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════ -->
+<section style="position:relative; overflow:hidden; background:linear-gradient(135deg, #F0EDF7 0%, #EDE9F4 60%, #E8E2F0 100%); padding:100px 0 70px;">
+  <div class="ambient-orb" style="width:450px; height:450px; top:-120px; right:-80px; background:rgba(123,158,196,0.13);"></div>
+  <div class="ambient-orb" style="width:300px; height:300px; bottom:-60px; left:10%; background:rgba(201,122,146,0.09);"></div>
+
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px; position:relative; z-index:2;">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:24px; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:var(--text-secondary);">
+      <a href="/" style="color:var(--text-secondary); text-decoration:none;">Home</a>
+      <span style="opacity:0.4;">›</span>
+      <a href="/blog" style="color:var(--text-secondary); text-decoration:none;">Blog</a>
+      <span style="opacity:0.4;">›</span>
+      <span style="color:var(--accent-blue); font-weight:500;">{{ post.title|truncatechars:40 }}</span>
+    </div>
+
+    <!-- Category tags -->
+    {% if post.categories.all or post.tags.all %}
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
+      {% for cat in post.categories.all %}
+      <span style="padding:4px 12px; border-radius:999px; font-size:11px; font-weight:600; background:rgba(123,158,196,0.15); color:#5a7f9e; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:0.05em;">{{ cat.name }}</span>
+      {% endfor %}
+      {% for tag in post.tags.all %}
+      <span style="padding:4px 12px; border-radius:999px; font-size:11px; font-weight:500; background:rgba(30,30,46,0.06); color:var(--text-secondary); font-family:'Plus Jakarta Sans',sans-serif;">{{ tag.name }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Title -->
+    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:clamp(1.75rem,4vw,3rem); font-weight:700; color:var(--text-primary); line-height:1.2; max-width:800px; margin-bottom:24px; letter-spacing:-0.01em;">
+      {{ post.title }}
+    </h1>
+
+    <!-- Author + Date -->
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, var(--accent-blue), var(--color-soft-highlight)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:13px; flex-shrink:0;">
+        {{ post.author.first_name.0|upper|default:"?" }}
+      </div>
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-primary);">{{ post.author.get_full_name|default:post.author.username }}</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:var(--text-secondary);">{{ post.created|date:"j F Y" }}</div>
+      </div>
+      {% if post.auto_faq_schema %}
+      <span style="margin-left:8px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:600; background:rgba(123,158,196,0.12); color:var(--accent-blue); font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:0.06em;">FAQ Schema</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ ARTICLE CONTENT ════════════════════════════════════════════════ -->
+<section style="padding:80px 0; background:var(--bg-primary);">
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px;">
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:64px; align-items:start;">
+
+      <!-- Article body -->
+      <article>
+        {% if post.content %}
+        <div class="prose-content">{{ post.content|safe }}</div>
+        {% else %}
+        <div style="border:2px dashed rgba(30,30,46,0.12); border-radius:20px; padding:64px; text-align:center;">
+          <p style="color:var(--text-secondary); font-style:italic; font-size:15px;">No content written yet.</p>
+        </div>
+        {% endif %}
+      </article>
+
+      <!-- Sidebar -->
+      <aside style="position:sticky; top:100px;">
+        <!-- About author -->
+        <div style="background:white; border:1px solid var(--color-border-subtle); border-radius:20px; padding:24px; margin-bottom:20px;">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-secondary); margin-bottom:16px;">About the Author</p>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, var(--accent-blue), var(--color-soft-highlight)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px; flex-shrink:0;">
+              {{ post.author.first_name.0|upper|default:"?" }}
+            </div>
+            <div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700; color:var(--text-primary);">{{ post.author.get_full_name|default:post.author.username }}</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:var(--text-secondary);">{{ post.author.get_role_display }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        {% if post.categories.all %}
+        <div style="background:white; border:1px solid var(--color-border-subtle); border-radius:20px; padding:24px; margin-bottom:20px;">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-secondary); margin-bottom:12px;">Categories</p>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% for cat in post.categories.all %}
+            <span style="padding:5px 12px; border-radius:999px; font-size:12px; font-weight:500; background:rgba(123,158,196,0.12); color:var(--accent-blue); font-family:'Plus Jakarta Sans',sans-serif;">{{ cat.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Tags -->
+        {% if post.tags.all %}
+        <div style="background:white; border:1px solid var(--color-border-subtle); border-radius:20px; padding:24px;">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-secondary); margin-bottom:12px;">Tags</p>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% for tag in post.tags.all %}
+            <span style="padding:5px 12px; border-radius:999px; font-size:12px; font-weight:500; background:var(--bg-secondary); color:var(--text-secondary); font-family:'Plus Jakarta Sans',sans-serif;">{{ tag.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══ CTA BAND ════════════════════════════════════════════════════════ -->
+<section style="padding:64px 0; background:var(--bg-secondary); border-top:1px solid var(--color-border-subtle);">
+  <div style="max-width:1400px; margin:0 auto; padding:0 48px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:24px;">
+    <div>
+      <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:1.5rem; font-weight:600; color:var(--text-primary); margin-bottom:6px;">Explore Our Collections</h3>
+      <p style="font-size:15px; color:var(--text-secondary);">Discover premium laminates crafted for modern interiors.</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <a href="/surface-explorer" class="btn-pill btn-pill-primary">View Products</a>
+      <a href="/contact-us" class="btn-pill btn-pill-ghost">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,306 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preview — {{ preview_title }}</title>
+
+  <!-- Google Fonts matching frontend exactly -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {} } }
+  </script>
+
+  <style>
+    /* ── CSS Variables — exact match to frontend globals.css ── */
+    :root {
+      --bg-primary:    #FAFAFA;
+      --bg-secondary:  #F5F3F8;
+      --bg-section:    #EDE9F4;
+      --text-primary:  #1E1E2E;
+      --text-secondary:#6B6B80;
+      --accent-blue:   #7B9EC4;
+      --accent-orange: #E8956D;
+      --accent-rose:   #C97A92;
+      --accent-peach:  #E8B49A;
+      --color-border-subtle: rgba(30,30,46,0.07);
+      --color-soft-highlight:#D5E3F0;
+      --ease-luxury: cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Preview banner ─────────────────────────────────────── */
+    .preview-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 99999;
+      height: 36px;
+      background: #1E1E2E;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+    }
+
+    /* ── Eyebrow — matches .eyebrow in globals.css ─────────── */
+    .eyebrow {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--accent-blue);
+    }
+
+    /* ── Section separator line ──────────────────────────────── */
+    .section-sep {
+      width: 40px; height: 2px;
+      background: var(--accent-blue);
+      margin-bottom: 20px;
+      border-radius: 999px;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn-pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 30px; border-radius: 999px;
+      font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+      transition: all 0.4s var(--ease-luxury); cursor: pointer;
+    }
+    .btn-pill-primary { background: var(--accent-blue); color: white; box-shadow: 0 8px 28px rgba(123,158,196,0.28); }
+    .btn-pill-ghost   { background: transparent; color: var(--text-primary); border: 1.5px solid rgba(30,30,46,0.16); }
+
+    /* ── Card styles ─────────────────────────────────────────── */
+    .card-elevated {
+      border-radius: 24px; overflow: hidden;
+      transition: transform 0.5s var(--ease-luxury), box-shadow 0.5s var(--ease-luxury);
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 12px 36px rgba(123,158,196,0.10);
+      border-radius: 20px;
+    }
+
+    /* ── Ambient orb ──────────────────────────────────────────── */
+    .ambient-orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); pointer-events: none;
+    }
+
+    /* ── Prose / rich text ─────────────────────────────────── */
+    .prose-content h1 { font-family:'Playfair Display',Georgia,serif; font-size:2rem; font-weight:700; margin-bottom:1rem; line-height:1.2; color:var(--text-primary); }
+    .prose-content h2 { font-family:'Playfair Display',Georgia,serif; font-size:1.5rem; font-weight:600; margin:2rem 0 0.75rem; color:var(--text-primary); }
+    .prose-content h3 { font-size:1.15rem; font-weight:600; margin:1.5rem 0 0.5rem; color:var(--text-primary); }
+    .prose-content p  { margin-bottom:1.1rem; line-height:1.8; color:var(--text-secondary); font-size:15px; }
+    .prose-content ul { list-style:disc; padding-left:1.5rem; margin-bottom:1rem; }
+    .prose-content li { margin-bottom:0.4rem; line-height:1.7; color:var(--text-secondary); font-size:15px; }
+    .prose-content strong { font-weight:600; color:var(--text-primary); }
+    .prose-content a  { color:var(--accent-blue); text-decoration:underline; }
+    .prose-content blockquote { border-left:3px solid var(--accent-blue); padding-left:1.25rem; color:var(--text-secondary); font-style:italic; margin:1.5rem 0; }
+    .prose-content table { width:100%; border-collapse:collapse; margin-bottom:1rem; }
+    .prose-content table th, .prose-content table td { border:1px solid var(--color-border-subtle); padding:0.6rem 0.9rem; text-align:left; font-size:14px; }
+    .prose-content table th { background:var(--bg-secondary); font-weight:600; color:var(--text-primary); }
+
+    /* ── Nav link underline animation ─────────────────────── */
+    .nav-link {
+      font-size:13px; font-weight:500; color:var(--text-primary);
+      position:relative; padding-bottom:2px;
+      font-family:'Plus Jakarta Sans', sans-serif;
+    }
+    .nav-link::after {
+      content:''; position:absolute; bottom:0; left:0;
+      width:0; height:1px; background:var(--accent-blue);
+      transition:width 0.3s;
+    }
+    .nav-link:hover::after { width:100%; }
+
+    /* page offset for banner + header */
+    .page-body { padding-top: 36px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ══════════════════ PREVIEW BANNER ══════════════════════════ -->
+<div class="preview-banner">
+  <span style="font-weight:700; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7B9EC4;">Preview Mode</span>
+  <span style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></span>
+  <span style="color:rgba(255,255,255,0.85); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:400px;">{{ preview_title }}</span>
+  <span style="padding:2px 8px; border-radius:999px; font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    {% if preview_status == 'published' %}background:rgba(52,211,153,0.2); color:#34d399;{% else %}background:rgba(251,191,36,0.2); color:#fbbf24;{% endif %}">
+    {{ preview_status }}
+  </span>
+  <!-- SEO toggle -->
+  <button onclick="document.getElementById('seo-panel').classList.toggle('hidden')"
+    style="margin-left:6px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:600; background:rgba(123,158,196,0.2); color:#7B9EC4; border:1px solid rgba(123,158,196,0.3); cursor:pointer; letter-spacing:0.05em;">
+    SEO Info
+  </button>
+  <div class="ml-auto flex items-center gap-2">
+    <a href="{{ edit_url }}"
+       style="padding:4px 12px; border-radius:999px; font-size:10px; font-weight:600; background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.15); text-decoration:none; letter-spacing:0.05em;">
+      ← Back to Editor
+    </a>
+    <button onclick="window.close()"
+      style="padding:4px 12px; border-radius:999px; font-size:10px; font-weight:600; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.2); cursor:pointer; letter-spacing:0.05em;">
+      ✕ Close
+    </button>
+  </div>
+</div>
+
+<!-- SEO Floating Panel -->
+<div id="seo-panel" class="hidden" style="position:fixed; top:36px; right:0; z-index:99998; width:300px; background:white; border-left:1px solid var(--color-border-subtle); border-bottom:1px solid var(--color-border-subtle); padding:16px; font-family:'Plus Jakarta Sans',sans-serif; box-shadow:-8px 8px 32px rgba(30,30,46,0.12);">
+  {% block seo_panel %}{% endblock %}
+</div>
+
+<!-- ══════════════════ SITE HEADER ══════════════════════════════ -->
+<div class="page-body">
+
+  <!-- Top utility bar -->
+  <div style="background:var(--bg-secondary); border-bottom:1px solid var(--color-border-subtle); font-size:11px; letter-spacing:0.07em; font-weight:500; font-family:'Plus Jakarta Sans',sans-serif;">
+    <div style="max-width:1400px; margin:0 auto; padding:9px 48px; display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:2.5px; margin-right:8px;">
+          <span style="display:block; width:5px; height:5px; border-radius:50%; background:#7B9EC4;"></span>
+          <span style="display:block; width:5px; height:5px; border-radius:50%; background:#E8956D;"></span>
+          <span style="display:block; width:5px; height:5px; border-radius:50%; background:#C97A92;"></span>
+          <span style="display:block; width:5px; height:5px; border-radius:50%; background:#E8B49A;"></span>
+        </div>
+        <span style="text-transform:uppercase; letter-spacing:0.12em; font-weight:600; color:var(--accent-blue);">Premium Surface Manufacturing</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:20px; color:var(--text-primary); opacity:0.65;">
+        <span>Dealer Network</span>
+        <span>Download Catalogue</span>
+        <span>info@sanishlaminate.com</span>
+        <span>(+91) 7027 777 032</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main header bar -->
+  <header style="background:rgba(255,255,255,0.85); backdrop-filter:blur(20px); border-bottom:1px solid var(--color-border-subtle); position:sticky; top:36px; z-index:190;">
+    <div style="max-width:1400px; margin:0 auto; padding:14px 48px; display:flex; align-items:center; justify-content:space-between;">
+      <!-- Logo (text fallback since SVG not available in Django) -->
+      <a href="/" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px;">
+          <span style="display:block; width:7px; height:7px; border-radius:50%; background:#7B9EC4;"></span>
+          <span style="display:block; width:7px; height:7px; border-radius:50%; background:#E8956D;"></span>
+          <span style="display:block; width:7px; height:7px; border-radius:50%; background:#C97A92;"></span>
+          <span style="display:block; width:7px; height:7px; border-radius:50%; background:#E8B49A;"></span>
+        </div>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.02em; color:var(--text-primary);">SANISH</span>
+        <span style="font-family:'Playfair Display',serif; font-size:11px; font-style:italic; color:var(--text-secondary); letter-spacing:0.05em;">Laminates</span>
+      </a>
+      <!-- Nav -->
+      <nav style="display:flex; align-items:center; gap:32px;">
+        <a href="#" class="nav-link">Home</a>
+        <a href="#" class="nav-link">Products</a>
+        <a href="#" class="nav-link">Surface Explorer</a>
+        <a href="#" class="nav-link">About Us</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+      <!-- CTA -->
+      <a href="#" class="btn-pill btn-pill-primary" style="font-size:10px; padding:10px 22px;">Download Catalogue</a>
+    </div>
+  </header>
+
+  <!-- PAGE CONTENT -->
+  {% block content %}{% endblock %}
+
+  <!-- ══════════════════ FOOTER ══════════════════════════════ -->
+  <footer style="background:linear-gradient(to bottom, #F4EDF7, #EFE7F3); padding-top:80px; border-top:1px solid var(--color-border-subtle);">
+    <div style="max-width:1400px; margin:0 auto; padding:0 48px 64px;">
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1.2fr; gap:40px;">
+        <!-- Brand -->
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px;">
+              <span style="display:block; width:7px; height:7px; border-radius:50%; background:#7B9EC4;"></span>
+              <span style="display:block; width:7px; height:7px; border-radius:50%; background:#E8956D;"></span>
+              <span style="display:block; width:7px; height:7px; border-radius:50%; background:#C97A92;"></span>
+              <span style="display:block; width:7px; height:7px; border-radius:50%; background:#E8B49A;"></span>
+            </div>
+            <span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:18px; color:var(--text-primary);">SANISH</span>
+            <span style="font-family:'Playfair Display',serif; font-size:11px; font-style:italic; color:var(--text-secondary);">Laminates</span>
+          </div>
+          <div style="font-size:12px; font-weight:500; color:var(--accent-blue); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; font-family:'Plus Jakarta Sans',sans-serif;">Premium Decorative Surface Solutions</div>
+          <p style="font-size:15px; color:var(--text-secondary); line-height:1.6; max-width:300px;">Crafting elegant laminate and decorative surface solutions for architects, interior designers, commercial projects, and modern living spaces across India.</p>
+        </div>
+        <!-- Collections -->
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:20px; font-family:'Plus Jakarta Sans',sans-serif;">Collections</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">High Gloss Laminates</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Ultra Matte</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Textured Surfaces</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Acrylic Laminates</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Decorative Panels</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">PVC Panels</a>
+          </div>
+        </div>
+        <!-- Company -->
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:20px; font-family:'Plus Jakarta Sans',sans-serif;">Company</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">About Us</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Dealer Enquiry</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Careers</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Contact Us</a>
+            <a href="#" style="font-size:15px; color:var(--text-secondary); text-decoration:none;">Blog</a>
+          </div>
+        </div>
+        <!-- Newsletter -->
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px; font-family:'Plus Jakarta Sans',sans-serif;">Stay Connected</div>
+          <p style="font-size:13px; color:var(--text-secondary); line-height:1.7; margin-bottom:16px;">Subscribe for new collections, design inspiration, and exclusive dealer offers.</p>
+          <div style="display:flex; margin-bottom:24px;">
+            <input type="email" placeholder="Your email address" style="flex:1; background:white; border:1px solid var(--color-border-subtle); border-right:none; padding:10px 14px; font-size:12px; color:var(--text-primary); outline:none;"/>
+            <button style="background:var(--accent-blue); color:white; padding:10px 16px; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; font-weight:500; border:none; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; white-space:nowrap;">Subscribe</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Footer bottom bar -->
+    <div style="background:rgba(255,255,255,0.45); border-top:1px solid rgba(0,0,0,0.05); padding:20px 0;">
+      <div style="max-width:1400px; margin:0 auto; padding:0 48px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:13px; color:var(--text-secondary);">© 2026 SANISH Laminates. All Rights Reserved.</span>
+        <div style="display:flex; gap:20px;">
+          <a href="#" style="font-size:13px; color:var(--text-secondary); text-decoration:none;">Privacy Policy</a>
+          <a href="#" style="font-size:13px; color:var(--text-secondary); text-decoration:none;">Terms & Conditions</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- end .page-body -->
+
+<script>
+  /* ── SEO panel: close on outside click ── */
+  document.addEventListener('click', function(e) {
+    const panel  = document.getElementById('seo-panel');
+    const toggle = e.target.closest('button[onclick]');
+    if (!panel.classList.contains('hidden') && !panel.contains(e.target) && !toggle) {
+      panel.classList.add('hidden');
+    }
+  });
+</script>
+</body>
+</html>

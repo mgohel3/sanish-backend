@@ -1,0 +1,29 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if dealer %}Edit{% else %}New{% endif %} Dealer{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'dealer_list' %}" class="hover:text-accent">Dealers</a><span class="text-gray-300">/</span><span>{% if dealer %}{{ dealer.name }}{% else %}New{% endif %}</span>{% endblock %}
+{% block content %}
+<form method="post" class="max-w-2xl space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between"><h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if dealer %}Edit Dealer{% else %}Add Dealer{% endif %}</h1><button type="submit" class="btn-primary">Save</button></div>
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="sm:col-span-2"><label class="form-label">Business Name *</label><input type="text" name="name" value="{{ dealer.name|default:'' }}" required class="form-input"/></div>
+      <div><label class="form-label">Contact Person</label><input type="text" name="contact" value="{{ dealer.contact|default:'' }}" class="form-input"/></div>
+      <div><label class="form-label">Phone</label><input type="text" name="phone" value="{{ dealer.phone|default:'' }}" class="form-input"/></div>
+      <div><label class="form-label">Email</label><input type="email" name="email" value="{{ dealer.email|default:'' }}" class="form-input"/></div>
+      <div>
+        <label class="form-label">Status</label>
+        <select name="status" class="form-input form-select">
+          <option value="active" {% if not dealer or dealer.status == 'active' %}selected{% endif %}>Active</option>
+          <option value="inactive" {% if dealer.status == 'inactive' %}selected{% endif %}>Inactive</option>
+        </select>
+      </div>
+      <div><label class="form-label">City *</label><input type="text" name="city" value="{{ dealer.city|default:'' }}" required class="form-input"/></div>
+      <div><label class="form-label">State</label><input type="text" name="state" value="{{ dealer.state|default:'' }}" class="form-input"/></div>
+      <div class="sm:col-span-2"><label class="form-label">Address</label><textarea name="address" rows="2" class="form-input resize-none">{{ dealer.address|default:'' }}</textarea></div>
+      <div><label class="form-label">Latitude</label><input type="number" step="0.000001" name="lat" value="{{ dealer.lat|default:'' }}" class="form-input" placeholder="23.022505"/></div>
+      <div><label class="form-label">Longitude</label><input type="number" step="0.000001" name="lng" value="{{ dealer.lng|default:'' }}" class="form-input" placeholder="72.571365"/></div>
+    </div>
+  </div>
+</form>
+{% endblock %}

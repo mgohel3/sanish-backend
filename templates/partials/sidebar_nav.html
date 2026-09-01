@@ -1,0 +1,136 @@
+{% load static %}
+{% with active=active_nav %}
+
+<!-- Home -->
+<a href="{% url 'cms_home' %}"
+   class="nav-item {% if active == 'home' %}active{% endif %}">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Dashboard</span>
+</a>
+
+<!-- Products group -->
+<div x-data="{ openProducts: ['products','categories','collections'].includes('{{ active }}') }"
+     class="mt-1">
+  <button @click="openProducts = !openProducts"
+          class="nav-item w-full {% if active in 'products,categories,collections' %}active{% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+      <path stroke-linecap="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+    </svg>
+    <span x-show="sidebarOpen" class="flex-1 truncate text-left">Products</span>
+    <svg x-show="sidebarOpen" :class="openProducts && 'rotate-90'" class="w-3.5 h-3.5 transition-transform flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" d="M9 5l7 7-7 7"/>
+    </svg>
+  </button>
+  <div x-show="openProducts && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
+    <a href="{% url 'product_list' %}"    class="nav-item {% if active == 'products' %}active{% endif %} text-sm">All Products</a>
+    <a href="{% url 'category_list' %}"   class="nav-item {% if active == 'categories' %}active{% endif %} text-sm">Categories</a>
+    <a href="{% url 'collection_list' %}" class="nav-item {% if active == 'collections' %}active{% endif %} text-sm">Collections</a>
+  </div>
+</div>
+
+<!-- City Pages group -->
+<div x-data="{ openCity: '{{ active }}'.startsWith('city_page') || '{{ active }}' == 'page_template' }"
+     class="mt-1">
+  <button @click="openCity = !openCity"
+          class="nav-item w-full {% if 'city' in active %}active{% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+      <path stroke-linecap="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+      <path stroke-linecap="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    <span x-show="sidebarOpen" class="flex-1 truncate text-left">City Pages</span>
+    <svg x-show="sidebarOpen" :class="openCity && 'rotate-90'" class="w-3.5 h-3.5 transition-transform flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <div x-show="openCity && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
+    <a href="{% url 'city_page_list' %}"       class="nav-item text-sm">All Pages</a>
+    <a href="{% url 'page_template_list' %}"   class="nav-item text-sm">Templates</a>
+    <a href="{% url 'city_page_bulk_import' %}" class="nav-item text-sm">Bulk Import</a>
+  </div>
+</div>
+
+<!-- SEO -->
+<div x-data="{ openSeo: ['seo','site_settings','seo_health'].includes('{{ active }}') }" class="mt-1">
+  <button @click="openSeo = !openSeo" class="nav-item w-full {% if active == 'seo' or active == 'site_settings' or active == 'seo_health' %}active{% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+      <path stroke-linecap="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <span x-show="sidebarOpen" class="flex-1 truncate text-left">SEO & Settings</span>
+    <svg x-show="sidebarOpen" :class="openSeo && 'rotate-90'" class="w-3.5 h-3.5 transition-transform flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <div x-show="openSeo && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
+    <a href="{% url 'site_settings' %}" class="nav-item {% if active == 'site_settings' %}active{% endif %} text-sm">Site Settings</a>
+    <a href="{% url 'seo_global' %}"    class="nav-item {% if active == 'seo' %}active{% endif %} text-sm">Global SEO</a>
+    <a href="{% url 'seo_health' %}"    class="nav-item {% if active == 'seo_health' %}active{% endif %} text-sm">
+      SEO Health <span class="ml-auto inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+    </a>
+    <a href="{% url 'seo_redirects' %}" class="nav-item text-sm">Redirects</a>
+    <a href="{% url 'seo_schema' %}"    class="nav-item text-sm">Schema Generator</a>
+  </div>
+</div>
+
+<!-- Blog -->
+<a href="{% url 'blog_list' %}" class="nav-item {% if active == 'blog' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Blog</span>
+</a>
+
+<!-- Leads -->
+<div x-data="{ openLeads: ['leads','dealers'].includes('{{ active }}') }" class="mt-1">
+  <button @click="openLeads = !openLeads" class="nav-item w-full {% if active in 'leads,dealers' %}active{% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+      <path stroke-linecap="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+    </svg>
+    <span x-show="sidebarOpen" class="flex-1 truncate text-left">
+      Leads
+      {% if stats.inquiries %}<span class="ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-red-500 text-white rounded-full">{{ stats.inquiries }}</span>{% endif %}
+    </span>
+    <svg x-show="sidebarOpen" :class="openLeads && 'rotate-90'" class="w-3.5 h-3.5 transition-transform flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <div x-show="openLeads && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
+    <a href="{% url 'inquiry_list' %}" class="nav-item text-sm">Inquiries</a>
+    <a href="{% url 'dealer_list' %}"  class="nav-item text-sm">Dealers</a>
+  </div>
+</div>
+
+<!-- Media Library -->
+<a href="{% url 'media_library' %}" class="nav-item {% if active == 'media' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Media Library</span>
+</a>
+
+<!-- Navigation Links -->
+<a href="{% url 'nav_link_list' %}" class="nav-item {% if active == 'nav_links' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Navigation</span>
+</a>
+
+<!-- Users -->
+<a href="{% url 'user_list' %}" class="nav-item {% if active == 'users' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Users & Roles</span>
+</a>
+
+{% endwith %}
+
+<style>
+  .nav-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.55rem 0.75rem; border-radius: 14px; font-size: 0.875rem; font-weight: 500;
+    color: #6b7280; transition: all 0.15s;
+    text-decoration: none; cursor: pointer; width: 100%;
+  }
+  .dark .nav-item { color: #9ca3af; }
+  .nav-item:hover { background: #F6F1F8; color: #1f2937; }
+  .dark .nav-item:hover { background: #2E2A3A; color: #f3f4f6; }
+  .nav-item.active { background: rgba(142,169,196,0.12); color: #8EA9C4; }
+  .dark .nav-item.active { color: #B8CDD9; }
+</style>
