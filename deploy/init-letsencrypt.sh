@@ -30,9 +30,16 @@ $COMPOSE run --rm --entrypoint "/bin/sh -c '
 echo "==> Starting nginx + apps"
 $COMPOSE up -d
 
+echo "==> Removing the throwaway self-signed cert so certbot won't balk"
+$COMPOSE run --rm --entrypoint "/bin/sh -c '
+  rm -rf /etc/letsencrypt/live/${DOMAIN} \
+         /etc/letsencrypt/archive/${DOMAIN} \
+         /etc/letsencrypt/renewal/${DOMAIN}.conf
+'" certbot
+
 echo "==> Requesting the real certificate"
 $COMPOSE run --rm --entrypoint "certbot certonly --webroot -w /var/www/certbot \
-  -d ${DOMAIN} --email ${EMAIL} --agree-tos --no-eff-email --force-renewal" certbot
+  -d ${DOMAIN} --email ${EMAIL} --agree-tos --no-eff-email --non-interactive" certbot
 
 echo "==> Reloading nginx with the real certificate"
 $COMPOSE exec nginx nginx -s reload
