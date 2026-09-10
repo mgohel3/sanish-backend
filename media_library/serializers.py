@@ -20,4 +20,5 @@ class MediaAssetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = MediaAsset
-        fields = ("id", "url", "original_url", "type", "folder", "alt_text", "title", "width", "height", "created")
+        fields = ("id", "url", "original_url", "type", "folder", "alt_text",
+                  "title", "caption", "description", "width", "height", "created")

@@ -21,6 +21,15 @@
     <div>
       <label class="form-label">Description</label>
       <textarea name="description" rows="3" class="form-input resize-none">{{ category.description|default:'' }}</textarea>
+      <p class="form-hint">Also used as the intro text on the category listing page (/laminates, /louvers, /asa-sheets).</p>
+    </div>
+    <div>
+      <label class="form-label">Listing Hero Eyebrow <span class="form-hint">(small label above the page title)</span></label>
+      <input type="text" name="hero_eyebrow" value="{{ category.hero_eyebrow|default:'' }}" class="form-input" placeholder="e.g. Surface Collection"/>
+    </div>
+    <div>
+      <label class="form-label">Listing Hero Image URL <span class="form-hint">(overrides banner image)</span></label>
+      <input type="text" name="hero_image_url" value="{{ category.hero_image_url|default:'' }}" class="form-input" placeholder="https://…"/>
     </div>
     <div>
       <label class="form-label">Status</label>

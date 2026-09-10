@@ -1,0 +1,139 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Import Products{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'product_list' %}" class="hover:text-accent">Products</a><span class="text-gray-300">/</span><span>Import</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Import Products</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      Upload a CSV or XLSX file to create and update products in bulk (WooCommerce-style).
+      Rows are matched to existing products by <span class="font-mono">id</span>, then by <span class="font-mono">sku</span>.
+      Review the preview before committing.
+    </p>
+  </div>
+
+  {% if not preview_rows %}
+  <!-- Upload form -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8"
+       x-data="{ dragging: false }"
+       @dragover.prevent="dragging = true"
+       @dragleave.prevent="dragging = false"
+       @drop.prevent="dragging = false; $refs.fileInput.files = $event.dataTransfer.files; $refs.uploadForm.submit()">
+    <form method="post" enctype="multipart/form-data" id="uploadForm" x-ref="uploadForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="preview"/>
+      <div :class="dragging && 'border-accent bg-accent/5'"
+           class="border-2 border-dashed border-gray-200 dark:border-dark-600 rounded-2xl p-12 text-center transition-colors">
+        <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        <p class="text-gray-600 dark:text-gray-300 font-medium mb-1">Drop your CSV or Excel file here</p>
+        <p class="text-sm text-gray-400 mb-4">or click to browse</p>
+        <label class="btn-primary cursor-pointer">
+          Browse File
+          <input type="file" name="import_file" accept=".csv,.xlsx" required class="hidden" x-ref="fileInput"
+                 @change="$refs.uploadForm.submit()"/>
+        </label>
+      </div>
+      <label class="mt-5 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <input type="checkbox" name="create_missing_categories" class="rounded"/>
+        Create categories that don't exist yet (published)
+      </label>
+    </form>
+
+    <!-- Download template -->
+    <div class="mt-6 p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 flex items-center gap-4">
+      <svg class="w-8 h-8 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Download Template File</p>
+        <p class="text-xs text-gray-400">products-import-template.csv — all supported columns with one sample row.</p>
+      </div>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="download_template"/>
+        <button type="submit" class="btn-secondary text-xs py-2">Download →</button>
+      </form>
+    </div>
+
+    <div class="mt-6">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Columns</h3>
+      <div class="overflow-x-auto">
+        <table class="data-table text-xs">
+          <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono">id</td><td><span class="badge badge-gray">No</span></td><td>Existing product id. Leave blank for new products.</td></tr>
+            <tr><td class="font-mono">sku</td><td><span class="badge badge-red">Yes</span></td><td>Match key. Must be unique.</td></tr>
+            <tr><td class="font-mono">name</td><td><span class="badge badge-red">Yes*</span></td><td>*Required when creating a new product.</td></tr>
+            <tr><td class="font-mono">slug</td><td><span class="badge badge-gray">No</span></td><td>Auto-generated from name when blank.</td></tr>
+            <tr><td class="font-mono">status</td><td><span class="badge badge-gray">No</span></td><td><span class="font-mono">draft</span> or <span class="font-mono">published</span> (defaults to draft).</td></tr>
+            <tr><td class="font-mono">category</td><td><span class="badge badge-red">Yes*</span></td><td>Category slug or name. *Required for new products.</td></tr>
+            <tr><td class="font-mono">collection</td><td><span class="badge badge-gray">No</span></td><td>Collection slug or name. Blank clears it.</td></tr>
+            <tr><td class="font-mono">features</td><td><span class="badge badge-gray">No</span></td><td>Separate multiple with <span class="font-mono">|</span></td></tr>
+            <tr><td class="font-mono">tech_specs</td><td><span class="badge badge-gray">No</span></td><td><span class="font-mono">Key: value | Key: value</span></td></tr>
+            <tr><td class="font-mono">image_urls</td><td><span class="badge badge-gray">No</span></td><td>External URLs separated with <span class="font-mono">|</span></td></tr>
+            <tr><td class="font-mono">design_type / color / badge</td><td><span class="badge badge-gray">No</span></td><td>Must match an allowed value or the row is skipped.</td></tr>
+            <tr><td colspan="3" class="text-gray-400">Also: short_description, description, finish, thickness, dimensions, surface, application, accent_color, meta_title, meta_description, meta_keywords</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Preview table -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Preview — {{ preview_rows|length }} rows</h2>
+        <p class="text-sm mt-0.5">
+          <span class="text-emerald-500">{{ ready_count }} ready</span>
+          {% if error_count %}<span class="text-red-500"> · {{ error_count }} will be skipped</span>{% endif %}
+        </p>
+      </div>
+      <a href="{% url 'product_import' %}" class="btn-ghost text-sm">← Start Over</a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="data-table text-xs">
+        <thead>
+          <tr><th>Row</th><th>SKU</th><th>Name</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          {% for row in preview_rows %}
+          <tr class="{% if row.errors %}bg-red-50 dark:bg-red-900/10{% endif %}">
+            <td class="font-mono">{{ row.row }}</td>
+            <td class="font-mono">{{ row.sku }}</td>
+            <td>{{ row.name }}</td>
+            <td>
+              {% if row.action == 'create' %}<span class="badge badge-green">Create</span>
+              {% elif row.action == 'update' %}<span class="badge badge-yellow">Update</span>
+              {% else %}<span class="badge badge-red">Skip</span>{% endif %}
+            </td>
+            <td>
+              {% if row.errors %}<div class="text-red-500">{% for err in row.errors %}<p>{{ err }}</p>{% endfor %}</div>
+              {% else %}<span class="text-gray-400">—</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="commit"/>
+      <input type="hidden" name="raw_rows" value="{{ raw_rows }}"/>
+      <input type="hidden" name="create_missing_flag" value="{% if create_missing %}1{% else %}0{% endif %}"/>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="btn-primary" {% if not ready_count %}disabled{% endif %}>
+          Commit — {{ ready_count }} product{{ ready_count|pluralize }}
+        </button>
+        <a href="{% url 'product_import' %}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

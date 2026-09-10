@@ -1,0 +1,109 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}{% if section %}Edit{% else %}New{% endif %} Block · {{ page.title }}{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'site_page_list' %}" class="hover:text-accent">Pages</a><span class="text-gray-300">/</span><a href="{% url 'page_section_list' page.slug %}" class="hover:text-accent">{{ page.title }}</a><span class="text-gray-300">/</span><span>{% if section %}{{ section.label }}{% else %}New {{ config.label }}{% endif %}</span>{% endblock %}
+{% block extra_head %}<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>{% endblock %}
+
+{% block content %}
+{{ values|json_script:"initial-values" }}
+<form method="post" class="max-w-3xl mx-auto space-y-6">
+  {% csrf_token %}
+  <input type="hidden" name="block_type" value="{{ block_type }}" />
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+      {% if section %}Edit block{% else %}New block{% endif %}
+      <span class="text-gray-400 font-normal">· {{ config.label }}</span>
+    </h1>
+    <div class="flex gap-3">
+      <a href="{% url 'page_section_list' page.slug %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save block</button>
+    </div>
+  </div>
+
+  <p class="text-sm text-gray-500 dark:text-gray-400">{{ config.description }}</p>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Block name (CMS only)</label>
+      <input type="text" name="label" value="{{ section.label|default:config.label }}" class="form-input" required />
+    </div>
+    <div>
+      <label class="form-label">Anchor id <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="anchor_id" value="{{ section.anchor_id|default:'' }}" class="form-input" placeholder="team" />
+      <p class="form-hint">Adds <code>id="…"</code> to the section so it can be linked as <code>{{ page.path }}#…</code>.</p>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="enabled" {% if not section or section.enabled %}checked{% endif %} class="rounded border-gray-300" />
+      <span>Visible on the site</span>
+    </label>
+  </div>
+
+  <div class="card space-y-5">
+    {% for field in config.fields %}
+    <div>
+      <label class="form-label">{{ field.label }}</label>
+
+      {% if field.type == "textarea" %}
+        <textarea name="{{ field.name }}" rows="3" class="form-input resize-y">{{ values|dictkey:field.name }}</textarea>
+
+      {% elif field.type == "richtext" %}
+        <textarea name="{{ field.name }}" id="rt_{{ field.name }}" class="form-input min-h-[220px]">{{ values|dictkey:field.name }}</textarea>
+
+      {% elif field.type == "bool" %}
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="{{ field.name }}" {% if values|dictkey:field.name %}checked{% endif %} class="rounded border-gray-300" />
+          <span class="text-gray-500">Yes</span>
+        </label>
+
+      {% elif field.type == "select" %}
+        <select name="{{ field.name }}" class="form-input">
+          {% for opt in field.options %}
+          <option value="{{ opt }}" {% if values|dictkey:field.name == opt %}selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+
+      {% elif field.type == "repeater" %}
+        {% include "dashboard/homepage/_repeater.html" with field=field %}
+
+      {% elif field.type == "image" or field.type == "video" or field.type == "media" %}
+        <div class="mp-field" x-data="{ v: '{{ values|dictkey:field.name|escapejs }}' }">
+          <div class="flex gap-2">
+            <input type="text" name="{{ field.name }}" x-model="v" class="form-input flex-1" placeholder="Path or URL" />
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: '{% if field.type == 'video' %}video{% elif field.type == 'image' %}image{% endif %}' })">
+              Media Library
+            </button>
+          </div>
+          <template x-if="v && !v.match(/\.(mp4|webm|mov|m4v)$/i)">
+            <img :src="v" alt="" class="mt-2 h-28 rounded-xl object-cover border border-surface-200 dark:border-dark-600"/>
+          </template>
+        </div>
+
+      {% else %}
+        <input type="text" name="{{ field.name }}" value="{{ values|dictkey:field.name }}" class="form-input" />
+      {% endif %}
+
+      {% if field.help %}<p class="form-hint">{{ field.help }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'page_section_list' page.slug %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save block</button>
+  </div>
+</form>
+
+{% include "dashboard/partials/media_picker.html" %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('textarea[id^="rt_"]').forEach(function (el) {
+      ClassicEditor.create(el, {
+        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'blockQuote', 'undo', 'redo'],
+      }).catch(function (e) { console.error(e); });
+    });
+  });
+</script>
+{% endblock %}

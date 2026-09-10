@@ -2,6 +2,8 @@ import re
 from django.db import models
 from django.utils.text import slugify
 
+from homepage import blocks as _blocks
+
 
 SCHEMA_CHOICES = [
     ("LocalBusiness",  "Local Business"),
@@ -187,3 +189,90 @@ class CityPage(models.Model):
                 "twitter_description": self.twitter_description,
             },
         }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Generic CMS-managed site pages (Home, About, Contact, …)
+#
+# A ``SitePage`` owns an ordered list of ``PageSection`` blocks. The blocks use
+# the exact same registry as the home page — ``homepage.blocks.BLOCK_TYPES`` —
+# so the CMS form/list templates and the ``resolved()`` merge behave identically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class SitePage(models.Model):
+    """One editable page of the public site."""
+
+    slug        = models.SlugField(
+        max_length=80, unique=True,
+        help_text='Matches the CMS/API key, e.g. "about-us".',
+    )
+    title       = models.CharField(max_length=120)
+    path        = models.CharField(
+        max_length=120, blank=True,
+        help_text='Front-end route for the "Preview" link, e.g. "/about-us".',
+    )
+    description = models.CharField(max_length=255, blank=True)
+    position    = models.PositiveIntegerField(default=0)
+    is_system   = models.BooleanField(
+        default=True,
+        help_text="System pages cannot be deleted from the CMS.",
+    )
+    # A few pages have their block editor elsewhere (the Home page keeps its own
+    # HomeSection-based editor). When set, the CMS list links straight to it.
+    external_url_name = models.CharField(max_length=80, blank=True)
+
+    created     = models.DateTimeField(auto_now_add=True)
+    updated     = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        verbose_name = "Site Page"
+
+    def __str__(self):
+        return self.title
+
+
+class PageSection(models.Model):
+    """One orderable block on a :class:`SitePage` — a per-page clone of
+    ``homepage.models.HomeSection``."""
+
+    page       = models.ForeignKey(
+        SitePage, on_delete=models.CASCADE, related_name="sections"
+    )
+    block_type = models.CharField(max_length=40, choices=_blocks.block_choices())
+    label      = models.CharField(
+        max_length=120,
+        help_text="Internal name shown in the CMS list (not published).",
+    )
+    anchor_id  = models.SlugField(
+        max_length=60, blank=True,
+        help_text='Optional id for the <section> tag (e.g. "team" -> /about-us#team).',
+    )
+    position   = models.PositiveIntegerField(default=0)
+    enabled    = models.BooleanField(default=True)
+    content    = models.JSONField(default=dict, blank=True)
+
+    created    = models.DateTimeField(auto_now_add=True)
+    updated    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        verbose_name = "Page Section"
+
+    def __str__(self):
+        return f"{self.page.slug} · {self.position:02d}. {self.label}"
+
+    @property
+    def block_config(self) -> dict:
+        return _blocks.BLOCK_TYPES.get(self.block_type, {})
+
+    def resolved(self) -> dict:
+        """Stored content merged over the block type's defaults."""
+        data = _blocks.defaults_for(self.block_type)
+        if isinstance(self.content, dict):
+            for key, value in self.content.items():
+                if value in ("", None) and key in data:
+                    continue  # keep the default rather than blanking it
+                data[key] = value
+        return data

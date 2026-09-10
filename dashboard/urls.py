@@ -3,7 +3,7 @@ from accounts.views import LoginView, LogoutView
 from dashboard.views.home import HomeView
 from dashboard.views.products import (
     ProductListView, ProductCreateView, ProductEditView, ProductDeleteView,
-    ProductPreviewView,
+    ProductPreviewView, ProductExportView, ProductImportView,
 )
 from dashboard.views.categories import (
     CategoryListView, CategoryCreateView, CategoryEditView, CategoryDeleteView,
@@ -23,10 +23,19 @@ from dashboard.views.blog import (
 from dashboard.views.leads import (
     InquiryListView, DealerListView, DealerCreateView, DealerEditView,
 )
-from dashboard.views.media import MediaLibraryView, MediaUploadAjaxView
+from dashboard.views.media import MediaLibraryView, MediaUploadAjaxView, MediaPickerListView
 from dashboard.views.users import UserListView, UserCreateView, UserEditView, ActivityLogView
 from dashboard.views.nav_views import NavLinkListView, NavLinkCreateView, NavLinkEditView, NavLinkDeleteView
+from dashboard.views.homepage import (
+    HomeSectionListView, HomeSectionReorderView, HomeSectionToggleView,
+    HomeSectionCreateView, HomeSectionEditView, HomeSectionDeleteView,
+)
 from dashboard.views.seo_health import SEOHealthView
+from dashboard.views.pages import (
+    SitePageListView, PageSectionListView, PageSectionReorderView,
+    PageSectionToggleView, PageSectionCreateView, PageSectionEditView,
+    PageSectionDeleteView,
+)
 
 urlpatterns = [
     # Auth
@@ -38,6 +47,8 @@ urlpatterns = [
 
     # Products
     path("products/",              ProductListView.as_view(),   name="product_list"),
+    path("products/export/",       ProductExportView.as_view(), name="product_export"),
+    path("products/import/",       ProductImportView.as_view(), name="product_import"),
     path("products/create/",       ProductCreateView.as_view(), name="product_create"),
     path("products/<int:pk>/",     ProductEditView.as_view(),   name="product_edit"),
     path("products/<int:pk>/delete/",  ProductDeleteView.as_view(),  name="product_delete"),
@@ -90,12 +101,30 @@ urlpatterns = [
     # Media
     path("media/",        MediaLibraryView.as_view(),    name="media_library"),
     path("media/upload/", MediaUploadAjaxView.as_view(), name="media_upload_ajax"),
+    path("media/picker/", MediaPickerListView.as_view(), name="media_picker_list"),
 
     # Users
     path("users/",              UserListView.as_view(),    name="user_list"),
     path("users/create/",       UserCreateView.as_view(),  name="user_create"),
     path("users/<int:pk>/",     UserEditView.as_view(),    name="user_edit"),
     path("users/activity-log/", ActivityLogView.as_view(), name="activity_log"),
+
+    # Home Page blocks
+    path("home-page/",                   HomeSectionListView.as_view(),    name="home_section_list"),
+    path("home-page/reorder/",           HomeSectionReorderView.as_view(), name="home_section_reorder"),
+    path("home-page/create/",            HomeSectionCreateView.as_view(),  name="home_section_create"),
+    path("home-page/<int:pk>/",          HomeSectionEditView.as_view(),    name="home_section_edit"),
+    path("home-page/<int:pk>/toggle/",   HomeSectionToggleView.as_view(),  name="home_section_toggle"),
+    path("home-page/<int:pk>/delete/",   HomeSectionDeleteView.as_view(),  name="home_section_delete"),
+
+    # Pages (generic block builder — About Us, Contact Us, Rewards, …)
+    path("pages/",                          SitePageListView.as_view(),        name="site_page_list"),
+    path("pages/<slug:slug>/",              PageSectionListView.as_view(),     name="page_section_list"),
+    path("pages/<slug:slug>/reorder/",      PageSectionReorderView.as_view(),  name="page_section_reorder"),
+    path("pages/<slug:slug>/create/",       PageSectionCreateView.as_view(),   name="page_section_create"),
+    path("pages/<slug:slug>/<int:pk>/",     PageSectionEditView.as_view(),     name="page_section_edit"),
+    path("pages/<slug:slug>/<int:pk>/toggle/", PageSectionToggleView.as_view(), name="page_section_toggle"),
+    path("pages/<slug:slug>/<int:pk>/delete/", PageSectionDeleteView.as_view(), name="page_section_delete"),
 
     # Navigation Links
     path("navigation/",              NavLinkListView.as_view(),   name="nav_link_list"),

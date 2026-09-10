@@ -1,6 +1,29 @@
 from rest_framework import serializers
-from .models import CityPage, PageTemplate
+from .models import CityPage, PageTemplate, SitePage
 from seo.schema_generators import generate_schema_json
+from media_library.utils import absolutize_media_urls
+
+
+class SitePageSerializer(serializers.ModelSerializer):
+    """Public payload for ``GET /api/pages/<slug>/`` — enabled blocks, in order,
+    each with its ``content`` merged over the block type's defaults."""
+
+    sections = serializers.SerializerMethodField()
+
+    def get_sections(self, obj):
+        request = self.context.get("request")
+        return [
+            {
+                "block_type": s.block_type,
+                "anchor_id":  s.anchor_id,
+                "content":    absolutize_media_urls(s.resolved(), request),
+            }
+            for s in obj.sections.filter(enabled=True)
+        ]
+
+    class Meta:
+        model  = SitePage
+        fields = ("slug", "title", "path", "sections")
 
 
 class CityPageListSerializer(serializers.ModelSerializer):

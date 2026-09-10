@@ -7,13 +7,20 @@
   <!-- Header -->
   <div class="flex flex-wrap items-center justify-between gap-4">
     <h1 class="text-xl font-bold text-gray-900 dark:text-white">Products</h1>
-    <a href="{% url 'product_create' %}" class="btn-primary">+ New Product</a>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'product_export' %}{% if querystring %}?{{ querystring }}{% endif %}" class="btn-ghost">Export CSV</a>
+      <a href="{% url 'product_import' %}" class="btn-secondary">Import</a>
+      <a href="{% url 'product_create' %}" class="btn-primary">+ New Product</a>
+    </div>
   </div>
 
   <!-- Filters -->
   <form method="get" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-4 flex flex-wrap gap-3 items-end">
     <div class="flex-1 min-w-[180px]">
-      <label class="form-label">Search</label>
+      <label class="form-label flex items-center justify-between">
+        <span>Search</span>
+        <span class="text-xs font-normal text-gray-400">{{ total_count }} product{{ total_count|pluralize }}</span>
+      </label>
       <input type="text" name="q" value="{{ q }}" placeholder="Name or SKU…" class="form-input"/>
     </div>
     <div class="min-w-[160px]">
@@ -88,6 +95,7 @@
         {% endfor %}
       </tbody>
     </table>
+    {% include "dashboard/partials/_pagination.html" %}
   </div>
 </div>
 {% endblock %}

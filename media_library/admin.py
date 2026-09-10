@@ -12,5 +12,5 @@ class MediaFolderAdmin(admin.ModelAdmin):
 class MediaAssetAdmin(admin.ModelAdmin):
     list_display  = ("title", "type", "folder", "uploaded_by", "created")
     list_filter   = ("type", "folder")
-    search_fields = ("title", "alt_text")
-    readonly_fields = ("webp_version", "width", "height", "created")
+    search_fields = ("title", "alt_text", "caption", "original_filename")
+    readonly_fields = ("webp_version", "width", "height", "created", "updated", "original_filename")

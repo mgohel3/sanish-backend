@@ -57,6 +57,66 @@
     </div>
 
     <div class="space-y-6">
+      <!-- Layout -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Layout</h2>
+        <div>
+          <label class="form-label">Article Layout</label>
+          <select name="layout" class="form-input form-select">
+            {% for value, label in layout_choices %}
+            <option value="{{ value }}" {% if post.layout == value or not post and value == 'sidebar' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <p class="form-hint mt-1">The sidebar shows the author card, categories and tags next to the article.</p>
+        </div>
+        <div class="pt-2 border-t border-surface-100 dark:border-dark-600 space-y-2">
+          <p class="form-label mb-1">Display Options</p>
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" name="show_author" {% if not post or post.show_author %}checked{% endif %} class="rounded accent-accent"/>
+            <span>Show author card in sidebar</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" name="show_share" {% if not post or post.show_share %}checked{% endif %} class="rounded accent-accent"/>
+            <span>Show social share buttons in sidebar</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" name="show_related" {% if not post or post.show_related %}checked{% endif %} class="rounded accent-accent"/>
+            <span>Show recommended articles at end of post</span>
+          </label>
+        </div>
+        <div>
+          <label class="form-label">Author</label>
+          <select name="author" class="form-input form-select">
+            {% for u in authors %}
+            <option value="{{ u.pk }}"
+              {% if post and post.author_id == u.pk %}selected{% elif not post and u.pk == request.user.pk %}selected{% endif %}>
+              {{ u.get_full_name|default:u.username }}{% if u.get_role_display %} — {{ u.get_role_display }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Featured / banner image -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
+           x-data="{ img: '{{ post.featured_image_url|default:'' }}' }">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Featured Image</h2>
+        <div class="mp-field">
+          <label class="form-label">Banner Image URL</label>
+          <div class="flex gap-2">
+            <input type="url" name="featured_image_url" x-model="img" class="form-input flex-1" placeholder="https://…"/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+              Media Library
+            </button>
+          </div>
+          <p class="form-hint mt-1">Shown as the article banner and on the blog listing card.</p>
+        </div>
+        <template x-if="img">
+          <img :src="img" alt="" class="w-full h-40 object-cover rounded-2xl border border-surface-200 dark:border-dark-600"/>
+        </template>
+      </div>
+
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Organisation</h2>
         <div>
@@ -87,6 +147,7 @@
     </div>
   </div>
 </form>
+{% include "dashboard/partials/media_picker.html" %}
 {% endblock %}
 {% block extra_js %}
 <script>ClassicEditor.create(document.querySelector('#content_editor'),{toolbar:['heading','|','bold','italic','link','bulletedList','numberedList','|','blockQuote','insertTable','imageUpload','undo','redo']});</script>

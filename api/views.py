@@ -4,15 +4,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from catalog.models import Category, Collection, Product
-from pages.models import CityPage
+from pages.models import CityPage, SitePage
 from blog.models import BlogPost
+from homepage.models import HomeSection
 from leads.models import Dealer, Inquiry
 from seo.models import GlobalSEO, SiteSettings, NavLink
+from media_library.utils import absolutize_media_urls
 
 from .serializers import (
     CategorySerializer, CollectionSerializer,
     ProductListSerializer, ProductDetailSerializer,
     CityPageListSerializer, CityPageDetailSerializer,
+    SitePageSerializer,
     BlogPostListSerializer, BlogPostDetailSerializer,
     DealerSerializer, InquiryCreateSerializer,
 )
@@ -22,12 +25,27 @@ from .throttles import InquiryThrottle
 # ── Products ──────────────────────────────────────────────────────────────────
 
 class ProductListView(generics.ListAPIView):
-    queryset         = Product.objects.filter(status="published").select_related("category", "collection")
     serializer_class = ProductListSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class  = None  # storefront filters client-side over the full set
     filter_backends  = [filters.SearchFilter, filters.OrderingFilter]
     search_fields    = ["name", "sku", "category__name"]
     ordering_fields  = ["name", "created"]
+
+    def get_queryset(self):
+        qs = (
+            Product.objects.filter(status="published")
+            .select_related("category", "collection")
+            .prefetch_related("product_images__asset", "related_products")
+        )
+        # ?category= accepts a slug ("laminates") or a name ("Thermo Laminates")
+        category = self.request.query_params.get("category")
+        if category:
+            qs = qs.filter(category__slug=category) | qs.filter(category__name__iexact=category)
+        collection = self.request.query_params.get("collection")
+        if collection:
+            qs = qs.filter(collection__slug=collection) | qs.filter(collection__name__iexact=collection)
+        return qs.distinct()
 
 
 class ProductDetailView(generics.RetrieveAPIView):
@@ -43,6 +61,7 @@ class CategoryListView(generics.ListAPIView):
     queryset         = Category.objects.filter(status="published")
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class  = None
 
 
 # ── Collections ───────────────────────────────────────────────────────────────
@@ -51,6 +70,7 @@ class CollectionListView(generics.ListAPIView):
     queryset         = Collection.objects.filter(status="published")
     serializer_class = CollectionSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class  = None
 
 
 # ── City Pages ────────────────────────────────────────────────────────────────
@@ -71,9 +91,10 @@ class CityPageDetailView(generics.RetrieveAPIView):
 # ── Blog ──────────────────────────────────────────────────────────────────────
 
 class BlogPostListView(generics.ListAPIView):
-    queryset         = BlogPost.objects.filter(status="published")
+    queryset         = BlogPost.objects.filter(status="published").prefetch_related("categories")
     serializer_class = BlogPostListSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class  = None  # storefront renders the full list / filters client-side
     filter_backends  = [filters.SearchFilter]
     search_fields    = ["title", "categories__name"]
 
@@ -183,3 +204,30 @@ class NavLinksView(APIView):
                 "position":     lnk.position,
             })
         return Response(by_group)
+
+
+# ── Home Page blocks (public read) ────────────────────────────────────────────
+
+class HomePageView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        sections = HomeSection.objects.filter(enabled=True)  # Meta.ordering applies
+        return Response({
+            "sections": [
+                {
+                    "block_type": s.block_type,
+                    "anchor_id":  s.anchor_id,
+                    "content":    absolutize_media_urls(s.resolved(), request),
+                }
+                for s in sections
+            ],
+        })
+
+
+class SitePageView(generics.RetrieveAPIView):
+    """Public read for one CMS-managed page's blocks — ``GET /api/pages/<slug>/``."""
+    queryset           = SitePage.objects.prefetch_related("sections")
+    serializer_class   = SitePageSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field       = "slug"

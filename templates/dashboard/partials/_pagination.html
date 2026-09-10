@@ -1,0 +1,37 @@
+{% comment %}
+Reusable pager. Expects: page_obj, paginator, elided_pages, querystring (encoded, no `page`).
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 dark:border-dark-600"
+     aria-label="Pagination">
+  <p class="text-xs text-gray-400">
+    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+  </p>
+  <div class="flex items-center gap-1">
+    {% if page_obj.has_previous %}
+      <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}"
+         class="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700">← Prev</a>
+    {% else %}
+      <span class="px-3 py-1.5 rounded-xl text-xs text-gray-300 dark:text-gray-600">← Prev</span>
+    {% endif %}
+
+    {% for num in elided_pages %}
+      {% if num == page_obj.paginator.ELLIPSIS %}
+        <span class="px-2 py-1.5 text-xs text-gray-400">{{ num }}</span>
+      {% elif num == page_obj.number %}
+        <span class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-accent text-white">{{ num }}</span>
+      {% else %}
+        <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ num }}"
+           class="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}"
+         class="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700">Next →</a>
+    {% else %}
+      <span class="px-3 py-1.5 rounded-xl text-xs text-gray-300 dark:text-gray-600">Next →</span>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}

@@ -18,6 +18,10 @@
         specKeys: Object.keys({{ product.tech_specs|default:'{}'|safe }}),
         specVals: Object.values({{ product.tech_specs|default:'{}'|safe }}),
         images: [{% for pi in current_images %}{ id: {{ pi.asset.pk }}, url: '{{ pi.asset.url|escapejs }}', title: '{{ pi.asset.title|escapejs }}' }{% if not forloop.last %},{% endif %}{% endfor %}],
+        imageUrls: {{ product.image_urls|default:'[]'|safe }},
+        addImageUrl() { this.imageUrls.push(''); },
+        removeImageUrl(i) { this.imageUrls.splice(i, 1); },
+        get imageUrlsJson() { return JSON.stringify(this.imageUrls.filter(u => u.trim())); },
         setFeatured(i) { const item = this.images.splice(i, 1)[0]; this.images.unshift(item); },
         removeImage(i) { this.images.splice(i, 1); },
         addFeature() { this.features.push(''); },
@@ -34,6 +38,7 @@
       @submit="
         document.getElementById('features_json').value = featuresJson;
         document.getElementById('specs_json').value = specsJson;
+        document.getElementById('image_urls_json').value = imageUrlsJson;
         $el.querySelectorAll('input[name=image_ids]').forEach(el => el.remove());
         images.forEach(img => {
           const inp = document.createElement('input');
@@ -45,8 +50,9 @@
   {% csrf_token %}
 
   <!-- Hidden fields -->
-  <input type="hidden" name="features_json" id="features_json"/>
-  <input type="hidden" name="specs_json"    id="specs_json"/>
+  <input type="hidden" name="features_json"   id="features_json"/>
+  <input type="hidden" name="specs_json"      id="specs_json"/>
+  <input type="hidden" name="image_urls_json" id="image_urls_json"/>
 
   <!-- Top bar: save/status -->
   <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -111,6 +117,65 @@
               <option value="">None</option>
               {% for col in collections %}<option value="{{ col.pk }}" {% if product.collection_id == col.pk %}selected{% endif %}>{{ col.name }}</option>{% endfor %}
             </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Surface Attributes -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Surface Attributes</h2>
+        <p class="form-hint">Shown on storefront cards and used by the listing-page filters.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Finish</label>
+            <input type="text" name="finish" value="{{ product.finish|default:'' }}" class="form-input" placeholder="e.g. High Gloss"/>
+          </div>
+          <div>
+            <label class="form-label">Design Type</label>
+            <select name="design_type" class="form-input form-select">
+              <option value="">—</option>
+              {% for opt in design_type_choices %}
+                <option value="{{ opt }}" {% if product.design_type == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Colour</label>
+            <select name="color" class="form-input form-select">
+              <option value="">—</option>
+              {% for opt in color_choices %}
+                <option value="{{ opt }}" {% if product.color == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Badge</label>
+            <select name="badge" class="form-input form-select">
+              <option value="" {% if not product.badge %}selected{% endif %}>None</option>
+              {% for opt in badge_choices %}
+                <option value="{{ opt }}" {% if product.badge == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Thickness</label>
+            <input type="text" name="thickness" value="{{ product.thickness|default:'' }}" class="form-input" placeholder="e.g. 1.0mm"/>
+          </div>
+          <div>
+            <label class="form-label">Dimensions</label>
+            <input type="text" name="dimensions" value="{{ product.dimensions|default:'' }}" class="form-input" placeholder="e.g. 8ft × 4ft (2440 × 1220mm)"/>
+          </div>
+          <div>
+            <label class="form-label">Surface Type</label>
+            <input type="text" name="surface" value="{{ product.surface|default:'' }}" class="form-input" placeholder="e.g. Decorative Laminate"/>
+          </div>
+          <div>
+            <label class="form-label">Accent Colour (hex)</label>
+            <input type="text" name="accent_color" value="{{ product.accent_color|default:'#85addc' }}" class="form-input" placeholder="#85addc"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="form-label">Application</label>
+            <input type="text" name="application" value="{{ product.application|default:'' }}" class="form-input" placeholder="Cabinets, Wardrobes, Wall Panels"/>
           </div>
         </div>
       </div>
@@ -262,7 +327,35 @@
             <input type="file" id="image-upload-input" multiple accept="image/*" class="hidden"/>
             <span id="image-upload-label-text">+ Upload Images</span>
           </label>
-          <p class="form-hint text-center">Or pick from <a href="{% url 'media_library' %}" target="_blank" class="text-accent underline">Media Library</a></p>
+          <button type="button" class="btn-ghost w-full justify-center text-xs mt-2"
+                  @click="$dispatch('open-media-picker', { accept: 'image', onSelect: (it) => { if (!images.some(x => x.id === it.id)) images.push({ id: it.id, url: it.url, title: it.title }); } })">
+            + Choose from Media Library
+          </button>
+        </div>
+
+        <!-- External image URLs (used when no Media Library images attached) -->
+        <div class="mt-5 pt-4 border-t border-gray-100 dark:border-dark-600">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">External Image URLs</h3>
+            <div class="flex gap-1">
+              <button type="button" @click="$dispatch('open-media-picker', { accept: 'image', onSelect: (it) => imageUrls.push(it.url) })" class="btn-ghost py-1 px-3 text-xs">Library</button>
+              <button type="button" @click="addImageUrl()" class="btn-ghost py-1 px-3 text-xs">+ Add URL</button>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <template x-for="(u, i) in imageUrls" :key="i">
+              <div class="flex gap-2 items-center mp-field">
+                <input type="text" x-model="imageUrls[i]" class="form-input flex-1 text-xs" placeholder="https://…"/>
+                <button type="button" @click="openMediaPicker({ el: $el.closest('.mp-field').querySelector('input'), accept: 'image' })" class="text-gray-400 hover:text-accent p-1" title="Choose from Media Library">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16v12H4z"/></svg>
+                </button>
+                <button type="button" @click="removeImageUrl(i)" class="text-red-400 hover:text-red-600 p-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </template>
+            <p x-show="imageUrls.length === 0" class="text-[11px] text-gray-400 py-1">Media Library images take priority over these.</p>
+          </div>
         </div>
       </div>
 
@@ -295,6 +388,7 @@
   </div>
 
 </form>
+{% include "dashboard/partials/media_picker.html" %}
 {% endblock %}
 
 {% block extra_js %}

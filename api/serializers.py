@@ -7,6 +7,8 @@ from catalog.serializers import (  # noqa: F401
     ProductListSerializer,
     ProductDetailSerializer,
 )
-from pages.serializers import CityPageListSerializer, CityPageDetailSerializer  # noqa: F401
+from pages.serializers import (  # noqa: F401
+    CityPageListSerializer, CityPageDetailSerializer, SitePageSerializer,
+)
 from blog.serializers import BlogPostListSerializer, BlogPostDetailSerializer   # noqa: F401
 from leads.serializers import InquiryCreateSerializer, DealerSerializer         # noqa: F401

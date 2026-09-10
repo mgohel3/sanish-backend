@@ -1,5 +1,27 @@
 from django.contrib import admin
-from .models import PageTemplate, CityPage
+from .models import PageTemplate, CityPage, SitePage, PageSection
+
+
+class PageSectionInline(admin.TabularInline):
+    model = PageSection
+    extra = 0
+    fields = ("position", "block_type", "label", "anchor_id", "enabled")
+    ordering = ("position",)
+
+
+@admin.register(SitePage)
+class SitePageAdmin(admin.ModelAdmin):
+    list_display  = ("title", "slug", "path", "position", "is_system")
+    list_editable = ("position",)
+    prepopulated_fields = {"slug": ("title",)}
+    inlines = [PageSectionInline]
+
+
+@admin.register(PageSection)
+class PageSectionAdmin(admin.ModelAdmin):
+    list_display = ("page", "position", "label", "block_type", "enabled")
+    list_filter  = ("page", "block_type", "enabled")
+    ordering     = ("page", "position")
 
 
 @admin.register(PageTemplate)

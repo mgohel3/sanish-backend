@@ -15,14 +15,28 @@ class MediaFolder(models.Model):
         "self", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="children",
     )
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base = slugify(self.name) or "folder"
+            slug = base
+            i = 2
+            while MediaFolder.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                slug = f"{base}-{i}"
+                i += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
+
+    @property
+    def asset_count(self):
+        return self.assets.count()
 
 
 class MediaAsset(models.Model):
@@ -46,6 +60,9 @@ class MediaAsset(models.Model):
     )
     alt_text = models.CharField(max_length=300, blank=True)
     title = models.CharField(max_length=300, blank=True)
+    caption = models.CharField(max_length=500, blank=True)
+    description = models.TextField(blank=True)
+    original_filename = models.CharField(max_length=300, blank=True)
     width = models.PositiveIntegerField(null=True, blank=True)
     height = models.PositiveIntegerField(null=True, blank=True)
     webp_version = models.FileField(
@@ -56,6 +73,7 @@ class MediaAsset(models.Model):
         on_delete=models.SET_NULL, related_name="uploaded_assets",
     )
     created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]
@@ -64,19 +82,30 @@ class MediaAsset(models.Model):
     def __str__(self):
         return self.title or self.file.name
 
+    @property
+    def filename(self):
+        return self.file.name.rsplit("/", 1)[-1] if self.file else ""
+
     def save(self, *args, **kwargs):
         # Auto-detect type from extension
+        is_svg = False
         if self.file:
             name = self.file.name.lower()
-            if any(name.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")):
+            is_svg = name.endswith(".svg")
+            if any(name.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".avif", ".bmp", ".tiff")):
                 self.type = self.TYPE_IMAGE
-            elif any(name.endswith(ext) for ext in (".mp4", ".mov", ".avi", ".webm")):
+            elif any(name.endswith(ext) for ext in (".mp4", ".mov", ".avi", ".webm", ".mkv", ".m4v")):
                 self.type = self.TYPE_VIDEO
             elif name.endswith(".pdf"):
                 self.type = self.TYPE_PDF
+            else:
+                self.type = self.TYPE_OTHER
+            if not self.original_filename:
+                self.original_filename = self.file.name.rsplit("/", 1)[-1]
         super().save(*args, **kwargs)
-        # WebP conversion after first save (file is now persisted)
-        if self.type == self.TYPE_IMAGE and not self.webp_version:
+        # WebP conversion after first save (file is now persisted).
+        # Skip SVG — Pillow cannot rasterise it.
+        if self.type == self.TYPE_IMAGE and not is_svg and not self.webp_version:
             try:
                 webp_path = convert_to_webp(self)
                 if webp_path:

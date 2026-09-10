@@ -1,0 +1,44 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Add Block{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'home_section_list' %}" class="hover:text-accent">Home Page</a><span class="text-gray-300">/</span><span>Add Block</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Choose a block type</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pick what kind of section to add. You can reorder it afterwards.</p>
+  </div>
+
+  <div>
+    <h2 class="form-label mb-3">Flexible blocks</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {% for key, cfg in block_types.items %}
+      {% if key in generic_blocks %}
+      <a href="{% url 'home_section_create' %}?type={{ key }}"
+         class="card hover:shadow-card-md transition-shadow block">
+        <div class="font-semibold text-gray-900 dark:text-white">{{ cfg.label }}</div>
+        <p class="text-xs text-gray-400 mt-1">{{ cfg.description }}</p>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2 class="form-label mb-3">Home sections</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {% for key, cfg in block_types.items %}
+      {% if key not in generic_blocks %}
+      <a href="{% url 'home_section_create' %}?type={{ key }}"
+         class="card hover:shadow-card-md transition-shadow block">
+        <div class="font-semibold text-gray-900 dark:text-white">{{ cfg.label }}</div>
+        <p class="text-xs text-gray-400 mt-1">{{ cfg.description }}</p>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <a href="{% url 'home_section_list' %}" class="btn-ghost">← Cancel</a>
+</div>
+{% endblock %}

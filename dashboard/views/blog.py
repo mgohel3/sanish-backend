@@ -1,9 +1,21 @@
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from accounts.permissions import ContentManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from blog.models import BlogPost, BlogCategory, Tag
+
+User = get_user_model()
+
+BLOG_POSTS_PER_PAGE = 20
+
+LAYOUT_VALUES = {c[0] for c in BlogPost.LAYOUT_CHOICES}
+
+
+def _clean_layout(value):
+    return value if value in LAYOUT_VALUES else BlogPost.LAYOUT_SIDEBAR
 
 
 class BlogPostListView(ContentManagerRequiredMixin, View):
@@ -15,8 +27,24 @@ class BlogPostListView(ContentManagerRequiredMixin, View):
             qs = qs.filter(title__icontains=q)
         if status:
             qs = qs.filter(status=status)
+
+        total_count = qs.count()
+        paginator = Paginator(qs, BLOG_POSTS_PER_PAGE)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        elided_pages = list(paginator.get_elided_page_range(
+            page_obj.number, on_each_side=2, on_ends=1
+        ))
+
+        querystring = request.GET.copy()
+        querystring.pop("page", None)
+
         return render(request, "dashboard/blog/list.html", {
-            "posts":      qs,
+            "posts":       page_obj,
+            "page_obj":    page_obj,
+            "paginator":   paginator,
+            "elided_pages": elided_pages,
+            "total_count": total_count,
+            "querystring": querystring.urlencode(),
             "q": q, "selected_status": status,
             "active_nav": "blog",
         })
@@ -25,22 +53,30 @@ class BlogPostListView(ContentManagerRequiredMixin, View):
 class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
     def get(self, request):
         return render(request, "dashboard/blog/form.html", {
-            "categories": BlogCategory.objects.all(),
-            "tags":       Tag.objects.all(),
-            "active_nav": "blog",
+            "categories":     BlogCategory.objects.all(),
+            "tags":           Tag.objects.all(),
+            "authors":        User.objects.filter(is_active=True).order_by("first_name", "username"),
+            "layout_choices": BlogPost.LAYOUT_CHOICES,
+            "active_nav":     "blog",
         })
 
     def post(self, request):
         d = request.POST
+        author_id = d.get("author")
         post = BlogPost(
             title=d["title"],
             content=d.get("content", ""),
-            author=request.user,
+            layout=_clean_layout(d.get("layout")),
+            featured_image_url=d.get("featured_image_url", "").strip(),
+            author=User.objects.filter(pk=author_id).first() if author_id else request.user,
             status=d.get("status", "draft"),
             seo_title=d.get("seo_title", ""),
             meta_description=d.get("meta_description", ""),
             meta_keywords=d.get("meta_keywords", ""),
             auto_faq_schema=bool(d.get("auto_faq_schema")),
+            show_author=bool(d.get("show_author")),
+            show_share=bool(d.get("show_share")),
+            show_related=bool(d.get("show_related")),
         )
         post.save()
         cat_ids = d.getlist("categories")
@@ -58,10 +94,12 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
     def get(self, request, pk):
         post = get_object_or_404(BlogPost, pk=pk)
         return render(request, "dashboard/blog/form.html", {
-            "post":       post,
-            "categories": BlogCategory.objects.all(),
-            "tags":       Tag.objects.all(),
-            "active_nav": "blog",
+            "post":           post,
+            "categories":     BlogCategory.objects.all(),
+            "tags":           Tag.objects.all(),
+            "authors":        User.objects.filter(is_active=True).order_by("first_name", "username"),
+            "layout_choices": BlogPost.LAYOUT_CHOICES,
+            "active_nav":     "blog",
         })
 
     def post(self, request, pk):
@@ -69,11 +107,19 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         d = request.POST
         post.title = d["title"]
         post.content = d.get("content", "")
+        post.layout = _clean_layout(d.get("layout"))
+        post.featured_image_url = d.get("featured_image_url", "").strip()
+        author_id = d.get("author")
+        if author_id:
+            post.author = User.objects.filter(pk=author_id).first()
         post.status = d.get("status", "draft")
         post.seo_title = d.get("seo_title", "")
         post.meta_description = d.get("meta_description", "")
         post.meta_keywords = d.get("meta_keywords", "")
         post.auto_faq_schema = bool(d.get("auto_faq_schema"))
+        post.show_author = bool(d.get("show_author"))
+        post.show_share = bool(d.get("show_share"))
+        post.show_related = bool(d.get("show_related"))
         post.save()
         post.categories.set(d.getlist("categories"))
         post.tags.set(d.getlist("tags"))

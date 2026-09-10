@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "media_library",
     "catalog",
     "pages",
+    "homepage",
     "seo",
     "blog",
     "leads",

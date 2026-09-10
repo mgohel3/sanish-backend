@@ -1,0 +1,174 @@
+{% comment %}
+Reusable "Choose from Media Library" picker.
+
+Include ONCE per page:  {% include "dashboard/partials/media_picker.html" %}
+
+Open it from any button with plain JS — no Alpine context needed on the trigger:
+
+  <button type="button"
+          onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+    Choose from Media Library
+  </button>
+
+`accept` may be 'image', 'video' or '' (any). On pick, the target input's value
+is set to the asset URL and native `input`/`change` events are fired so Alpine
+x-model / preview bindings update.
+{% endcomment %}
+<style>[x-cloak]{display:none!important;}</style>
+<div id="media-picker-root" x-data="mediaPicker()" x-cloak
+     @open-media-picker.window="open($event.detail)">
+  <div x-show="shown" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50" @click="shown = false"></div>
+
+    <div class="relative bg-white dark:bg-[#23202E] rounded-2xl shadow-xl w-full max-w-4xl max-h-[88vh] flex flex-col">
+      <!-- header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
+        <h3 class="font-bold text-gray-900 dark:text-white">Media Library</h3>
+        <button type="button" @click="shown = false" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- toolbar -->
+      <div class="flex flex-wrap items-end gap-3 px-5 py-3 border-b border-gray-100 dark:border-white/10">
+        <div class="flex-1 min-w-[160px]">
+          <label class="form-label">Search</label>
+          <input type="text" x-model.debounce.300ms="q" @input="reload()" class="form-input" placeholder="Title or filename…"/>
+        </div>
+        <div class="min-w-[130px]">
+          <label class="form-label">Type</label>
+          <select x-model="type" @change="reload()" class="form-input form-select" :disabled="lockType">
+            <option value="">All</option>
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+            <option value="pdf">PDFs</option>
+          </select>
+        </div>
+        <div class="min-w-[150px]">
+          <label class="form-label">Folder</label>
+          <select x-model="folder" @change="reload()" class="form-input form-select">
+            <template x-for="f in folders" :key="f.id">
+              <option :value="f.id" x-text="f.name"></option>
+            </template>
+          </select>
+        </div>
+        <label class="btn-secondary text-sm cursor-pointer">
+          <span x-text="uploading ? 'Uploading…' : 'Upload new'"></span>
+          <input type="file" class="hidden" :accept="uploadAccept" @change="upload($event)"/>
+        </label>
+      </div>
+
+      <!-- grid -->
+      <div class="flex-1 overflow-y-auto p-5">
+        <div x-show="!loading && results.length === 0" class="py-16 text-center text-gray-400 text-sm">
+          Nothing here yet. Try a different filter, or use <b>Upload new</b>.
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          <template x-for="item in results" :key="item.id">
+            <button type="button" @click="choose(item)"
+                    class="group relative bg-white dark:bg-dark-700 rounded-xl overflow-hidden ring-2 ring-transparent hover:ring-accent focus:ring-accent focus:outline-none">
+              <template x-if="item.type === 'image'">
+                <div class="aspect-square bg-surface-100 dark:bg-dark-600">
+                  <img :src="item.url" :alt="item.alt_text" loading="lazy" class="w-full h-full object-cover"/>
+                </div>
+              </template>
+              <template x-if="item.type === 'video'">
+                <div class="aspect-square bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+              </template>
+              <template x-if="item.type !== 'image' && item.type !== 'video'">
+                <div class="aspect-square bg-gray-50 dark:bg-white/5 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7z"/></svg>
+                </div>
+              </template>
+              <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate px-1 py-1" x-text="item.title"></p>
+            </button>
+          </template>
+        </div>
+        <div class="text-center pt-4" x-show="hasMore && !loading">
+          <button type="button" class="btn-ghost text-sm" @click="loadMore()">Load more</button>
+        </div>
+        <p x-show="loading" class="text-center text-sm text-gray-400 py-4">Loading…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.openMediaPicker = function (detail) {
+    window.dispatchEvent(new CustomEvent('open-media-picker', { detail: detail || {} }));
+  };
+
+  function mediaPicker() {
+    return {
+      shown: false,
+      results: [],
+      folders: [{ id: '', name: 'All folders' }],
+      q: '', type: '', folder: '',
+      page: 1, hasMore: false, loading: false,
+      uploading: false,
+      targetEl: null,
+      onSelect: null,
+      lockType: false,
+      get uploadAccept() {
+        if (this.type === 'image') return 'image/*';
+        if (this.type === 'video') return 'video/*';
+        return 'image/*,video/*,.pdf';
+      },
+      open(detail) {
+        this.targetEl = detail.el ||
+          (detail.selector ? document.querySelector(detail.selector) : null);
+        this.onSelect = typeof detail.onSelect === 'function' ? detail.onSelect : null;
+        if (detail.accept === 'image' || detail.accept === 'video') {
+          this.type = detail.accept;
+          this.lockType = true;
+        } else {
+          this.lockType = false;
+        }
+        this.shown = true;
+        this.reload();
+      },
+      reload() { this.page = 1; this.fetch(); },
+      loadMore() { this.page += 1; this.fetch(true); },
+      fetch(append) {
+        this.loading = true;
+        const p = new URLSearchParams({ q: this.q, type: this.type, folder: this.folder, page: this.page });
+        fetch("{% url 'media_picker_list' %}?" + p.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+          .then(r => r.json())
+          .then(d => {
+            if (d.folders) this.folders = d.folders;
+            this.results = append ? this.results.concat(d.results) : d.results;
+            this.hasMore = d.has_more;
+          })
+          .catch(() => {})
+          .finally(() => { this.loading = false; });
+      },
+      choose(item) {
+        if (this.onSelect) {
+          try { this.onSelect(item); } catch (err) { /* no-op */ }
+        } else if (this.targetEl) {
+          this.targetEl.value = item.url;
+          this.targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+          this.targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        this.shown = false;
+      },
+      upload(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        this.uploading = true;
+        fetch("{% url 'media_upload_ajax' %}", { method: 'POST', body: fd })
+          .then(r => r.json())
+          .then(d => { if (d && d.url) this.choose(d); })
+          .catch(() => {})
+          .finally(() => { this.uploading = false; e.target.value = ''; });
+      },
+    };
+  }
+</script>

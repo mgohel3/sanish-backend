@@ -36,16 +36,29 @@
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Logos & Favicon</h2>
         <p class="form-hint">Enter a path (e.g. <code>/assets/img/logo/black-logo.svg</code>) or a full CDN URL. Use the Media Library to upload files first.</p>
-        <div><label class="form-label">Dark Logo URL <span class="form-hint">(used on light backgrounds / main header)</span></label>
-          <input type="text" name="logo_dark_url" value="{{ s.logo_dark_url }}" class="form-input font-mono text-sm"/>
+        <div class="mp-field"><label class="form-label">Dark Logo URL <span class="form-hint">(used on light backgrounds / main header)</span></label>
+          <div class="flex gap-2">
+            <input type="text" name="logo_dark_url" value="{{ s.logo_dark_url }}" class="form-input font-mono text-sm flex-1"/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Media Library</button>
+          </div>
           {% if s.logo_dark_url %}<img src="{{ s.logo_dark_url }}" alt="dark logo preview" class="mt-2 h-10 object-contain bg-gray-50 rounded p-1 border border-gray-100" onerror="this.style.display='none'"/>{% endif %}
         </div>
-        <div><label class="form-label">Light Logo URL <span class="form-hint">(used on dark backgrounds / footer)</span></label>
-          <input type="text" name="logo_light_url" value="{{ s.logo_light_url }}" class="form-input font-mono text-sm"/>
+        <div class="mp-field"><label class="form-label">Light Logo URL <span class="form-hint">(used on dark backgrounds / footer)</span></label>
+          <div class="flex gap-2">
+            <input type="text" name="logo_light_url" value="{{ s.logo_light_url }}" class="form-input font-mono text-sm flex-1"/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Media Library</button>
+          </div>
           {% if s.logo_light_url %}<img src="{{ s.logo_light_url }}" alt="light logo preview" class="mt-2 h-10 object-contain bg-gray-800 rounded p-1 border border-gray-700" onerror="this.style.display='none'"/>{% endif %}
         </div>
-        <div><label class="form-label">Favicon URL</label>
-          <input type="text" name="favicon_url" value="{{ s.favicon_url }}" class="form-input font-mono text-sm" placeholder="/favicon.ico"/></div>
+        <div class="mp-field"><label class="form-label">Favicon URL</label>
+          <div class="flex gap-2">
+            <input type="text" name="favicon_url" value="{{ s.favicon_url }}" class="form-input font-mono text-sm flex-1" placeholder="/favicon.ico"/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Media Library</button>
+          </div>
+        </div>
       </div>
 
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
@@ -197,4 +210,5 @@
     </div>
   </form>
 </div>
+{% include "dashboard/partials/media_picker.html" %}
 {% endblock %}

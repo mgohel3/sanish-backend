@@ -7,7 +7,7 @@ from .views import (
     CityPageListView, CityPageDetailView,
     BlogPostListView, BlogPostDetailView,
     DealerListView, InquiryCreateView,
-    RobotsView, SiteSettingsView, NavLinksView,
+    RobotsView, SiteSettingsView, NavLinksView, HomePageView, SitePageView,
 )
 
 urlpatterns = [
@@ -35,4 +35,8 @@ urlpatterns = [
     path("site-settings/", SiteSettingsView.as_view(), name="api_site_settings"),
     # Nav Links (public read — groups: main/topbar/mega_quick/footer_company)
     path("nav-links/", NavLinksView.as_view(), name="api_nav_links"),
+    # Home page blocks (public read — ordered, enabled only)
+    path("homepage/", HomePageView.as_view(), name="api_homepage"),
+    # CMS-managed page blocks (public read — ordered, enabled only)
+    path("pages/<slug:slug>/", SitePageView.as_view(), name="api_site_page"),
 ]

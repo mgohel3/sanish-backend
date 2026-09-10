@@ -23,6 +23,8 @@ class CategoryCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         cat = Category.objects.create(
             name=d["name"],
             description=d.get("description", ""),
+            hero_eyebrow=d.get("hero_eyebrow", ""),
+            hero_image_url=d.get("hero_image_url", ""),
             mega_group=d.get("mega_group", "none"),
             mega_icon=d.get("mega_icon", "◈"),
             mega_description=d.get("mega_description", ""),
@@ -47,6 +49,8 @@ class CategoryEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         d = request.POST
         cat.name = d["name"]
         cat.description = d.get("description", "")
+        cat.hero_eyebrow = d.get("hero_eyebrow", "")
+        cat.hero_image_url = d.get("hero_image_url", "")
         cat.mega_group = d.get("mega_group", "none")
         cat.mega_icon = d.get("mega_icon", "◈")
         cat.mega_description = d.get("mega_description", "")

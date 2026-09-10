@@ -2,6 +2,23 @@ from django.db import models
 from django.utils.text import slugify
 
 
+DESIGN_TYPE_CHOICES = [
+    ("Wood", "Wood"), ("Stone", "Stone"), ("Fabric", "Fabric"),
+    ("Solid", "Solid"), ("Metallic", "Metallic"),
+]
+
+COLOR_CHOICES = [
+    (c, c) for c in [
+        "White", "Beige", "Black", "Blue", "Brown", "Green", "Grey",
+        "Metallic", "Multicolor", "Orange", "Pink", "Purple", "Red", "Yellow",
+    ]
+]
+
+BADGE_CHOICES = [
+    ("", "None"), ("New", "New"), ("Bestseller", "Bestseller"), ("Limited", "Limited"),
+]
+
+
 class Category(models.Model):
     STATUS_DRAFT     = "draft"
     STATUS_PUBLISHED = "published"
@@ -22,6 +39,15 @@ class Category(models.Model):
     banner_image     = models.ForeignKey(
         "media_library.MediaAsset", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="category_banners",
+    )
+    # Listing-page hero (shown at the top of /laminates, /louvers, /asa-sheets)
+    hero_eyebrow     = models.CharField(
+        max_length=120, blank=True,
+        help_text='Small label above the title on the category listing page (e.g. "Surface Collection")',
+    )
+    hero_image_url   = models.CharField(
+        max_length=500, blank=True,
+        help_text="Hero background image URL. Overrides the banner image when set.",
     )
     # Mega-menu fields
     mega_group       = models.CharField(max_length=10, choices=MEGA_GROUP_CHOICES, default="none",
@@ -130,9 +156,29 @@ class Product(models.Model):
     description      = models.TextField(blank=True)  # rendered by CKEditor
     features         = models.JSONField(default=list, blank=True)   # ["Feature 1", ...]
     tech_specs       = models.JSONField(default=dict, blank=True)   # {"Thickness": "1mm", ...}
+
+    # Surface attributes — used by the storefront cards, filters and detail page
+    finish           = models.CharField(max_length=60, blank=True,
+                                        help_text='e.g. "High Gloss", "Ultra Matte", "Suede"')
+    thickness        = models.CharField(max_length=40, blank=True, help_text='e.g. "1.0mm"')
+    dimensions       = models.CharField(max_length=80, blank=True,
+                                        help_text='e.g. "8ft × 4ft (2440 × 1220mm)"')
+    surface          = models.CharField(max_length=80, blank=True,
+                                        help_text='e.g. "Decorative Laminate"')
+    application      = models.CharField(max_length=200, blank=True,
+                                        help_text='Comma-separated uses, e.g. "Cabinets, Wardrobes, Wall Panels"')
+    design_type      = models.CharField(max_length=20, blank=True, choices=DESIGN_TYPE_CHOICES)
+    color            = models.CharField(max_length=20, blank=True, choices=COLOR_CHOICES)
+    badge            = models.CharField(max_length=12, blank=True, choices=BADGE_CHOICES)
+    accent_color     = models.CharField(max_length=7, blank=True, default="#85addc",
+                                        help_text="Hex accent colour for this product's card")
     images           = models.ManyToManyField(
         "media_library.MediaAsset",
         through="ProductImage", blank=True, related_name="products",
+    )
+    image_urls       = models.JSONField(
+        default=list, blank=True,
+        help_text="External image URLs — used when no Media Library images are attached.",
     )
     pdf_catalog      = models.ForeignKey(
         "media_library.MediaAsset", null=True, blank=True,

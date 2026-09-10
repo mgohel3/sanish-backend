@@ -22,6 +22,14 @@ DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"  # noqa: F405
 
+# Folders the Media Library "Import frontend images" button / `sync_media
+# --import-frontend` pull from. Defaults to the sibling Next.js public image
+# dirs when unset (see media_library.utils.get_import_dirs).
+MEDIA_LIBRARY_IMPORT_DIRS = [
+    str(BASE_DIR.parent / "sanish-next-fixed" / "public" / "assets" / "img"),  # noqa: F405
+    str(BASE_DIR.parent / "sanish-next" / "public" / "assets" / "img"),        # noqa: F405
+]
+
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 CORS_ALLOWED_ORIGINS = [
