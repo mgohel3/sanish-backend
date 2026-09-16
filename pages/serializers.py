@@ -53,4 +53,4 @@ class CityPageDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = CityPage
-        fields = ("slug", "resolved_data", "schema_json")
+        fields = ("id", "slug", "resolved_data", "schema_json")

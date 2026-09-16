@@ -48,5 +48,29 @@
     <div><label class="form-label">Meta Description</label><textarea name="meta_description" rows="3" class="form-input resize-none">{{ collection.meta_description|default:'' }}</textarea></div>
     <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ collection.meta_keywords|default:'' }}" class="form-input"/></div>
   </div>
+
+  <!-- Catalogue PDF -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-3">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Collection PDF / Catalogue PDF</h2>
+    <p class="form-hint">Pick a PDF already uploaded to the Media Library. Shown as a "Download Catalogue" link on this collection's product listing pages.</p>
+    <div id="pdf-catalog-current" class="flex items-center gap-2 p-3 rounded-xl bg-surface-50 dark:bg-dark-700 {% if not collection.pdf_catalog %}hidden{% endif %}">
+      <svg class="w-8 h-8 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7zm5 1l4 4h-4V4z"/></svg>
+      <span id="pdf-catalog-title" class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ collection.pdf_catalog.title|default:'' }}</span>
+      <button type="button" class="ml-auto text-gray-300 hover:text-red-500 p-1" title="Remove"
+              onclick="document.getElementById('pdf_catalog_id').value='';document.getElementById('pdf-catalog-current').classList.add('hidden')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <input type="hidden" id="pdf_catalog_id" name="pdf_catalog_id" value="{{ collection.pdf_catalog_id|default:'' }}"/>
+    <button type="button" class="btn-secondary w-full justify-center"
+            onclick="openMediaPicker({ accept: 'pdf', onSelect: function(it){
+              document.getElementById('pdf_catalog_id').value = it.id;
+              document.getElementById('pdf-catalog-title').textContent = it.title;
+              document.getElementById('pdf-catalog-current').classList.remove('hidden');
+            }})">
+      Choose from Library
+    </button>
+  </div>
 </form>
+{% include "dashboard/partials/media_picker.html" %}
 {% endblock %}

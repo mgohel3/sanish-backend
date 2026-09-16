@@ -1,0 +1,45 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Menus{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Menus</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Menus</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Manage every menu on the site from here. The four <span class="badge-gray">System</span> menus are
+        the live Header, Top Bar, Mega Menu quick links, and Footer — they can't be deleted, but you can
+        freely add, remove, reorder (drag and drop), and toggle their items. Create any number of extra
+        menus below for dropdown submenus, footer columns, or a nav for a brand-new page.
+      </p>
+    </div>
+    <a href="{% url 'menu_create' %}" class="btn-primary">+ New menu</a>
+  </div>
+
+  <div class="card p-0 overflow-hidden">
+    <ul class="divide-y divide-gray-50 dark:divide-dark-700/60">
+      {% for m in menus %}
+      <li class="flex items-center gap-4 px-5 py-4 bg-white dark:bg-dark-800">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-900 dark:text-white truncate">{{ m.name }}</span>
+            {% if m.is_system %}<span class="badge-gray">System</span>{% endif %}
+          </div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            <code>{{ m.slug }}</code> · {{ m.items.count }} top-level item{{ m.items.count|pluralize }}
+          </div>
+        </div>
+        <a href="{% url 'menu_edit' m.slug %}" class="btn-ghost text-xs">Settings</a>
+        <a href="{% url 'menu_item_list' m.slug %}" class="btn-secondary text-xs">Manage items</a>
+      </li>
+      {% empty %}
+      <li class="px-5 py-10 text-center text-gray-400 text-sm">
+        No menus yet. <a href="{% url 'menu_create' %}" class="text-accent">Create the first one.</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

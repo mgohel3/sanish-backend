@@ -1,4 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
 {% block title %}{% if page %}Edit{% else %}New{% endif %} City Page{% endblock %}
 {% block breadcrumbs %}
   <span class="text-gray-300">/</span><a href="{% url 'city_page_list' %}" class="hover:text-accent">City Pages</a>
@@ -12,12 +13,12 @@
 {% block content %}
 <form method="post"
       x-data="{
-        faqs: {{ page.faqs|default:'[]'|safe }},
-        whyUs: {{ page.why_choose_us|default:'[]'|safe }},
-        testimonials: {{ page.testimonials|default:'[]'|safe }},
-        metaTitle: '{{ page.seo_title|default:'' }}',
-        metaDesc:  '{{ page.meta_description|default:'' }}',
-        templateId: '{{ page.template_id|default:'' }}',
+        faqs: {{ page.faqs|jsonify:"[]" }},
+        whyUs: {{ page.why_choose_us|jsonify:"[]" }},
+        testimonials: {{ page.testimonials|jsonify:"[]" }},
+        metaTitle: '{{ page.seo_title|default:''|escapejs }}',
+        metaDesc:  '{{ page.meta_description|default:''|escapejs }}',
+        templateId: '{{ page.template_id|default:''|escapejs }}',
         addFaq() { this.faqs.push({q:'',a:''}); },
         removeFaq(i) { this.faqs.splice(i,1); },
         addWhyUs() { this.whyUs.push({title:'',desc:''}); },
@@ -235,21 +236,6 @@
         <p class="form-hint">Hold Ctrl/Cmd to select multiple</p>
       </div>
 
-      <!-- Phase 2 stubs -->
-      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">SEO Analysis <span class="badge badge-yellow ml-2">Phase 2</span></h2>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
-            <span class="text-sm">SEO Score Indicator</span><span class="text-xs text-gray-400">Coming soon</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
-            <span class="text-sm">Missing SEO Alerts</span><span class="text-xs text-gray-400">Coming soon</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 opacity-50 cursor-not-allowed">
-            <span class="text-sm">Internal Linking Suggestions</span><span class="text-xs text-gray-400">Coming soon</span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </form>

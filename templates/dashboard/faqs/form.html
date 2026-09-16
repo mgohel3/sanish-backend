@@ -1,0 +1,48 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if faq %}Edit{% else %}New{% endif %} FAQ{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'faq_list' %}" class="hover:text-accent">FAQs</a><span class="text-gray-300">/</span><span>{% if faq %}Edit{% else %}New{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if faq %}Edit FAQ{% else %}New FAQ{% endif %}</h1>
+    <div class="flex gap-3">
+      <a href="{% url 'faq_list' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save FAQ</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Question</label>
+      <input type="text" name="question" value="{{ faq.question|default:'' }}" class="form-input" required />
+    </div>
+    <div>
+      <label class="form-label">Answer</label>
+      <textarea name="answer" rows="4" class="form-input" required>{{ faq.answer|default:'' }}</textarea>
+      <p class="form-hint">Plain text, or simple HTML like &lt;a href="..."&gt; links.</p>
+    </div>
+    <div>
+      <label class="form-label">Source blog post <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <select name="source_post" class="form-input">
+        <option value="">— None —</option>
+        {% for p in posts %}
+        <option value="{{ p.pk }}" {% if faq.source_post_id == p.pk %}selected{% endif %}>{{ p.title }}</option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">Shown as a "read more" link on the FAQ page.</p>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_active" {% if not faq or faq.is_active %}checked{% endif %} class="rounded border-gray-300" />
+      <span>Active <span class="text-gray-400 font-normal">(uncheck to hide from the live site without deleting)</span></span>
+    </label>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'faq_list' %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save FAQ</button>
+  </div>
+</form>
+{% endblock %}

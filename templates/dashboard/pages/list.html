@@ -5,12 +5,15 @@
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
 
-  <div>
-    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Pages</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-      Every content page on the site. Open one to manage its blocks — drag to reorder,
-      toggle visibility, edit or add sections, just like the Home Page.
-    </p>
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Pages</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Every content page on the site. Open one to manage its blocks — drag to reorder,
+        toggle visibility, edit or add sections, just like the Home Page.
+      </p>
+    </div>
+    <a href="{% url 'site_page_create' %}" class="btn-primary">+ New page</a>
   </div>
 
   <div class="card p-0 overflow-hidden">
@@ -21,6 +24,8 @@
           <div class="flex items-center gap-2">
             <span class="font-semibold text-gray-900 dark:text-white truncate">{{ p.title }}</span>
             {% if p.external_url_name %}<span class="badge-gray">Home editor</span>{% endif %}
+            {% if not p.is_system %}<span class="badge-gray">Custom</span>{% endif %}
+            {% if not p.is_published %}<span class="badge-gray text-amber-600 dark:text-amber-400">Draft</span>{% endif %}
           </div>
           <div class="text-xs text-gray-400 mt-0.5">
             {{ p.path|default:"—" }}
@@ -32,14 +37,31 @@
         <a href="{{ p.path }}" target="_blank" rel="noopener" class="btn-ghost text-xs">Preview ↗</a>
         {% endif %}
 
+        <form method="post" action="{% url 'site_page_toggle' p.slug %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost text-xs">
+            {% if p.is_published %}Unpublish{% else %}Publish{% endif %}
+          </button>
+        </form>
+
         {% if p.external_url_name %}
         <a href="{% url p.external_url_name %}" class="btn-secondary text-xs">Manage blocks</a>
         {% else %}
         <a href="{% url 'page_section_list' p.slug %}" class="btn-secondary text-xs">Manage blocks</a>
         {% endif %}
+
+        {% if not p.is_system %}
+        <form method="post" action="{% url 'site_page_delete' p.slug %}"
+              onsubmit="return confirm('Delete “{{ p.title|escapejs }}”? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost text-xs text-red-500 hover:text-red-600">Delete</button>
+        </form>
+        {% endif %}
       </li>
       {% empty %}
-      <li class="px-5 py-10 text-center text-gray-400 text-sm">No pages yet.</li>
+      <li class="px-5 py-10 text-center text-gray-400 text-sm">
+        No pages yet. <a href="{% url 'site_page_create' %}" class="text-accent">Create the first one.</a>
+      </li>
       {% endfor %}
     </ul>
   </div>

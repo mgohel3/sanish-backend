@@ -13,12 +13,12 @@
     </div>
   </div>
 
-  <!-- Type tabs -->
-  <div class="flex gap-1 bg-surface-100 dark:bg-dark-800 p-1 rounded-2xl w-fit">
+  <!-- Form tabs — one per CMS form that feeds the Leads pipeline, kept in sync automatically -->
+  <div class="flex gap-1 flex-wrap bg-surface-100 dark:bg-dark-800 p-1 rounded-2xl w-fit">
     <a href="?type=all{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'all' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">All</a>
-    <a href="?type=contact{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'contact' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Contact</a>
-    <a href="?type=dealer{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'dealer' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Dealer</a>
-    <a href="?type=architect{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == 'architect' %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">Architect</a>
+    {% for t in tabs %}
+    <a href="?type={{ t.key }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {% if tab == t.key %}bg-white dark:bg-dark-700 text-gray-800 dark:text-white shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">{{ t.label }}</a>
+    {% endfor %}
   </div>
 
   <!-- Filters row -->
@@ -35,50 +35,112 @@
     <button type="submit" class="btn-primary">Filter</button>
   </form>
 
-  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
-    <table class="data-table">
-      <thead>
-        <tr><th>Contact</th><th>Type</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th></tr>
-      </thead>
-      <tbody>
-        {% for inq in inquiries %}
-        <tr x-data="{ expanded: false }">
-          <td>
-            <div>
-              <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
-              <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
-              <button @click="expanded = !expanded" class="text-xs text-accent hover:underline mt-0.5" x-text="expanded ? 'Hide message' : 'View message'"></button>
-              <div x-show="expanded" x-transition class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300">
-                {{ inq.message|default:"(no message)" }}
+  <form method="post" id="leadsForm">
+    {% csrf_token %}
+    <input type="hidden" name="tab" value="{{ tab }}"/>
+    <input type="hidden" name="status_filter" value="{{ status_filter }}"/>
+    <input type="hidden" name="q" value="{{ q }}"/>
+
+    <div id="bulk-bar" class="hidden flex flex-wrap items-center gap-3 p-3 mb-4 bg-accent/5 border border-accent/20 rounded-2xl">
+      <span class="text-sm text-gray-600 dark:text-gray-300"><span id="bulk-count">0</span> selected</span>
+      <select name="status" class="form-input form-select text-xs w-36 py-1">
+        {% for val,label in STATUS_CHOICES %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" name="action" value="bulk_update_status" class="btn-primary text-xs py-1 px-3">Update Status</button>
+      <button type="submit" name="action" value="bulk_delete" class="btn-ghost text-xs py-1 px-3 text-red-600" onclick="return confirmBulkDelete()">Delete Selected</button>
+    </div>
+
+    {% regroup inquiries by form_label as form_groups %}
+    {% for group in form_groups %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden {% if not forloop.last %}mb-6{% endif %}">
+      <div class="px-5 py-3 border-b border-surface-100 dark:border-dark-700 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ group.grouper }} <span class="text-gray-400 font-normal">({{ group.list|length }})</span></h2>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="w-8"><input type="checkbox" class="select-all-group" onclick="toggleGroup(this)"></th>
+            <th>Contact</th><th>Type</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inq in group.list %}
+          <tr x-data="{ expanded: false }">
+            <td><input type="checkbox" name="ids" value="{{ inq.pk }}" class="row-check" onclick="updateBulkBar()"></td>
+            <td>
+              <div>
+                <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
+                <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
+                <button @click="expanded = !expanded" class="text-xs text-accent hover:underline mt-0.5" x-text="expanded ? 'Hide message' : 'View message'"></button>
+                <div x-show="expanded" x-transition class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300">
+                  {{ inq.message|default:"(no message)" }}
+                </div>
               </div>
-            </div>
-          </td>
-          <td><span class="badge badge-blue">{{ inq.get_type_display }}</span></td>
-          <td class="text-sm text-gray-500">{{ inq.city }}</td>
-          <td>
-            {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
-            {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
-            {% elif inq.status == 'qualified' %}<span class="badge badge-green">Qualified</span>
-            {% else %}<span class="badge badge-gray">Closed</span>{% endif %}
-          </td>
-          <td class="text-xs text-gray-400">{{ inq.created|date:"d M Y" }}</td>
-          <td class="text-right">
-            <form method="post" class="flex items-center justify-end gap-2">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="update_status"/>
-              <input type="hidden" name="pk" value="{{ inq.pk }}"/>
-              <select name="status" class="form-input form-select text-xs w-28 py-1">
-                {% for val,label in STATUS_CHOICES %}<option value="{{ val }}" {% if inq.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
-              </select>
-              <button type="submit" class="btn-primary text-xs py-1 px-3">Save</button>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="py-12 text-center text-gray-400">No inquiries.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+            </td>
+            <td><span class="badge badge-blue">{{ inq.get_type_display }}</span></td>
+            <td class="text-sm text-gray-500">{{ inq.city }}</td>
+            <td>
+              {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
+              {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
+              {% elif inq.status == 'qualified' %}<span class="badge badge-green">Qualified</span>
+              {% else %}<span class="badge badge-gray">Closed</span>{% endif %}
+            </td>
+            <td class="text-xs text-gray-400">{{ inq.created|date:"d M Y" }}</td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-2">
+                <select class="form-input form-select text-xs w-28 py-1">
+                  {% for val,label in STATUS_CHOICES %}<option value="{{ val }}" {% if inq.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                <button type="button" class="btn-primary text-xs py-1 px-3" onclick="quickUpdate({{ inq.pk }}, this)">Save</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% empty %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card py-12 text-center text-gray-400">No inquiries.</div>
+    {% endfor %}
+  </form>
 </div>
+
+<script>
+function updateBulkBar(){
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  document.getElementById('bulk-count').textContent = checked;
+  document.getElementById('bulk-bar').classList.toggle('hidden', checked === 0);
+  document.querySelectorAll('.select-all-group').forEach(function(box){
+    const table = box.closest('table');
+    const rows  = table.querySelectorAll('.row-check');
+    const allChecked = rows.length > 0 && Array.from(rows).every(r => r.checked);
+    box.checked = allChecked;
+  });
+}
+function toggleGroup(box){
+  const table = box.closest('table');
+  table.querySelectorAll('.row-check').forEach(el => el.checked = box.checked);
+  updateBulkBar();
+}
+function confirmBulkDelete(){
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  if(checked === 0) return false;
+  return confirm('Delete ' + checked + ' selected inquiry(ies)? This cannot be undone.');
+}
+function quickUpdate(pk, btn){
+  const select = btn.previousElementSibling;
+  const form = document.getElementById('leadsForm');
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+  fd.append('action', 'bulk_update_status');
+  fd.append('ids', pk);
+  fd.append('status', select.value);
+  fd.append('tab', '{{ tab }}');
+  fd.append('status_filter', '{{ status_filter }}');
+  fd.append('q', '{{ q }}');
+  fetch(window.location.pathname, {method: 'POST', body: fd}).then(function(){
+    window.location.href = window.location.pathname + window.location.search;
+  });
+}
+</script>
 {% endblock %}

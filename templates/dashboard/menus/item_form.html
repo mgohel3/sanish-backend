@@ -1,0 +1,53 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if item %}Edit{% else %}New{% endif %} Item · {{ menu_obj.name }}{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'menu_list' %}" class="hover:text-accent">Menus</a><span class="text-gray-300">/</span><a href="{% url 'menu_item_list' menu_obj.slug %}" class="hover:text-accent">{{ menu_obj.name }}</a>{% if parent %}<span class="text-gray-300">/</span><a href="{% url 'menu_item_children' menu_obj.slug parent.pk %}" class="hover:text-accent">{{ parent.label }}</a>{% endif %}<span class="text-gray-300">/</span><span>{% if item %}{{ item.label }}{% else %}New item{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+      {% if item %}Edit item{% else %}New item{% endif %}
+      {% if parent %}<span class="text-gray-400 font-normal">· submenu of “{{ parent.label }}”</span>{% endif %}
+    </h1>
+    <div class="flex gap-3">
+      {% if parent %}
+      <a href="{% url 'menu_item_children' menu_obj.slug parent.pk %}" class="btn-ghost">Cancel</a>
+      {% else %}
+      <a href="{% url 'menu_item_list' menu_obj.slug %}" class="btn-ghost">Cancel</a>
+      {% endif %}
+      <button type="submit" class="btn-primary">Save item</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Label</label>
+      <input type="text" name="label" value="{{ item.label|default:'' }}" class="form-input" required />
+    </div>
+    <div>
+      <label class="form-label">URL <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="url" value="{{ item.url|default:'' }}" class="form-input" placeholder="/about-us" />
+      <p class="form-hint">Leave blank if this item is only a dropdown trigger for its submenu.</p>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="open_new_tab" {% if item.open_new_tab %}checked{% endif %} class="rounded border-gray-300" />
+      <span>Open in a new tab</span>
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="active" {% if not item or item.active %}checked{% endif %} class="rounded border-gray-300" />
+      <span>Active <span class="text-gray-400 font-normal">(uncheck to hide from the live site without deleting)</span></span>
+    </label>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    {% if parent %}
+    <a href="{% url 'menu_item_children' menu_obj.slug parent.pk %}" class="btn-ghost">Cancel</a>
+    {% else %}
+    <a href="{% url 'menu_item_list' menu_obj.slug %}" class="btn-ghost">Cancel</a>
+    {% endif %}
+    <button type="submit" class="btn-primary">Save item</button>
+  </div>
+</form>
+{% endblock %}

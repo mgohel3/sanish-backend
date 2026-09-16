@@ -9,7 +9,7 @@ from django.http import HttpResponse
 
 from accounts.permissions import SEOManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
-from seo.models import GlobalSEO, Redirect, SiteSettings
+from seo.models import GlobalSEO, Redirect, SiteSettings, ThemeSettings
 from seo.schema_generators import generate_schema_json
 
 
@@ -32,6 +32,15 @@ class GlobalSEOView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         s.gtm_code              = d.get("gtm_code", "")
         s.fb_pixel_code         = d.get("fb_pixel_code", "")
         s.clarity_code          = d.get("clarity_code", "")
+        s.gsc_verification_code = d.get("gsc_verification_code", "")
+        s.recaptcha_version      = d.get("recaptcha_version", GlobalSEO.RECAPTCHA_OFF)
+        s.recaptcha_site_key     = d.get("recaptcha_site_key", "")
+        s.recaptcha_secret_key   = d.get("recaptcha_secret_key", "")
+        raw_score = d.get("recaptcha_v3_min_score", "").strip()
+        try:
+            s.recaptcha_v3_min_score = float(raw_score) if raw_score else 0.5
+        except ValueError:
+            s.recaptcha_v3_min_score = 0.5
         s.save()
         self.log_action("Updated Global SEO settings")
         messages.success(request, "SEO settings saved.")
@@ -186,3 +195,40 @@ class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
 
         messages.success(request, "Site settings saved.")
         return redirect("site_settings")
+
+
+class ThemeSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
+    _FIELDS = [
+        "primary_color", "secondary_color", "accent_color", "heading_color", "text_color",
+        "link_color", "link_hover_color", "background_color", "header_bg_color",
+        "footer_bg_color", "footer_text_color",
+        "heading_font", "body_font", "base_font_size",
+        "button_style", "button_radius", "button_hover_effect", "button_text_color",
+        "container_max_width", "border_radius", "card_shadow_style",
+    ]
+
+    _TABS = [
+        ("colors",     "Colors"),
+        ("typography", "Typography"),
+        ("buttons",    "Buttons"),
+        ("layout",     "Layout"),
+    ]
+
+    def get(self, request):
+        settings = ThemeSettings.get()
+        return render(request, "dashboard/seo/theme_settings.html", {
+            "s":          settings,
+            "tabs":       self._TABS,
+            "active_nav": "theme_settings",
+        })
+
+    def post(self, request):
+        s = ThemeSettings.get()
+        d = request.POST
+        for field in self._FIELDS:
+            val = d.get(field, "")
+            setattr(s, field, val if val is not None else "")
+        s.save()
+        self.log_action("Updated Theme Settings")
+        messages.success(request, "Theme settings saved.")
+        return redirect("theme_settings")

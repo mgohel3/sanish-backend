@@ -28,7 +28,9 @@ class MediaLibraryView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         return redirect(url)
 
     def _ids(self, request):
-        raw = request.POST.getlist("ids") or request.POST.get("ids", "").split(",")
+        raw = []
+        for v in request.POST.getlist("ids"):
+            raw.extend(v.split(","))
         return [i for i in (s.strip() for s in raw) if i.isdigit()]
 
     # ── GET ───────────────────────────────────────────────────────────────────

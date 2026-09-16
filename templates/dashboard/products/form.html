@@ -1,4 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
 {% block title %}{% if product %}Edit{% else %}New{% endif %} Product{% endblock %}
 {% block breadcrumbs %}
   <span class="text-gray-300">/</span><a href="{% url 'product_list' %}" class="hover:text-accent">Products</a>
@@ -8,22 +9,115 @@
 {% block extra_head %}
 <!-- CKEditor 5 -->
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+<!-- Sortable.js — drag-to-reorder for the manageable attribute dropdowns -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+<script>
+  var ATTR_URLS = {
+    finish:      { add: "{% url 'attribute_option_add' 'finish' %}",      del: "{% url 'attribute_option_delete' 'finish' %}",      reorder: "{% url 'attribute_option_reorder' 'finish' %}" },
+    design_type: { add: "{% url 'attribute_option_add' 'design_type' %}", del: "{% url 'attribute_option_delete' 'design_type' %}", reorder: "{% url 'attribute_option_reorder' 'design_type' %}" },
+    color:       { add: "{% url 'attribute_option_add' 'color' %}",       del: "{% url 'attribute_option_delete' 'color' %}",       reorder: "{% url 'attribute_option_reorder' 'color' %}" },
+    badge:       { add: "{% url 'attribute_option_add' 'badge' %}",       del: "{% url 'attribute_option_delete' 'badge' %}",       reorder: "{% url 'attribute_option_reorder' 'badge' %}" },
+  };
+
+  function attrManager(attribute, initialOptions, currentValue) {
+    return {
+      attribute: attribute,
+      options: initialOptions || [],
+      selected: currentValue || '',
+      open: false,
+      newValue: '',
+      initSort(el) {
+        var self = this;
+        var start = function () {
+          if (typeof Sortable === 'undefined') { setTimeout(start, 50); return; }
+          Sortable.create(el, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+              var order = Array.from(el.children).map(function (li) { return li.dataset.id; }).filter(Boolean);
+              self.options = order.map(function (id) {
+                return self.options.find(function (o) { return String(o.id) === String(id); });
+              }).filter(Boolean);
+              fetch(ATTR_URLS[self.attribute].reorder, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ order: order }),
+              });
+            },
+          });
+        };
+        start();
+      },
+      add() {
+        var self = this;
+        var value = this.newValue.trim();
+        if (!value) return;
+        fetch(ATTR_URLS[this.attribute].add, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+          body: JSON.stringify({ value: value }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.ok) {
+              if (!self.options.some(function (o) { return o.id === data.id; })) {
+                self.options.push({ id: data.id, value: data.value });
+              }
+              self.selected = data.value;
+              self.newValue = '';
+            } else {
+              alert(data.error || 'Could not add option.');
+            }
+          });
+      },
+      remove(id) {
+        var self = this;
+        if (!confirm('Remove this option from the list?')) return;
+        fetch(ATTR_URLS[this.attribute].del, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+          body: JSON.stringify({ id: id }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.ok) {
+              self.options = self.options.filter(function (o) { return o.id !== id; });
+              if (self.selected && !self.options.some(function (o) { return o.value === self.selected; })) {
+                self.selected = '';
+              }
+            } else {
+              alert(data.error || 'Could not remove option.');
+            }
+          });
+      },
+    };
+  }
+</script>
 {% endblock %}
 
 {% block content %}
 <form method="post" enctype="multipart/form-data"
       x-data="{
-        features: {{ product.features|default:'[]'|safe }},
-        specs: {{ product.tech_specs|default:'{}'|safe }},
-        specKeys: Object.keys({{ product.tech_specs|default:'{}'|safe }}),
-        specVals: Object.values({{ product.tech_specs|default:'{}'|safe }}),
+        features: {{ product.features|jsonify:"[]" }},
+        specs: {{ product.tech_specs|jsonify:"{}" }},
+        specKeys: Object.keys({{ product.tech_specs|jsonify:"{}" }}),
+        specVals: Object.values({{ product.tech_specs|jsonify:"{}" }}),
         images: [{% for pi in current_images %}{ id: {{ pi.asset.pk }}, url: '{{ pi.asset.url|escapejs }}', title: '{{ pi.asset.title|escapejs }}' }{% if not forloop.last %},{% endif %}{% endfor %}],
-        imageUrls: {{ product.image_urls|default:'[]'|safe }},
+        imageUrls: {{ product.image_urls|jsonify:"[]" }},
         addImageUrl() { this.imageUrls.push(''); },
         removeImageUrl(i) { this.imageUrls.splice(i, 1); },
         get imageUrlsJson() { return JSON.stringify(this.imageUrls.filter(u => u.trim())); },
         setFeatured(i) { const item = this.images.splice(i, 1)[0]; this.images.unshift(item); },
         removeImage(i) { this.images.splice(i, 1); },
+        applicationImage: {% if current_application_image %}{ id: {{ current_application_image.asset.pk }}, url: '{{ current_application_image.asset.url|escapejs }}', title: '{{ current_application_image.asset.title|escapejs }}' }{% else %}null{% endif %},
+        setApplicationImage(it) { this.applicationImage = { id: it.id, url: it.url, title: it.title }; },
+        removeApplicationImage() { this.applicationImage = null; },
+        textureImages: [{% for pi in current_texture_images %}{ id: {{ pi.asset.pk }}, url: '{{ pi.asset.url|escapejs }}', title: '{{ pi.asset.title|escapejs }}', label: '{{ pi.label|escapejs }}' }{% if not forloop.last %},{% endif %}{% endfor %}],
+        addTextureImage(it) { this.textureImages.push({ id: it.id, url: it.url, title: it.title, label: '' }); },
+        removeTextureImage(i) { this.textureImages.splice(i, 1); },
+        get textureImagesJson() {
+          return JSON.stringify(this.textureImages.map(t => ({ id: t.id, label: t.label || '' })));
+        },
         addFeature() { this.features.push(''); },
         removeFeature(i) { this.features.splice(i,1); },
         addSpec() { this.specKeys.push(''); this.specVals.push(''); },
@@ -39,6 +133,8 @@
         document.getElementById('features_json').value = featuresJson;
         document.getElementById('specs_json').value = specsJson;
         document.getElementById('image_urls_json').value = imageUrlsJson;
+        document.getElementById('application_image_id').value = applicationImage ? applicationImage.id : '';
+        document.getElementById('texture_images_json').value = textureImagesJson;
         $el.querySelectorAll('input[name=image_ids]').forEach(el => el.remove());
         images.forEach(img => {
           const inp = document.createElement('input');
@@ -53,6 +149,8 @@
   <input type="hidden" name="features_json"   id="features_json"/>
   <input type="hidden" name="specs_json"      id="specs_json"/>
   <input type="hidden" name="image_urls_json" id="image_urls_json"/>
+  <input type="hidden" name="application_image_id" id="application_image_id"/>
+  <input type="hidden" name="texture_images_json"  id="texture_images_json"/>
 
   <!-- Top bar: save/status -->
   <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -125,49 +223,110 @@
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Surface Attributes</h2>
         <p class="form-hint">Shown on storefront cards and used by the listing-page filters.</p>
+        <p class="form-hint">Each field below has a "Show on product page" toggle — on by default. A blank field is always hidden regardless of the toggle.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="form-label">Finish</label>
-            <input type="text" name="finish" value="{{ product.finish|default:'' }}" class="form-input" placeholder="e.g. High Gloss"/>
-          </div>
-          <div>
-            <label class="form-label">Design Type</label>
-            <select name="design_type" class="form-input form-select">
+          <div x-data="attrManager('finish', {{ finish_options|jsonify:'[]' }}, '{{ product.finish|default:''|escapejs }}')">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Finish</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="finish" x-model="selected" class="form-input form-select">
               <option value="">—</option>
-              {% for opt in design_type_choices %}
-                <option value="{{ opt }}" {% if product.design_type == opt %}selected{% endif %}>{{ opt }}</option>
-              {% endfor %}
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
             </select>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_finish" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
           </div>
-          <div>
-            <label class="form-label">Colour</label>
-            <select name="color" class="form-input form-select">
+          <div x-data="attrManager('design_type', {{ design_type_options|jsonify:'[]' }}, '{{ product.design_type|default:''|escapejs }}')">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Design Type</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="design_type" x-model="selected" class="form-input form-select">
               <option value="">—</option>
-              {% for opt in color_choices %}
-                <option value="{{ opt }}" {% if product.color == opt %}selected{% endif %}>{{ opt }}</option>
-              {% endfor %}
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
             </select>
+            <p class="form-hint">Also shown as a tag on the product page.</p>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_design_type" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
           </div>
-          <div>
-            <label class="form-label">Badge</label>
-            <select name="badge" class="form-input form-select">
-              <option value="" {% if not product.badge %}selected{% endif %}>None</option>
-              {% for opt in badge_choices %}
-                <option value="{{ opt }}" {% if product.badge == opt %}selected{% endif %}>{{ opt }}</option>
-              {% endfor %}
+          <div x-data="attrManager('color', {{ color_options|jsonify:'[]' }}, '{{ product.color|default:''|escapejs }}')">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Colour</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="color" x-model="selected" class="form-input form-select">
+              <option value="">—</option>
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
             </select>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
+          </div>
+          <div x-data="attrManager('badge', {{ badge_options|jsonify:'[]' }}, '{{ product.badge|default:''|escapejs }}')">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Badge</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="badge" x-model="selected" class="form-input form-select">
+              <option value="">None</option>
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
+            </select>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
           </div>
           <div>
             <label class="form-label">Thickness</label>
             <input type="text" name="thickness" value="{{ product.thickness|default:'' }}" class="form-input" placeholder="e.g. 1.0mm"/>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_thickness" {% if not product or product.show_thickness %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
           </div>
           <div>
             <label class="form-label">Dimensions</label>
             <input type="text" name="dimensions" value="{{ product.dimensions|default:'' }}" class="form-input" placeholder="e.g. 8ft × 4ft (2440 × 1220mm)"/>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_dimensions" {% if not product or product.show_dimensions %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
           </div>
           <div>
             <label class="form-label">Surface Type</label>
             <input type="text" name="surface" value="{{ product.surface|default:'' }}" class="form-input" placeholder="e.g. Decorative Laminate"/>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_surface" {% if not product or product.show_surface %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+          </div>
+          <div>
+            <label class="form-label">Product Type</label>
+            <input type="text" name="product_type" value="{{ product.product_type|default:'' }}" class="form-input" placeholder="e.g. Premium Laminate (1mm)"/>
+            <p class="form-hint">Shown as a tag and in the specs table on the product page.</p>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_product_type" {% if not product or product.show_product_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+          </div>
+          <div>
+            <label class="form-label">Surface Category</label>
+            <input type="text" name="surface_category" value="{{ product.surface_category|default:'' }}" class="form-input" placeholder="e.g. Glossy Surface"/>
+            <p class="form-hint">Shown as a tag and in the specs table on the product page.</p>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_surface_category" {% if not product or product.show_surface_category %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
           </div>
           <div>
             <label class="form-label">Accent Colour (hex)</label>
@@ -176,6 +335,32 @@
           <div class="sm:col-span-2">
             <label class="form-label">Application</label>
             <input type="text" name="application" value="{{ product.application|default:'' }}" class="form-input" placeholder="Cabinets, Wardrobes, Wall Panels"/>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_application" {% if not product or product.show_application %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Custom attributes — admin-defined title/value pairs -->
+        <div class="pt-4 border-t border-gray-100 dark:border-dark-600">
+          <div class="flex items-center justify-between mb-2">
+            <label class="form-label mb-0">Custom Attributes</label>
+            <button type="button" @click="addSpec()" class="btn-ghost py-1 px-3 text-xs">+ Add Field</button>
+          </div>
+          <p class="form-hint mb-3">Not one of the fixed fields above? Add your own — each appears as an extra row at the bottom of the specs table on the product page. Remove a row here to remove it from the page.</p>
+          <div class="space-y-2">
+            <template x-for="(key, i) in specKeys" :key="i">
+              <div class="flex gap-2 items-center">
+                <input type="text" x-model="specKeys[i]" class="form-input w-40" placeholder="Title (e.g. Warranty)"/>
+                <span class="text-gray-400">→</span>
+                <input type="text" x-model="specVals[i]" class="form-input flex-1" placeholder="Details (e.g. 10 Years)"/>
+                <button type="button" @click="removeSpec(i)" class="text-red-400 hover:text-red-600 p-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </template>
+            <p x-show="specKeys.length === 0" class="text-xs text-gray-400 text-center py-4">No custom fields yet. Click + Add Field.</p>
           </div>
         </div>
       </div>
@@ -219,32 +404,11 @@
         </div>
       </div>
 
-      <!-- Tech Specs -->
-      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Technical Specs</h2>
-          <button type="button" @click="addSpec()" class="btn-ghost py-1 px-3 text-xs">+ Add Spec</button>
-        </div>
-        <div class="space-y-2">
-          <template x-for="(key, i) in specKeys" :key="i">
-            <div class="flex gap-2 items-center">
-              <input type="text" x-model="specKeys[i]" class="form-input w-40" placeholder="Key (e.g. Thickness)"/>
-              <span class="text-gray-400">→</span>
-              <input type="text" x-model="specVals[i]" class="form-input flex-1" placeholder="Value (e.g. 0.8mm)"/>
-              <button type="button" @click="removeSpec(i)" class="text-red-400 hover:text-red-600 p-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-          </template>
-          <p x-show="specKeys.length === 0" class="text-xs text-gray-400 text-center py-4">No specs yet. Click + Add Spec.</p>
-        </div>
-      </div>
-
       <!-- SEO -->
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
            x-data="{
-             metaTitle: '{{ product.meta_title|default:'' }}',
-             metaDesc:  '{{ product.meta_description|default:'' }}',
+             metaTitle: '{{ product.meta_title|default:''|escapejs }}',
+             metaDesc:  '{{ product.meta_description|default:''|escapejs }}',
            }">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO Settings</h2>
 
@@ -359,19 +523,101 @@
         </div>
       </div>
 
+      <!-- Application image — the single "applied in a room" shot shown below
+           the title on the product page (separate from the swatch gallery above). -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Application Image</h2>
+        <p class="text-[11px] text-gray-400 mb-4">Shown below the product title — a photo of the finish applied in a room. One image only.</p>
+        <template x-if="applicationImage">
+          <div class="flex items-center gap-2 p-2 rounded-xl bg-surface-50 dark:bg-dark-700">
+            <img :src="applicationImage.url" class="w-12 h-12 rounded-xl object-cover flex-shrink-0"/>
+            <span class="text-xs text-gray-500 truncate flex-1" x-text="applicationImage.title"></span>
+            <button type="button" @click="removeApplicationImage()"
+                    class="text-gray-300 hover:text-red-500 p-1 transition-colors" title="Remove">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </template>
+        <p x-show="!applicationImage" class="text-xs text-gray-400 text-center py-4">No application image yet.</p>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <label class="btn-secondary justify-center cursor-pointer text-center block" id="application-upload-label">
+            <input type="file" id="application-upload-input" accept="image/*" class="hidden"/>
+            <span id="application-upload-label-text">+ Upload</span>
+          </label>
+          <button type="button" class="btn-ghost justify-center text-xs"
+                  @click="$dispatch('open-media-picker', { accept: 'image', onSelect: (it) => setApplicationImage(it) })">
+            Choose from Library
+          </button>
+        </div>
+        <div class="mt-3 pt-3 border-t border-gray-100 dark:border-dark-600">
+          <label class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">External URL</label>
+          <div class="flex gap-2 items-center mp-field">
+            <input type="text" name="application_image_url" value="{{ product.application_image_url|default:'' }}"
+                   class="form-input flex-1 text-xs" placeholder="https://…"/>
+            <button type="button" @click="openMediaPicker({ el: $el.closest('.mp-field').querySelector('input'), accept: 'image' })" class="text-gray-400 hover:text-accent p-1" title="Choose from Media Library">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16v12H4z"/></svg>
+            </button>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-1">Used only when no Media Library image is attached above.</p>
+        </div>
+      </div>
+
+      <!-- Texture variants — labeled thumbnails (Fluted, Glossy, …) shown near
+           the title as static reference swatches for the other finishes this
+           color is available in. -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Texture Variants</h2>
+        <p class="text-[11px] text-gray-400 mb-4">Static reference swatches (e.g. Fluted, Leather, Glossy) shown next to the title.</p>
+        <div id="texture-gallery" class="space-y-2">
+          <template x-for="(img, i) in textureImages" :key="img.id + '-' + i">
+            <div class="flex items-center gap-2 p-2 rounded-xl bg-surface-50 dark:bg-dark-700">
+              <img :src="img.url" class="w-12 h-12 rounded-xl object-cover flex-shrink-0"/>
+              <input type="text" x-model="img.label" placeholder="Label, e.g. Fluted"
+                     class="form-input flex-1 text-xs"/>
+              <button type="button" @click="removeTextureImage(i)"
+                      class="text-gray-300 hover:text-red-500 p-1 transition-colors" title="Remove">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </template>
+          <p x-show="textureImages.length === 0" class="text-xs text-gray-400 text-center py-4">No texture variants yet.</p>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <label class="btn-secondary justify-center cursor-pointer text-center block" id="texture-upload-label">
+            <input type="file" id="texture-upload-input" multiple accept="image/*" class="hidden"/>
+            <span id="texture-upload-label-text">+ Upload</span>
+          </label>
+          <button type="button" class="btn-ghost justify-center text-xs"
+                  @click="$dispatch('open-media-picker', { accept: 'image', onSelect: (it) => addTextureImage(it) })">
+            Choose from Library
+          </button>
+        </div>
+      </div>
+
       <!-- PDF Catalog -->
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">PDF Catalog</h2>
-        {% if product.pdf_catalog %}
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">PDF Catalog</h2>
+        <p class="form-hint mb-4">Catalogue PDFs are managed per collection now, not per product.</p>
+        {% if product.collection.pdf_catalog %}
         <div class="flex items-center gap-2 p-3 rounded-xl bg-surface-50 dark:bg-dark-700 mb-3">
           <svg class="w-8 h-8 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7zm5 1l4 4h-4V4z"/></svg>
-          <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ product.pdf_catalog.title }}</span>
+          <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ product.collection.pdf_catalog.title }}</span>
         </div>
+        <a href="{% url 'collection_edit' product.collection.pk %}" class="btn-secondary w-full justify-center text-center block">
+          Manage on "{{ product.collection.name }}" Collection
+        </a>
+        {% elif product.collection %}
+        <p class="text-xs text-gray-400 mb-3">No catalogue PDF set for the "{{ product.collection.name }}" collection yet.</p>
+        <a href="{% url 'collection_edit' product.collection.pk %}" class="btn-secondary w-full justify-center text-center block">
+          Add PDF to "{{ product.collection.name }}" Collection
+        </a>
+        {% else %}
+        <p class="text-xs text-gray-400">Assign this product to a collection above to attach a catalogue PDF.</p>
         {% endif %}
-        <label class="btn-secondary w-full justify-center cursor-pointer text-center block">
-          <input type="file" name="pdf_catalog_file" accept=".pdf" class="hidden"/>
-          {{ product.pdf_catalog|yesno:"Replace PDF,Upload PDF" }}
-        </label>
       </div>
 
       <!-- Related Products -->
@@ -418,6 +664,53 @@
       } catch (e) { console.error('Upload error', e); }
     }
     label.textContent = '+ Upload Images';
+    this.value = '';
+  });
+
+  document.getElementById('application-upload-input').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+    const label = document.getElementById('application-upload-label-text');
+    label.textContent = 'Uploading…';
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch("{% url 'media_upload_ajax' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: fd,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        Alpine.$data(document.querySelector('[x-data]')).setApplicationImage(data);
+      } else {
+        console.error('Upload failed', await res.text());
+      }
+    } catch (e) { console.error('Upload error', e); }
+    label.textContent = '+ Upload';
+    this.value = '';
+  });
+
+  document.getElementById('texture-upload-input').addEventListener('change', async function () {
+    const files = Array.from(this.files);
+    if (!files.length) return;
+    const label = document.getElementById('texture-upload-label-text');
+    label.textContent = 'Uploading…';
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await fetch("{% url 'media_upload_ajax' %}", {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          body: fd,
+        });
+        if (!res.ok) { console.error('Upload failed', await res.text()); continue; }
+        const data = await res.json();
+        Alpine.$data(document.querySelector('[x-data]')).addTextureImage(data);
+      } catch (e) { console.error('Upload error', e); }
+    }
+    label.textContent = '+ Upload';
     this.value = '';
   });
 </script>

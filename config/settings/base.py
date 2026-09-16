@@ -29,11 +29,16 @@ INSTALLED_APPS = [
     "accounts",
     "media_library",
     "catalog",
+    "applications",
+    "gallery",
     "pages",
     "homepage",
     "seo",
     "blog",
+    "faq",
     "leads",
+    "formbuilder",
+    "menus",
     "dashboard",
     "api",
 ]
@@ -118,6 +123,7 @@ REST_FRAMEWORK = {
         "anon": "60/minute",
         "user": "300/minute",
         "inquiry": "10/minute",
+        "form_submit": "10/minute",
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -129,6 +135,10 @@ CORS_ALLOWED_ORIGINS = [
     for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
     if o.strip()
 ]
+
+# The live Next.js site's origin — used to embed the real block components as
+# a live preview iframe in the CMS block editor (see dashboard/pages/form.html).
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
 # ── Email ─────────────────────────────────────────────────────────────────────

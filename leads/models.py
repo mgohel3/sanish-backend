@@ -23,6 +23,11 @@ class Inquiry(models.Model):
     ]
 
     type        = models.CharField(max_length=10, choices=TYPE_CHOICES, default=TYPE_CONTACT)
+    form        = models.ForeignKey(
+        "formbuilder.FormDefinition", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="inquiries",
+        help_text="Which CMS-managed form this inquiry was submitted through, if any.",
+    )
     name        = models.CharField(max_length=200)
     email       = models.EmailField()
     phone       = models.CharField(max_length=20, blank=True)
@@ -40,6 +45,13 @@ class Inquiry(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.type}) — {self.status}"
+
+    @property
+    def form_label(self):
+        """Display label for grouping in the Leads dashboard: the CMS form's
+        name when known, else the code-managed Collection Inquiry Form —
+        the only form still submitting inquiries outside the form builder."""
+        return self.form.name if self.form_id else "Collection Inquiry Form"
 
 
 class Dealer(models.Model):

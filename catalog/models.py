@@ -19,6 +19,34 @@ BADGE_CHOICES = [
 ]
 
 
+class ProductAttributeOption(models.Model):
+    """Admin-managed values for a Product dropdown field (Design Type, Colour,
+    Badge, Finish). Replaces the old hardcoded choice tuples above so the CMS
+    can add/remove/reorder options without a code change."""
+
+    DESIGN_TYPE = "design_type"
+    COLOR       = "color"
+    BADGE       = "badge"
+    FINISH      = "finish"
+    ATTRIBUTE_CHOICES = [
+        (DESIGN_TYPE, "Design Type"),
+        (COLOR,       "Colour"),
+        (BADGE,       "Badge"),
+        (FINISH,      "Finish"),
+    ]
+
+    attribute = models.CharField(max_length=20, choices=ATTRIBUTE_CHOICES)
+    value     = models.CharField(max_length=60)
+    position  = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["attribute", "position", "id"]
+        unique_together = [("attribute", "value")]
+
+    def __str__(self):
+        return f"{self.get_attribute_display()}: {self.value}"
+
+
 class Category(models.Model):
     STATUS_DRAFT     = "draft"
     STATUS_PUBLISHED = "published"
@@ -109,6 +137,11 @@ class Collection(models.Model):
         "media_library.MediaAsset", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="collection_og_images",
     )
+    pdf_catalog         = models.ForeignKey(
+        "media_library.MediaAsset", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="collection_pdfs",
+        help_text="Catalogue PDF for this collection, shown as a download on its product listing pages.",
+    )
     status              = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     created             = models.DateTimeField(auto_now_add=True)
     updated             = models.DateTimeField(auto_now=True)
@@ -126,9 +159,25 @@ class Collection(models.Model):
 
 
 class ProductImage(models.Model):
+    ROLE_GALLERY     = "gallery"
+    ROLE_APPLICATION = "application"
+    ROLE_TEXTURE     = "texture"
+    ROLE_CHOICES = [
+        (ROLE_GALLERY,     "Gallery"),
+        (ROLE_APPLICATION, "Application"),
+        (ROLE_TEXTURE,     "Texture"),
+    ]
+
     product  = models.ForeignKey("Product", on_delete=models.CASCADE, related_name="product_images")
     asset    = models.ForeignKey("media_library.MediaAsset", on_delete=models.CASCADE)
     position = models.PositiveIntegerField(default=0)
+    role     = models.CharField(max_length=12, choices=ROLE_CHOICES, default=ROLE_GALLERY,
+                                help_text="Where this image is shown on the product page: the main "
+                                          "swatch/gallery, the single applied-in-a-room shot below the "
+                                          "title, or a texture-variant thumbnail.")
+    label    = models.CharField(max_length=60, blank=True,
+                                help_text='Texture name shown under the thumbnail, e.g. "Fluted", '
+                                          '"Glossy" — only used for the Texture role.')
 
     class Meta:
         ordering = ["position"]
@@ -165,10 +214,26 @@ class Product(models.Model):
                                         help_text='e.g. "8ft × 4ft (2440 × 1220mm)"')
     surface          = models.CharField(max_length=80, blank=True,
                                         help_text='e.g. "Decorative Laminate"')
+    product_type     = models.CharField(max_length=80, blank=True,
+                                        help_text='Shown as a tag and in the specs table, e.g. "Premium Laminate (1mm)", "PVC Panel", "Decorative Panel"')
+    surface_category = models.CharField(max_length=80, blank=True,
+                                        help_text='Shown as a tag and in the specs table, e.g. "Glossy Surface", "Matt Surface", "Architectural Panel"')
     application      = models.CharField(max_length=200, blank=True,
                                         help_text='Comma-separated uses, e.g. "Cabinets, Wardrobes, Wall Panels"')
     design_type      = models.CharField(max_length=20, blank=True, choices=DESIGN_TYPE_CHOICES)
     color            = models.CharField(max_length=20, blank=True, choices=COLOR_CHOICES)
+
+    # Per-field visibility on the product detail page — lets the admin hide a
+    # field there even when it has a value, without clearing the data itself.
+    # A blank value always hides the row regardless of these flags.
+    show_surface          = models.BooleanField(default=True, help_text="Show the “Design / Surface” row")
+    show_product_type     = models.BooleanField(default=True, help_text="Show the “Product Type” tag & row")
+    show_finish            = models.BooleanField(default=True, help_text="Show the “Finish / Texture” row")
+    show_surface_category = models.BooleanField(default=True, help_text="Show the “Surface Category” tag & row")
+    show_thickness         = models.BooleanField(default=True, help_text="Show the “Thickness” row")
+    show_dimensions         = models.BooleanField(default=True, help_text="Show the “Standard Size” row")
+    show_application         = models.BooleanField(default=True, help_text="Show the “Applications” row")
+    show_design_type         = models.BooleanField(default=True, help_text="Show the “Design” tag")
     badge            = models.CharField(max_length=12, blank=True, choices=BADGE_CHOICES)
     accent_color     = models.CharField(max_length=7, blank=True, default="#85addc",
                                         help_text="Hex accent colour for this product's card")
@@ -179,6 +244,16 @@ class Product(models.Model):
     image_urls       = models.JSONField(
         default=list, blank=True,
         help_text="External image URLs — used when no Media Library images are attached.",
+    )
+    application_image_url = models.CharField(
+        max_length=500, blank=True,
+        help_text="External 'applied in a room' image URL — used when no Media Library "
+                  "application image is attached. Shown below the title on the product page.",
+    )
+    texture_variants = models.JSONField(
+        default=list, blank=True,
+        help_text='External texture-variant thumbnails — [{"label": "Fluted", "image_url": "https://…"}, …]. '
+                  "Used when no Media Library texture images are attached.",
     )
     pdf_catalog      = models.ForeignKey(
         "media_library.MediaAsset", null=True, blank=True,
@@ -209,5 +284,5 @@ class Product(models.Model):
 
     @property
     def primary_image(self):
-        pi = self.product_images.first()
+        pi = self.product_images.filter(role=ProductImage.ROLE_GALLERY).first()
         return pi.asset if pi else None

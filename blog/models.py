@@ -66,6 +66,10 @@ class BlogPost(models.Model):
     show_related      = models.BooleanField(
         default=True, help_text="Show the 'Recommended articles' section at the end of the post.",
     )
+    excerpt           = models.CharField(
+        max_length=450, blank=True,
+        help_text="Short description shown on blog cards and previews (recommended 350-450 characters).",
+    )
     content           = models.TextField(blank=True)  # CKEditor
     categories        = models.ManyToManyField(BlogCategory, blank=True, related_name="posts")
     tags              = models.ManyToManyField(Tag, blank=True, related_name="posts")
@@ -82,6 +86,10 @@ class BlogPost(models.Model):
         on_delete=models.SET_NULL, related_name="blog_og_images",
     )
     auto_faq_schema   = models.BooleanField(default=False)
+    faqs              = models.JSONField(
+        default=list, blank=True,
+        help_text="Accordion FAQ entries shown at the end of the article: [{question, answer}].",
+    )
     published_at      = models.DateTimeField(null=True, blank=True)
     created           = models.DateTimeField(auto_now_add=True)
     updated           = models.DateTimeField(auto_now=True)

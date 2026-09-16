@@ -1,0 +1,72 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if field %}Edit{% else %}New{% endif %} Field · {{ form_obj.name }}{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'form_list' %}" class="hover:text-accent">Forms</a><span class="text-gray-300">/</span><a href="{% url 'form_field_list' form_obj.slug %}" class="hover:text-accent">{{ form_obj.name }}</a><span class="text-gray-300">/</span><span>{% if field %}{{ field.label }}{% else %}New field{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+      {% if field %}Edit field{% else %}New field{% endif %}
+    </h1>
+    <div class="flex gap-3">
+      <a href="{% url 'form_field_list' form_obj.slug %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save field</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Field type</label>
+      <select name="field_type" class="form-input" id="field_type_select">
+        {% for value, label in FIELD_TYPES %}
+        <option value="{{ value }}" {% if field.field_type == value or not field and value == "text" %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label">Label <span class="normal-case font-normal text-gray-400">(shown to visitors)</span></label>
+      <input type="text" name="label" value="{{ field.label|default:'' }}" class="form-input" required />
+    </div>
+    <div>
+      <label class="form-label">Field name <span class="normal-case font-normal text-gray-400">(machine key)</span></label>
+      <input type="text" name="name" value="{{ field.name|default:'' }}" class="form-input" placeholder="phone" required />
+      <p class="form-hint">Used as the key in the submitted data. Letters, numbers, hyphens and underscores only.</p>
+    </div>
+    <div>
+      <label class="form-label">Placeholder <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="placeholder" value="{{ field.placeholder|default:'' }}" class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">Help text <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="help_text" value="{{ field.help_text|default:'' }}" class="form-input" />
+    </div>
+    <div id="options_field" class="{% if field.field_type != 'select' and field.field_type != 'radio' %}hidden{% endif %}">
+      <label class="form-label">Options <span class="normal-case font-normal text-gray-400">(dropdown/radio — one per line)</span></label>
+      <textarea name="options" rows="4" class="form-input resize-y">{% for opt in field.options %}{{ opt }}
+{% endfor %}</textarea>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="required" {% if field.required %}checked{% endif %} class="rounded border-gray-300" />
+      <span>Required</span>
+    </label>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'form_field_list' form_obj.slug %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save field</button>
+  </div>
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var select = document.getElementById('field_type_select');
+    var wrap = document.getElementById('options_field');
+    if (!select || !wrap) return;
+    select.addEventListener('change', function () {
+      wrap.classList.toggle('hidden', !(select.value === 'select' || select.value === 'radio'));
+    });
+  });
+</script>
+{% endblock %}

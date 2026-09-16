@@ -48,7 +48,7 @@ class BlogPostListSerializer(_ImageMixin, serializers.ModelSerializer):
     class Meta:
         model  = BlogPost
         fields = (
-            "id", "title", "slug", "image", "featured_image",
+            "id", "title", "slug", "excerpt", "image", "featured_image",
             "categories", "status", "published_at", "created",
         )
 
@@ -62,9 +62,10 @@ class BlogPostDetailSerializer(_ImageMixin, serializers.ModelSerializer):
     class Meta:
         model  = BlogPost
         fields = (
-            "id", "title", "slug", "layout", "image", "featured_image", "content",
+            "id", "title", "slug", "excerpt", "layout", "image", "featured_image", "content",
             "categories", "tags", "author",
             "show_author", "show_share", "show_related",
             "seo_title", "meta_description", "meta_keywords",
             "status", "published_at", "created", "updated",
+            "faqs", "auto_faq_schema",
         )

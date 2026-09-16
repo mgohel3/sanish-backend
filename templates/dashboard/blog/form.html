@@ -4,6 +4,7 @@
 {% block extra_head %}<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>{% endblock %}
 
 {% block content %}
+{% if post %}{{ post.faqs|json_script:"initial-faqs" }}{% else %}<script id="initial-faqs" type="application/json">[]</script>{% endif %}
 <form method="post" class="space-y-6">
   {% csrf_token %}
   <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -37,10 +38,53 @@
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
     <div class="xl:col-span-2 space-y-6">
-      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
+           x-data="{ excerpt: '{{ post.excerpt|default:''|escapejs }}' }">
         <div><label class="form-label">Title *</label><input type="text" name="title" value="{{ post.title|default:'' }}" required class="form-input text-lg font-semibold" placeholder="Post title…"/></div>
+        <div>
+          <label class="form-label">
+            Short Description
+            <span class="normal-case font-normal ml-1" :class="excerpt.length &gt;= 350 &amp;&amp; excerpt.length &lt;= 450 ? 'text-green-500' : 'text-gray-400'" x-text="'('+excerpt.length+'/450 — recommended 350-450)'"></span>
+          </label>
+          <textarea name="excerpt" x-model="excerpt" rows="4" maxlength="450" class="form-input resize-none" placeholder="A short summary of the post shown on blog cards and previews…"></textarea>
+          <p class="form-hint">Shown on the blog listing cards and used as a fallback preview snippet. Aim for 350-450 characters.</p>
+        </div>
         <div><label class="form-label">Content</label><textarea name="content" id="content_editor" class="form-input min-h-[300px]">{{ post.content|default:'' }}</textarea></div>
       </div>
+
+      <!-- FAQ Accordion -->
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
+           x-data="{ items: JSON.parse(document.getElementById('initial-faqs').textContent) }">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">FAQ Accordion</h2>
+          <button type="button" class="btn-secondary text-xs whitespace-nowrap" @click="items.push({question: '', answer: ''})">
+            + Add Question
+          </button>
+        </div>
+        <p class="form-hint">Shown as an expandable accordion at the end of the article. Leave empty for none.</p>
+        <template x-if="items.length === 0">
+          <p class="text-xs text-gray-400 italic">No FAQ items yet.</p>
+        </template>
+        <div class="space-y-3">
+          <template x-for="(item, idx) in items" :key="idx">
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-dark-700 space-y-2 relative">
+              <button type="button" class="absolute top-3 right-3 text-[11px] text-red-500 hover:underline" @click="items.splice(idx, 1)">
+                Remove
+              </button>
+              <div>
+                <label class="form-label">Question</label>
+                <input type="text" x-model="item.question" class="form-input" placeholder="e.g. Is buying laminates online safe?"/>
+              </div>
+              <div>
+                <label class="form-label">Answer</label>
+                <textarea x-model="item.answer" rows="2" class="form-input resize-none" placeholder="Answer shown when the question is expanded…"></textarea>
+              </div>
+            </div>
+          </template>
+        </div>
+        <input type="hidden" name="faqs_json" :value="JSON.stringify(items)"/>
+      </div>
+
       <!-- SEO -->
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
            x-data="{ metaTitle: '{{ post.seo_title|default:'' }}', metaDesc: '{{ post.meta_description|default:'' }}' }">
@@ -99,18 +143,24 @@
 
       <!-- Featured / banner image -->
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
-           x-data="{ img: '{{ post.featured_image_url|default:'' }}' }">
+           x-data="{ img: '{{ post.featured_image_url|default:'' }}', uploading: false }">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Featured Image</h2>
         <div class="mp-field">
           <label class="form-label">Banner Image URL</label>
           <div class="flex gap-2">
             <input type="url" name="featured_image_url" x-model="img" class="form-input flex-1" placeholder="https://…"/>
+            <label class="btn-secondary text-xs whitespace-nowrap cursor-pointer text-center"
+                   :class="{ 'opacity-50 pointer-events-none': uploading }">
+              <input type="file" accept="image/*" class="hidden"
+                     @change="uploadFeaturedImage($event, (url) => img = url, (v) => uploading = v)"/>
+              <span x-text="uploading ? 'Uploading…' : '+ Upload Image'"></span>
+            </label>
             <button type="button" class="btn-secondary text-xs whitespace-nowrap"
                     onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
               Media Library
             </button>
           </div>
-          <p class="form-hint mt-1">Shown as the article banner and on the blog listing card.</p>
+          <p class="form-hint mt-1">Shown as the article banner and on the blog listing card. Recommended size: <strong>1200 × 630px</strong> (1.91:1, same ratio as WordPress/Open Graph featured images — matches the images already imported from the old site), JPG/WebP, under 300KB. Keep the subject centred in the middle ~75% of the frame — the banner crops the edges on very wide or very narrow screens.</p>
         </div>
         <template x-if="img">
           <img :src="img" alt="" class="w-full h-40 object-cover rounded-2xl border border-surface-200 dark:border-dark-600"/>
@@ -151,4 +201,28 @@
 {% endblock %}
 {% block extra_js %}
 <script>ClassicEditor.create(document.querySelector('#content_editor'),{toolbar:['heading','|','bold','italic','link','bulletedList','numberedList','|','blockQuote','insertTable','imageUpload','undo','redo']});</script>
+<script>
+  async function uploadFeaturedImage(event, onDone, setUploading) {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch("{% url 'media_upload_ajax' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: fd,
+      });
+      if (!res.ok) { console.error('Upload failed', await res.text()); return; }
+      const data = await res.json();
+      onDone(data.url);
+    } catch (e) {
+      console.error('Upload error', e);
+    } finally {
+      setUploading(false);
+    }
+  }
+</script>
 {% endblock %}

@@ -1,0 +1,29 @@
+{% comment %}
+Compact doc-nav picker: a "Section" dropdown and, when the current section has
+more than one page, a "Page" dropdown next to it. Replaces both a second
+vertical sidebar (redundant next to the CMS's own) and a horizontal tab strip
+(doesn't fit — 14 sections overflow even a wide desktop screen). Dropdowns
+scale to any number of sections/pages without ever clipping.
+Expects: groups, current_group_id (optional), current_group (optional), current_slug (optional).
+{% endcomment %}
+<div class="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
+  <div class="flex items-center gap-2">
+    <label class="text-xs font-semibold uppercase tracking-wide text-gray-400">Section</label>
+    <select onchange="window.location.href=this.value" class="form-input form-select text-sm py-1.5 w-auto min-w-[190px]">
+      {% for group in groups %}
+      <option value="{% url 'help_article' group.articles.0.slug %}" {% if group.id == current_group_id %}selected{% endif %}>{{ group.title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if current_group and current_group.articles|length > 1 %}
+  <div class="flex items-center gap-2">
+    <label class="text-xs font-semibold uppercase tracking-wide text-gray-400">Page</label>
+    <select onchange="window.location.href=this.value" class="form-input form-select text-sm py-1.5 w-auto min-w-[220px]">
+      {% for a in current_group.articles %}
+      <option value="{% url 'help_article' a.slug %}" {% if a.slug == current_slug %}selected{% endif %}>{{ a.nav_title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+</div>

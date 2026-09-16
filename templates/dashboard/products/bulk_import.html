@@ -13,7 +13,70 @@
     </p>
   </div>
 
-  {% if not preview_rows %}
+  {% if folder_rows %}
+  <!-- Folder-import preview -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+          Folder preview — "{{ folder.name }}" ({{ folder_rows|length }} code{{ folder_rows|length|pluralize }})
+        </h2>
+        <p class="text-sm mt-0.5 text-gray-500 dark:text-gray-400">
+          Matched by filename → SKU. Uncheck any row you don't want to apply.
+        </p>
+      </div>
+      <a href="{% url 'product_import' %}" class="btn-ghost text-sm">← Start Over</a>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="folder_commit"/>
+      <input type="hidden" name="folder_id" value="{{ folder.pk }}"/>
+      <input type="hidden" name="folder_category" value="{{ folder_category_id }}"/>
+      <input type="hidden" name="folder_collection" value="{{ folder_collection_id }}"/>
+      <input type="hidden" name="folder_create_missing_flag" value="{% if folder_create_missing %}1{% else %}0{% endif %}"/>
+
+      <div class="overflow-x-auto">
+        <table class="data-table text-xs">
+          <thead>
+            <tr><th></th><th>Code (SKU)</th><th>Matched Product</th><th>Action</th><th>Images</th></tr>
+          </thead>
+          <tbody>
+            {% for row in folder_rows %}
+            <tr class="{% if row.action == 'skip' %}bg-red-50 dark:bg-red-900/10{% endif %}">
+              <td>
+                <input type="checkbox" name="codes" value="{{ row.code }}" class="rounded"
+                       {% if row.action != 'skip' %}checked{% endif %}
+                       {% if row.action == 'skip' %}disabled{% endif %}/>
+              </td>
+              <td class="font-mono">{{ row.code }}</td>
+              <td>{% if row.product %}{{ row.product.name }}{% else %}<span class="text-gray-400">—</span>{% endif %}</td>
+              <td>
+                {% if row.action == 'update' %}<span class="badge badge-yellow">Attach to existing</span>
+                {% elif row.action == 'create' %}<span class="badge badge-green">Create new</span>
+                {% else %}<span class="badge badge-red">Skip — no match{% if not folder_create_missing %} (create disabled){% endif %}</span>{% endif %}
+              </td>
+              <td>
+                <div class="flex gap-1">
+                  {% for img in row.images %}
+                  <img src="{{ img.url }}" alt="" class="w-10 h-10 rounded object-cover border border-gray-100 dark:border-dark-600"/>
+                  {% endfor %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex gap-3 pt-4">
+        <button type="submit" class="btn-primary">Attach Images</button>
+        <a href="{% url 'product_import' %}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  {% elif not preview_rows %}
   <!-- Upload form -->
   <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-8"
        x-data="{ dragging: false }"
@@ -54,6 +117,42 @@
       <form method="post">{% csrf_token %}
         <input type="hidden" name="action" value="download_template"/>
         <button type="submit" class="btn-secondary text-xs py-2">Download →</button>
+      </form>
+    </div>
+
+    <!-- Auto-attach images from a Media Library folder -->
+    <div class="mt-6 p-6 rounded-2xl border border-gray-100 dark:border-dark-600">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Auto-attach images from a Media Library folder</h3>
+      <p class="text-xs text-gray-400 mt-1 mb-4">
+        Upload your product photos into a <a href="{% url 'media_library' %}" class="text-accent hover:underline">Media Library</a>
+        folder first, named per file with the product's SKU (e.g. <span class="font-mono">6007-2.webp</span>,
+        optionally <span class="font-mono">6007-2-preview.webp</span> for a second shot). Pick that folder below —
+        matching products get the images attached; unmatched codes can optionally be created as new draft products.
+      </p>
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="folder_preview"/>
+        <div class="grid sm:grid-cols-3 gap-3">
+          <select name="folder_id" required class="form-input form-select">
+            <option value="">Select folder…</option>
+            {% for f in folders %}
+            <option value="{{ f.pk }}">{{ f.name }} ({{ f.asset_count }})</option>
+            {% endfor %}
+          </select>
+          <select name="folder_category" class="form-input form-select">
+            <option value="">Category for new products (optional)</option>
+            {% for cat in categories %}<option value="{{ cat.pk }}">{{ cat.name }}</option>{% endfor %}
+          </select>
+          <select name="folder_collection" class="form-input form-select">
+            <option value="">Collection (optional)</option>
+            {% for col in collections %}<option value="{{ col.pk }}">{{ col.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+          <input type="checkbox" name="folder_create_missing" class="rounded"/>
+          Create draft products for codes with no matching SKU (uses the category above)
+        </label>
+        <button type="submit" class="btn-secondary text-sm">Preview Matches →</button>
       </form>
     </div>
 

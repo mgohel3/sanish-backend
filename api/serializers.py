@@ -12,3 +12,4 @@ from pages.serializers import (  # noqa: F401
 )
 from blog.serializers import BlogPostListSerializer, BlogPostDetailSerializer   # noqa: F401
 from leads.serializers import InquiryCreateSerializer, DealerSerializer         # noqa: F401
+from formbuilder.serializers import FormDefinitionSerializer, FormSubmissionCreateSerializer  # noqa: F401

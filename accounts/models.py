@@ -1,5 +1,12 @@
+import secrets
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+
+OTP_VALID_MINUTES = 10
+OTP_MAX_ATTEMPTS = 5
 
 
 class User(AbstractUser):
@@ -27,12 +34,44 @@ class User(AbstractUser):
         related_name="user_avatar",
     )
 
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_expires_at = models.DateTimeField(blank=True, null=True)
+    otp_attempts = models.PositiveSmallIntegerField(default=0)
+
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+    def generate_otp(self):
+        """Create a fresh 6-digit sign-in code, valid for OTP_VALID_MINUTES."""
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        self.otp_code = code
+        self.otp_expires_at = timezone.now() + timedelta(minutes=OTP_VALID_MINUTES)
+        self.otp_attempts = 0
+        self.save(update_fields=["otp_code", "otp_expires_at", "otp_attempts"])
+        return code
+
+    def verify_otp(self, code):
+        """Check a submitted code. Returns True and clears the code on success."""
+        if not self.otp_code or not self.otp_expires_at:
+            return False
+        if timezone.now() > self.otp_expires_at or self.otp_attempts >= OTP_MAX_ATTEMPTS:
+            return False
+        if not code or code != self.otp_code:
+            self.otp_attempts += 1
+            self.save(update_fields=["otp_attempts"])
+            return False
+        self.clear_otp()
+        return True
+
+    def clear_otp(self):
+        self.otp_code = None
+        self.otp_expires_at = None
+        self.otp_attempts = 0
+        self.save(update_fields=["otp_code", "otp_expires_at", "otp_attempts"])
 
     @property
     def is_super_admin(self):

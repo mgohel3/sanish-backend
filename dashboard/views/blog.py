@@ -1,3 +1,5 @@
+import json
+
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
@@ -16,6 +18,24 @@ LAYOUT_VALUES = {c[0] for c in BlogPost.LAYOUT_CHOICES}
 
 def _clean_layout(value):
     return value if value in LAYOUT_VALUES else BlogPost.LAYOUT_SIDEBAR
+
+
+def _clean_faqs(raw_json):
+    """Parse the FAQ repeater's hidden JSON field into a clean list of
+    {question, answer} dicts, dropping any blank rows."""
+    try:
+        items = json.loads(raw_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    cleaned = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("question", "")).strip()
+        answer = str(item.get("answer", "")).strip()
+        if question and answer:
+            cleaned.append({"question": question, "answer": answer})
+    return cleaned
 
 
 class BlogPostListView(ContentManagerRequiredMixin, View):
@@ -65,6 +85,7 @@ class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         author_id = d.get("author")
         post = BlogPost(
             title=d["title"],
+            excerpt=d.get("excerpt", ""),
             content=d.get("content", ""),
             layout=_clean_layout(d.get("layout")),
             featured_image_url=d.get("featured_image_url", "").strip(),
@@ -74,6 +95,7 @@ class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             meta_description=d.get("meta_description", ""),
             meta_keywords=d.get("meta_keywords", ""),
             auto_faq_schema=bool(d.get("auto_faq_schema")),
+            faqs=_clean_faqs(d.get("faqs_json")),
             show_author=bool(d.get("show_author")),
             show_share=bool(d.get("show_share")),
             show_related=bool(d.get("show_related")),
@@ -106,6 +128,7 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         post = get_object_or_404(BlogPost, pk=pk)
         d = request.POST
         post.title = d["title"]
+        post.excerpt = d.get("excerpt", "")
         post.content = d.get("content", "")
         post.layout = _clean_layout(d.get("layout"))
         post.featured_image_url = d.get("featured_image_url", "").strip()
@@ -117,6 +140,7 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         post.meta_description = d.get("meta_description", "")
         post.meta_keywords = d.get("meta_keywords", "")
         post.auto_faq_schema = bool(d.get("auto_faq_schema"))
+        post.faqs = _clean_faqs(d.get("faqs_json"))
         post.show_author = bool(d.get("show_author"))
         post.show_share = bool(d.get("show_share"))
         post.show_related = bool(d.get("show_related"))
@@ -134,6 +158,21 @@ class BlogPostDeleteView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         self.log_action("Deleted blog post", post)
         post.delete()
         messages.success(request, "Blog post deleted.")
+        return redirect("blog_list")
+
+
+class BlogPostBulkDeleteView(ContentManagerRequiredMixin, LoggedActionMixin, View):
+    def post(self, request):
+        ids = [i for i in request.POST.getlist("ids") if i.strip().isdigit()]
+        qs = BlogPost.objects.filter(pk__in=ids)
+        count = qs.count()
+        if count:
+            titles = ", ".join(qs.values_list("title", flat=True)[:5])
+            qs.delete()
+            self.log_action(f"Bulk deleted {count} blog post(s): {titles}{'…' if count > 5 else ''}")
+            messages.success(request, f"Deleted {count} post{'s' if count != 1 else ''}.")
+        else:
+            messages.error(request, "No posts selected.")
         return redirect("blog_list")
 
 

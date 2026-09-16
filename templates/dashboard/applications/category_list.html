@@ -1,0 +1,64 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Applications{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Applications</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Applications</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Use-case categories shown on /applications. Open a category to upload its gallery images.
+      </p>
+    </div>
+    <a href="{% url 'application_category_create' %}" class="btn-primary">+ New Category</a>
+  </div>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Slug</th>
+          <th>Accent</th>
+          <th>Gallery</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td class="font-medium text-gray-800 dark:text-white">{{ cat.label }}</td>
+          <td class="font-mono text-xs text-gray-500">{{ cat.slug }}</td>
+          <td>
+            {% if cat.accent %}
+            <span class="inline-block w-4 h-4 rounded-full align-middle mr-1" style="background:{{ cat.accent }}"></span>
+            <span class="text-xs text-gray-500">{{ cat.accent }}</span>
+            {% else %}<span class="text-xs text-gray-400">—</span>{% endif %}
+          </td>
+          <td class="text-xs text-gray-500">
+            {{ cat.gallery|length }} image{{ cat.gallery|length|pluralize }}
+          </td>
+          <td>
+            {% if cat.enabled %}<span class="badge badge-green">Enabled</span>
+            {% else %}<span class="badge badge-yellow">Hidden</span>{% endif %}
+          </td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
+              <a href="{% url 'application_category_edit' cat.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
+              <form method="post" action="{% url 'application_category_delete' cat.pk %}" onsubmit="return confirm('Delete “{{ cat.label|escapejs }}”?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-ghost py-1.5 px-3 text-xs text-red-400">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-12 text-center text-gray-400">No categories yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

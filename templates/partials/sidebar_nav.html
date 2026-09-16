@@ -30,6 +30,16 @@
   </div>
 </div>
 
+<!-- Applications (the real /applications page — Design Gallery catalogues) -->
+<a href="{% url 'gallery_catalogue_list' %}"
+   class="nav-item {% if active == 'gallery' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16M4 6h16v12H4V6z"/>
+    <circle cx="8.5" cy="9.5" r="1.5"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Applications</span>
+</a>
+
 <!-- Pages group (Home Page block editor + generic page builder) -->
 <div x-data="{ openPages: ['homepage','pages'].includes('{{ active }}') }" class="mt-1">
   <button @click="openPages = !openPages"
@@ -66,8 +76,8 @@
 </div>
 
 <!-- SEO -->
-<div x-data="{ openSeo: ['seo','site_settings','seo_health'].includes('{{ active }}') }" class="mt-1">
-  <button @click="openSeo = !openSeo" class="nav-item w-full {% if active == 'seo' or active == 'site_settings' or active == 'seo_health' %}active{% endif %}">
+<div x-data="{ openSeo: ['seo','site_settings','theme_settings','seo_health'].includes('{{ active }}') }" class="mt-1">
+  <button @click="openSeo = !openSeo" class="nav-item w-full {% if active == 'seo' or active == 'site_settings' or active == 'theme_settings' or active == 'seo_health' %}active{% endif %}">
     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
       <path stroke-linecap="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
     </svg>
@@ -76,6 +86,7 @@
   </button>
   <div x-show="openSeo && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
     <a href="{% url 'site_settings' %}" class="nav-item {% if active == 'site_settings' %}active{% endif %} text-sm">Site Settings</a>
+    <a href="{% url 'theme_settings' %}" class="nav-item {% if active == 'theme_settings' %}active{% endif %} text-sm">Theme Settings</a>
     <a href="{% url 'seo_global' %}"    class="nav-item {% if active == 'seo' %}active{% endif %} text-sm">Global SEO</a>
     <a href="{% url 'seo_health' %}"    class="nav-item {% if active == 'seo_health' %}active{% endif %} text-sm">
       SEO Health <span class="ml-auto inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -85,12 +96,36 @@
   </div>
 </div>
 
+<!-- Forms -->
+<a href="{% url 'form_list' %}" class="nav-item {% if active == 'forms' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H9.828a2 2 0 00-1.414.586L5.586 8.414A2 2 0 005 9.828V19a2 2 0 002 2z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Forms</span>
+</a>
+
+<!-- Menus -->
+<a href="{% url 'menu_list' %}" class="nav-item {% if active == 'menus' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10m-10 6h16"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Menus</span>
+</a>
+
 <!-- Blog -->
 <a href="{% url 'blog_list' %}" class="nav-item {% if active == 'blog' %}active{% endif %} mt-1">
   <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
     <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
   </svg>
   <span x-show="sidebarOpen" class="truncate">Blog</span>
+</a>
+
+<!-- FAQs -->
+<a href="{% url 'faq_list' %}" class="nav-item {% if active == 'faqs' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">FAQs</span>
 </a>
 
 <!-- Leads -->
@@ -107,7 +142,6 @@
   </button>
   <div x-show="openLeads && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
     <a href="{% url 'inquiry_list' %}" class="nav-item text-sm">Inquiries</a>
-    <a href="{% url 'dealer_list' %}"  class="nav-item text-sm">Dealers</a>
   </div>
 </div>
 
@@ -119,20 +153,22 @@
   <span x-show="sidebarOpen" class="truncate">Media Library</span>
 </a>
 
-<!-- Navigation Links -->
-<a href="{% url 'nav_link_list' %}" class="nav-item {% if active == 'nav_links' %}active{% endif %} mt-1">
-  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-    <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
-  </svg>
-  <span x-show="sidebarOpen" class="truncate">Navigation</span>
-</a>
-
 <!-- Users -->
 <a href="{% url 'user_list' %}" class="nav-item {% if active == 'users' %}active{% endif %} mt-1">
   <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
     <path stroke-linecap="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
   </svg>
   <span x-show="sidebarOpen" class="truncate">Users & Roles</span>
+</a>
+
+<!-- Help (always last) -->
+<a href="{% url 'help_index' %}" class="nav-item {% if active == 'help' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="3.5"/>
+    <path stroke-linecap="round" d="M5.64 5.64l3.05 3.05m6.62 6.62l3.05 3.05m0-12.72l-3.05 3.05m-6.62 6.62l-3.05 3.05"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Help</span>
 </a>
 
 {% endwith %}

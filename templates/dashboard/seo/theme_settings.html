@@ -1,0 +1,305 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Theme Settings{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO & Settings</span><span class="text-gray-300">/</span><span>Theme Settings</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6" x-data="{ tab: 'colors' }">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Theme Settings</h1>
+    <p class="text-xs text-gray-400">Controls colors, fonts, button styles and layout tokens used across the frontend.</p>
+  </div>
+
+  <div class="rounded-2xl border border-amber-200/60 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20 p-4 text-xs text-amber-800 dark:text-amber-200 flex gap-2">
+    <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.502-3.032-1.502-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+    <div>
+      <strong>Pre-filled with the current approved design.</strong> Every value below already matches what's live in the frontend today (colors from the "Approved Sanish Palette", fonts, pill-shaped buttons, container width — sourced from <code>design.md</code> and the production CSS). Saving here only updates the CMS — it does not modify any frontend code or file. Frontend wiring to make these values actually drive the live site is a separate step.
+    </div>
+  </div>
+
+  <!-- Tab strip -->
+  <div class="flex gap-1 p-1 bg-gray-100 dark:bg-[#1A1725] rounded-2xl">
+    {% for tab_key, tab_label in tabs %}
+    <button type="button" @click="tab = '{{ tab_key }}'"
+      :class="tab === '{{ tab_key }}' ? 'bg-white dark:bg-[#23202E] shadow text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+      class="flex-1 py-2 px-3 text-[12px] font-semibold rounded-xl transition-all">
+      {{ tab_label }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- ── Colors ────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'colors'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Brand Colors</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Primary Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="primary_color" value="{{ s.primary_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.primary_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Buttons, links, CTAs, active-nav indicator</p>
+          </div>
+          <div><label class="form-label">Secondary Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="secondary_color" value="{{ s.secondary_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.secondary_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Sanish Blue — secondary brand color</p>
+          </div>
+          <div><label class="form-label">Accent Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="accent_color" value="{{ s.accent_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.accent_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Badges, tags, secondary highlights</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 pt-1">
+          {% for hex, role in s.approved_palette_swatches %}
+          <div class="flex flex-col items-center gap-1">
+            <div class="w-8 h-8 rounded-full border border-black/5" style="background:{{ hex }}"></div>
+            <span class="text-[10px] text-gray-400">{{ role }}</span>
+          </div>
+          {% endfor %}
+          <p class="text-[11px] text-gray-400 ml-2">↑ the 4 approved Sanish brand colors (design.md)</p>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Text & Links</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Heading Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="heading_color" value="{{ s.heading_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.heading_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+          <div><label class="form-label">Body Text Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="text_color" value="{{ s.text_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.text_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+          <div><label class="form-label">Link Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="link_color" value="{{ s.link_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.link_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+          <div><label class="form-label">Link Hover Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="link_hover_color" value="{{ s.link_hover_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.link_hover_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Sanish Pink — hover / focus / active state everywhere on the site</p>
+          </div>
+        </div>
+        <p class="text-sm" style="font-family:'Heebo',sans-serif;">
+          <span style="color:{{ s.text_color }}">Body copy preview — </span>
+          <a href="#" onclick="return false" style="color:{{ s.link_color }}" onmouseover="this.style.color='{{ s.link_hover_color }}'" onmouseout="this.style.color='{{ s.link_color }}'">a sample link</a>
+          <span style="color:{{ s.text_color }}"> inside a sentence, with </span>
+          <span style="color:{{ s.heading_color }}; font-weight:600;">a heading-colored phrase</span>.
+        </p>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Backgrounds</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Page Background</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="background_color" value="{{ s.background_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.background_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+          <div><label class="form-label">Header Background</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="header_bg_color" value="{{ s.header_bg_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.header_bg_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Header is a frosted-glass bar (white, ~86–94% opacity + blur) — this is its flat approximation</p>
+          </div>
+          <div><label class="form-label">Footer Background</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="footer_bg_color" value="{{ s.footer_bg_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.footer_bg_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+            <p class="form-hint">Footer uses a soft pink→purple gradient fading into this color — flat approximation</p>
+          </div>
+          <div><label class="form-label">Footer Text Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="footer_text_color" value="{{ s.footer_text_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.footer_text_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Typography ────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'typography'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Fonts</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Heading Font</label>
+            <select name="heading_font" class="form-input">
+              {% for value, label in s.FONT_CHOICES %}
+              <option value="{{ value }}" {% if s.heading_font == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <p class="form-hint">Production display face is a licensed font called “Vogue”; Bodoni Moda is the automatic Google Fonts fallback used whenever Vogue isn't installed</p>
+          </div>
+          <div><label class="form-label">Body Font</label>
+            <select name="body_font" class="form-input">
+              {% for value, label in s.FONT_CHOICES %}
+              <option value="{{ value }}" {% if s.body_font == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <p class="form-hint">Also used for nav, buttons and labels site-wide</p>
+          </div>
+        </div>
+        <div><label class="form-label">Base Font Size</label>
+          <select name="base_font_size" class="form-input max-w-xs">
+            {% for value, label in s.BASE_FONT_SIZE_CHOICES %}
+            <option value="{{ value }}" {% if s.base_font_size == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-3">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Preview</h2>
+        <div class="p-5 rounded-2xl bg-gray-50 dark:bg-black/20 space-y-2">
+          <p style="font-family:'{{ s.heading_font }}',serif; font-size:32px; color:{{ s.heading_color }}; line-height:1.15;">The quick brown fox</p>
+          <p style="font-family:'{{ s.body_font }}',sans-serif; font-size:{{ s.base_font_size }}; color:{{ s.text_color }}; line-height:1.7;">Jumps over the lazy dog — this is how body copy will read at the selected size and font.</p>
+        </div>
+        <p class="form-hint">Font names must match a Google Fonts family for the preview/frontend to load them automatically.</p>
+      </div>
+    </div>
+
+    <!-- ── Buttons ───────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'buttons'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Button Style</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Style</label>
+            <select name="button_style" class="form-input">
+              {% for value, label in s.BUTTON_STYLE_CHOICES %}
+              <option value="{{ value }}" {% if s.button_style == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div><label class="form-label">Corner Radius</label>
+            <select name="button_radius" class="form-input">
+              {% for value, label in s.BUTTON_RADIUS_CHOICES %}
+              <option value="{{ value }}" {% if s.button_radius == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div><label class="form-label">Hover Effect</label>
+            <select name="button_hover_effect" class="form-input">
+              {% for value, label in s.BUTTON_HOVER_CHOICES %}
+              <option value="{{ value }}" {% if s.button_hover_effect == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div><label class="form-label">Button Text Color</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="button_text_color" value="{{ s.button_text_color }}" class="h-10 w-14 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer" oninput="this.nextElementSibling.value=this.value"/>
+              <input type="text" value="{{ s.button_text_color }}" class="form-input font-mono text-sm flex-1" oninput="this.previousElementSibling.value=this.value"/>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Preview — your selected style</label>
+          <div class="flex flex-wrap items-center gap-3 p-5 rounded-2xl bg-gray-50 dark:bg-black/20">
+            <button type="button"
+              class="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] transition-all"
+              style="border-radius:{{ s.button_radius }};
+                     {% if s.button_style == 'outline' %}background:transparent; border:1.5px solid {{ s.primary_color }}; color:{{ s.primary_color }};
+                     {% elif s.button_style == 'ghost' %}background:transparent; color:{{ s.primary_color }}; border:none;
+                     {% elif s.button_style == 'soft' %}background:color-mix(in srgb, {{ s.primary_color }} 15%, white); color:{{ s.primary_color }}; border:none;
+                     {% else %}background:{{ s.primary_color }}; color:{{ s.button_text_color }}; border:none;{% endif %}"
+              onmouseover="{% if s.button_hover_effect == 'swap' %}this.style.background='{{ s.link_hover_color }}'; this.style.borderColor='{{ s.link_hover_color }}'; {% if s.button_style == 'ghost' or s.button_style == 'outline' or s.button_style == 'soft' %}this.style.color='{{ s.link_hover_color }}';{% endif %}{% elif s.button_hover_effect == 'darken' %}this.style.filter='brightness(0.85)';{% elif s.button_hover_effect == 'lighten' %}this.style.filter='brightness(1.15)';{% elif s.button_hover_effect == 'scale' %}this.style.transform='translateY(-2px) scale(1.03)';{% endif %}"
+              onmouseout="this.style.filter='none'; this.style.transform='none';
+                     {% if s.button_style == 'outline' %}this.style.background='transparent'; this.style.borderColor='{{ s.primary_color }}'; this.style.color='{{ s.primary_color }}';
+                     {% elif s.button_style == 'ghost' %}this.style.background='transparent'; this.style.color='{{ s.primary_color }}';
+                     {% elif s.button_style == 'soft' %}this.style.color='{{ s.primary_color }}';
+                     {% else %}this.style.background='{{ s.primary_color }}'; this.style.color='{{ s.button_text_color }}';{% endif %}">
+              Get In Touch
+            </button>
+            <span class="text-xs text-gray-400">Hover to preview</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Reference — button variants currently used on the live site</label>
+          <p class="form-hint mb-2">The frontend's <code>Button</code> component has 4 fixed variants; all share the pill shape and only swap color per variant. This is read-only reference — always mirrors production, not your settings above.</p>
+          <div class="flex flex-wrap items-center gap-3 p-5 rounded-2xl" style="background:linear-gradient(135deg,#24262b,#3a3d45);">
+            <button type="button" disabled class="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.14em]" style="border-radius:9999px; background:#AC8CC0; color:#fff;">Primary</button>
+            <button type="button" disabled class="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] bg-white/5" style="border-radius:9999px; border:1.5px solid rgba(255,255,255,0.35); color:#fff;">Ghost</button>
+            <button type="button" disabled class="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.14em]" style="border-radius:9999px; background:rgba(255,255,255,0.95); color:#AC8CC0;">Light</button>
+            <button type="button" disabled class="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.14em]" style="border-radius:9999px; background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.35); color:#fff; backdrop-filter:blur(6px);">Glass</button>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-1.5">Primary → main CTAs. Ghost → secondary actions on light backgrounds. Light / Glass → CTAs placed over photos and dark hero sections.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Layout ────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'layout'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Layout & Shape</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="form-label">Container Width</label>
+            <select name="container_max_width" class="form-input">
+              {% for value, label in s.CONTAINER_WIDTH_CHOICES %}
+              <option value="{{ value }}" {% if s.container_max_width == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <p class="form-hint">Matches <code>.site-container</code> max-width in globals.css</p>
+          </div>
+          <div><label class="form-label">Global Corner Radius</label>
+            <select name="border_radius" class="form-input">
+              {% for value, label in s.RADIUS_CHOICES %}
+              <option value="{{ value }}" {% if s.border_radius == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <p class="form-hint">Cards on the live site use 18–24px radii — 20px is the most common</p>
+          </div>
+          <div><label class="form-label">Card Shadow</label>
+            <select name="card_shadow_style" class="form-input max-w-xs">
+              {% for value, label in s.SHADOW_CHOICES %}
+              <option value="{{ value }}" {% if s.card_shadow_style == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Preview</label>
+          <div class="p-6 rounded-2xl bg-gray-50 dark:bg-black/20 flex justify-center">
+            <div class="bg-white p-5 w-64 text-center"
+                 style="border-radius:{{ s.border_radius }};
+                        {% if s.card_shadow_style == 'none' %}box-shadow:none; border:1px solid rgba(0,0,0,0.08);
+                        {% elif s.card_shadow_style == 'medium' %}box-shadow:0 8px 24px rgba(0,0,0,0.12);
+                        {% elif s.card_shadow_style == 'strong' %}box-shadow:0 16px 40px rgba(0,0,0,0.2);
+                        {% else %}box-shadow:0 4px 16px rgba(0,0,0,0.06);{% endif %}">
+              <div class="h-20 rounded-xl mb-3" style="background:{{ s.background_color }}; border-radius:{{ s.border_radius }};"></div>
+              <p class="text-sm font-semibold" style="color:{{ s.heading_color }}">Sample Card</p>
+              <p class="text-xs" style="color:{{ s.text_color }}">Card shadow &amp; radius preview</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit" class="btn-primary">Save Theme Settings</button>
+      <span class="text-xs text-gray-400">Changes reflect on the frontend immediately after the Next.js cache revalidates (or on next request in dev mode).</span>
+    </div>
+  </form>
+</div>
+{% endblock %}

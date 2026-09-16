@@ -1,0 +1,123 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}{% if project %}Edit{% else %}New{% endif %} Case Study{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'application_category_list' %}" class="hover:text-accent">Applications</a><span class="text-gray-300">/</span><a href="{% url 'application_project_list' %}" class="hover:text-accent">Case Studies</a><span class="text-gray-300">/</span><span>{% if project %}{{ project.label }}{% else %}New{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-3xl mx-auto space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if project %}Edit Case Study{% else %}New Case Study{% endif %}</h1>
+    <div class="flex gap-3">
+      <a href="{% url 'application_project_list' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Project Name *</label>
+      <input type="text" name="label" value="{{ project.label|default:'' }}" required class="form-input" placeholder="Modern Kitchen"/>
+    </div>
+
+    {% if not project %}
+    <div>
+      <label class="form-label">Slug *</label>
+      <input type="text" name="slug" required class="form-input" placeholder="modern-kitchen-gloss"/>
+      <p class="form-hint">Used in the case-study URL. Cannot be changed later.</p>
+    </div>
+    {% else %}
+    <div>
+      <label class="form-label">Slug</label>
+      <input type="text" value="{{ project.slug }}" class="form-input" disabled/>
+    </div>
+    {% endif %}
+
+    <div>
+      <label class="form-label">Category *</label>
+      <select name="category" required class="form-input form-select">
+        {% for c in categories %}
+        <option value="{{ c.pk }}" {% if project.category_id == c.pk %}selected{% endif %}>{{ c.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label">Finish <span class="normal-case font-normal text-gray-400">(shown on the card)</span></label>
+      <input type="text" name="finish" value="{{ project.finish|default:'' }}" class="form-input" placeholder="High Gloss White"/>
+    </div>
+
+    <div>
+      <label class="form-label">Hero Image</label>
+      <div class="mp-field" x-data="{ v: '{{ project.image|default:''|escapejs }}' }">
+        <div class="flex gap-2">
+          <input type="text" name="image" x-model="v" class="form-input flex-1" placeholder="Path or URL"/>
+          <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                  onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+            Media Library
+          </button>
+        </div>
+        <template x-if="v">
+          <img :src="v" alt="" class="mt-2 h-28 rounded-xl object-cover border border-surface-200 dark:border-dark-600"/>
+        </template>
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="tall" {% if project.tall %}checked{% endif %} class="rounded border-gray-300"/>
+      <span>Tall layout tile (masonry grid)</span>
+    </label>
+
+    <div>
+      <label class="form-label">Description</label>
+      <textarea name="description" rows="4" class="form-input resize-y">{{ project.description|default:'' }}</textarea>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Location</label>
+        <input type="text" name="location" value="{{ project.location|default:'' }}" class="form-input" placeholder="Delhi NCR, India"/>
+      </div>
+      <div>
+        <label class="form-label">Year</label>
+        <input type="text" name="year" value="{{ project.year|default:'' }}" class="form-input" placeholder="2025"/>
+      </div>
+      <div>
+        <label class="form-label">Designer <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+        <input type="text" name="designer" value="{{ project.designer|default:'' }}" class="form-input"/>
+      </div>
+      <div>
+        <label class="form-label">Area <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+        <input type="text" name="area" value="{{ project.area|default:'' }}" class="form-input" placeholder="320 sq ft"/>
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="enabled" {% if not project or project.enabled %}checked{% endif %} class="rounded border-gray-300"/>
+      <span>Visible on the site</span>
+    </label>
+  </div>
+
+  <div class="card space-y-4">
+    <label class="form-label">Gallery Images</label>
+    {% include "dashboard/homepage/_repeater.html" with field=gallery_field %}
+  </div>
+
+  <div class="card space-y-4">
+    <label class="form-label">Highlights</label>
+    {% include "dashboard/homepage/_repeater.html" with field=highlights_field %}
+  </div>
+
+  <div class="card space-y-4">
+    <label class="form-label">Products Used</label>
+    {% include "dashboard/homepage/_repeater.html" with field=products_field %}
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'application_project_list' %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+</form>
+
+{% include "dashboard/partials/media_picker.html" %}
+{% endblock %}

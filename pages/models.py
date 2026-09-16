@@ -218,6 +218,10 @@ class SitePage(models.Model):
         default=True,
         help_text="System pages cannot be deleted from the CMS.",
     )
+    is_published = models.BooleanField(
+        default=True,
+        help_text="Unpublished (draft) pages return 404 on the live site.",
+    )
     # A few pages have their block editor elsewhere (the Home page keeps its own
     # HomeSection-based editor). When set, the CMS list links straight to it.
     external_url_name = models.CharField(max_length=80, blank=True)

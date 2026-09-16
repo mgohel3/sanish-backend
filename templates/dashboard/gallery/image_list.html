@@ -1,0 +1,144 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}{{ catalogue.label }} Photos{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'gallery_catalogue_list' %}" class="hover:text-accent">Design Gallery</a><span class="text-gray-300">/</span><span>{{ catalogue.label }}</span>{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ catalogue.label }} — Photos</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Drag to reorder. Upload new photos, edit each one's product code, or remove one.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'gallery_catalogue_edit' catalogue.pk %}" class="btn-ghost">Catalogue Settings</a>
+      <label class="btn-primary cursor-pointer">
+        + Upload Photos
+        <input type="file" id="upload-input" accept="image/*" multiple class="hidden"/>
+      </label>
+    </div>
+  </div>
+
+  <div id="upload-progress" class="hidden text-sm text-gray-500"></div>
+
+  <form method="post" id="codes-form">
+    {% csrf_token %}
+    <div class="flex justify-end mb-3">
+      <button type="submit" class="btn-secondary text-xs">Save Product Codes</button>
+    </div>
+    <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {% for img in images %}
+      <div class="gallery-photo bg-white dark:bg-[#23202E] rounded-2xl shadow-card overflow-hidden" data-id="{{ img.pk }}">
+        <div class="drag-handle cursor-grab relative bg-gray-100 dark:bg-dark-700" style="aspect-ratio: 1/1;">
+          <img src="{{ img.image|cms_preview_src }}" alt="" class="w-full h-full object-cover pointer-events-none"/>
+          <button type="button" class="photo-delete absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500" data-id="{{ img.pk }}" title="Delete">
+            &times;
+          </button>
+        </div>
+        <div class="p-2">
+          <input type="text" name="product_id_{{ img.pk }}" value="{{ img.product_id }}" class="form-input text-xs py-1" placeholder="Code"/>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-gray-400 py-12 text-center col-span-full">No photos yet — upload some above.</p>
+      {% endfor %}
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    var grid = document.getElementById('image-grid');
+    var uploadInput = document.getElementById('upload-input');
+    var progress = document.getElementById('upload-progress');
+    var uploadUrl = "{% url 'gallery_image_upload' catalogue.pk %}";
+    var reorderUrl = "{% url 'gallery_image_reorder' catalogue.pk %}";
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    function makeCard(id, src, productId) {
+      var div = document.createElement('div');
+      div.className = 'gallery-photo bg-white dark:bg-[#23202E] rounded-2xl shadow-card overflow-hidden';
+      div.dataset.id = id;
+      div.innerHTML =
+        '<div class="drag-handle cursor-grab relative bg-gray-100 dark:bg-dark-700" style="aspect-ratio: 1/1;">' +
+          '<img src="' + src + '" alt="" class="w-full h-full object-cover pointer-events-none"/>' +
+          '<button type="button" class="photo-delete absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500" data-id="' + id + '" title="Delete">&times;</button>' +
+        '</div>' +
+        '<div class="p-2">' +
+          '<input type="text" name="product_id_' + id + '" value="' + productId + '" class="form-input text-xs py-1" placeholder="Code"/>' +
+        '</div>';
+      return div;
+    }
+
+    uploadInput.addEventListener('change', function () {
+      var files = Array.from(uploadInput.files || []);
+      if (files.length === 0) return;
+      progress.classList.remove('hidden');
+      var done = 0;
+
+      function uploadNext(i) {
+        if (i >= files.length) {
+          progress.textContent = 'Done — uploaded ' + done + ' of ' + files.length + '.';
+          setTimeout(function () { progress.classList.add('hidden'); }, 3000);
+          uploadInput.value = '';
+          return;
+        }
+        progress.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
+        var fd = new FormData();
+        fd.append('file', files[i]);
+        fd.append('csrfmiddlewaretoken', csrfToken);
+        fetch(uploadUrl, { method: 'POST', body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.id) {
+              grid.appendChild(makeCard(data.id, data.src, data.product_id || ''));
+              done++;
+            }
+          })
+          .catch(function () {})
+          .finally(function () { uploadNext(i + 1); });
+      }
+      uploadNext(0);
+    });
+
+    grid.addEventListener('click', function (e) {
+      var btn = e.target.closest('.photo-delete');
+      if (!btn) return;
+      if (!confirm('Delete this photo?')) return;
+      var id = btn.dataset.id;
+      var deleteUrl = "{% url 'gallery_image_delete' catalogue.pk 999999999 %}".replace('999999999', id);
+      fetch(deleteUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+      }).then(function (r) {
+        if (r.ok) {
+          var card = grid.querySelector('.gallery-photo[data-id="' + id + '"]');
+          if (card) card.remove();
+        }
+      });
+    });
+
+    if (typeof Sortable !== 'undefined') {
+      Sortable.create(grid, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function () {
+          var order = Array.from(grid.children)
+            .filter(function (el) { return el.dataset && el.dataset.id; })
+            .map(function (el) { return el.dataset.id; });
+          fetch(reorderUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ order: order }),
+          });
+        },
+      });
+    }
+  })();
+</script>
+{% endblock %}

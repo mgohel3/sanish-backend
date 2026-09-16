@@ -1,0 +1,79 @@
+{% comment %}
+Live preview panel for the block edit form (homepage/form.html and
+pages/form.html both include this). Embeds the real Next.js frontend
+rendering this exact block, and keeps it in sync with the form's current
+field values via postMessage — no page reload needed to see a change.
+
+Requires the including template to:
+  - wrap the form + this include in a `.xl:grid-cols-[...]` two-column div
+  - give the fields `<div class="card space-y-5">` the id `block-fields`
+  - populate `window.__ckEditors[fieldName] = editorInstance` for any CKEditor
+{% endcomment %}
+<div class="hidden xl:block sticky top-6 self-start">
+  <div class="card p-0 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-100 dark:border-dark-700/60 flex items-center justify-between">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Live Preview</span>
+      <a href="{{ FRONTEND_URL }}/cms-preview/block?type={{ block_type }}" target="_blank" rel="noopener" class="text-xs text-accent hover:underline">Open ↗</a>
+    </div>
+    <iframe id="block-live-preview" src="{{ FRONTEND_URL }}/cms-preview/block?type={{ block_type }}"
+            style="width:100%; height:70vh; min-height:480px; border:0; background:#fff;"
+            title="Live block preview"></iframe>
+  </div>
+  <p class="text-xs text-gray-400 mt-2">Updates as you type. Save the block to publish it.</p>
+</div>
+
+<script>
+(function () {
+  var iframe = document.getElementById('block-live-preview');
+  var fieldsRoot = document.getElementById('block-fields');
+  if (!iframe) return;
+
+  var PREVIEW_SOURCE = 'sanish-cms-preview';
+  var ckEditors = window.__ckEditors = window.__ckEditors || {};
+  var iframeReady = false;
+
+  function collectContent() {
+    var content = {};
+    if (!fieldsRoot) return content;
+    fieldsRoot.querySelectorAll('[name]').forEach(function (el) {
+      var name = el.name;
+      if (name.slice(-5) === '_json') {
+        var base = name.slice(0, -5);
+        try { content[base] = JSON.parse(el.value || '[]'); } catch (e) { content[base] = []; }
+        return;
+      }
+      if (el.type === 'checkbox') { content[name] = el.checked; return; }
+      if (el.tagName === 'TEXTAREA' && ckEditors[name]) { content[name] = ckEditors[name].getData(); return; }
+      content[name] = el.value;
+    });
+    return content;
+  }
+
+  function sendContent() {
+    if (!iframeReady || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage({ source: PREVIEW_SOURCE, type: 'content', content: collectContent() }, '*');
+  }
+
+  var debounceId;
+  function scheduleSend() {
+    clearTimeout(debounceId);
+    debounceId = setTimeout(sendContent, 120);
+  }
+
+  window.addEventListener('message', function (e) {
+    var msg = e.data;
+    if (!msg || msg.source !== PREVIEW_SOURCE) return;
+    if (msg.type === 'ready') { iframeReady = true; sendContent(); }
+  });
+
+  if (fieldsRoot) {
+    fieldsRoot.addEventListener('input', scheduleSend);
+    fieldsRoot.addEventListener('change', scheduleSend);
+  }
+
+  // Safety net for changes that don't dispatch a bubbling input/change event
+  // on a named field — Alpine repeater add/remove/reorder buttons, and
+  // CKEditor keystrokes (its editable region isn't a form-field <textarea>).
+  setInterval(scheduleSend, 400);
+})();
+</script>

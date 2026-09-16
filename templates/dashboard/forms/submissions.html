@@ -1,0 +1,39 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ form_obj.name }} · Submissions{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'form_list' %}" class="hover:text-accent">Forms</a><span class="text-gray-300">/</span><span>{{ form_obj.name }} Submissions</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ form_obj.name }} — Submissions</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Read-only. {{ submissions.count }} total.</p>
+    </div>
+    <a href="{% url 'form_field_list' form_obj.slug %}" class="btn-ghost">Manage fields</a>
+  </div>
+
+  <div class="card p-0 overflow-hidden">
+    <ul class="divide-y divide-gray-50 dark:divide-dark-700/60">
+      {% for s in submissions %}
+      <li class="px-5 py-4 bg-white dark:bg-dark-800">
+        <div class="flex items-center justify-between gap-4 mb-2">
+          <span class="text-xs text-gray-400">{{ s.created }}</span>
+          {% if s.source_page %}<span class="text-xs text-gray-400 truncate">{{ s.source_page }}</span>{% endif %}
+        </div>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          {% for key, value in s.data.items %}
+          <div class="flex gap-2">
+            <dt class="font-medium text-gray-500 dark:text-gray-400">{{ key }}:</dt>
+            <dd class="text-gray-900 dark:text-white truncate">{{ value }}</dd>
+          </div>
+          {% endfor %}
+        </dl>
+      </li>
+      {% empty %}
+      <li class="px-5 py-10 text-center text-gray-400 text-sm">No submissions yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

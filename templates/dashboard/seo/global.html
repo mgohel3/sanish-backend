@@ -27,11 +27,63 @@
     <!-- Analytics / Pixels -->
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
       <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Analytics & Pixels</h2>
+      <p class="form-hint">Paste just the ID/code — like the WordPress "Site Kit" plugin, the site automatically injects the right script for you. No template edits needed.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><label class="form-label">Google Analytics 4 (G-...)</label><input type="text" name="ga4_code" value="{{ settings.ga4_code }}" class="form-input font-mono" placeholder="G-XXXXXXXXXX"/></div>
-        <div><label class="form-label">Google Tag Manager (GTM-...)</label><input type="text" name="gtm_code" value="{{ settings.gtm_code }}" class="form-input font-mono" placeholder="GTM-XXXXXXX"/></div>
-        <div><label class="form-label">Facebook Pixel ID</label><input type="text" name="fb_pixel_code" value="{{ settings.fb_pixel_code }}" class="form-input font-mono"/></div>
-        <div><label class="form-label">Microsoft Clarity ID</label><input type="text" name="clarity_code" value="{{ settings.clarity_code }}" class="form-input font-mono"/></div>
+        <div>
+          <label class="form-label">Google Analytics 4 (G-...)</label>
+          <input type="text" name="ga4_code" value="{{ settings.ga4_code }}" class="form-input font-mono" placeholder="G-XXXXXXXXXX"/>
+          <p class="form-hint">Analytics → Admin → Data Streams → your stream → "Measurement ID".</p>
+        </div>
+        <div>
+          <label class="form-label">Google Tag Manager (GTM-...)</label>
+          <input type="text" name="gtm_code" value="{{ settings.gtm_code }}" class="form-input font-mono" placeholder="GTM-XXXXXXX"/>
+          <p class="form-hint">tagmanager.google.com → Container ID, shown top-right.</p>
+        </div>
+        <div>
+          <label class="form-label">Google Search Console verification</label>
+          <input type="text" name="gsc_verification_code" value="{{ settings.gsc_verification_code }}" class="form-input font-mono" placeholder="e.g. AbCdEf123..."/>
+          <p class="form-hint">Search Console → Settings → Ownership verification → HTML tag method → paste only the <code>content="..."</code> value, not the full tag.</p>
+        </div>
+        <div>
+          <label class="form-label">Microsoft Clarity project ID</label>
+          <input type="text" name="clarity_code" value="{{ settings.clarity_code }}" class="form-input font-mono" placeholder="e.g. abcd1234ef"/>
+          <p class="form-hint">clarity.microsoft.com → Settings → Setup → "Project ID".</p>
+        </div>
+        <div>
+          <label class="form-label">Facebook Pixel ID</label>
+          <input type="text" name="fb_pixel_code" value="{{ settings.fb_pixel_code }}" class="form-input font-mono"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- reCAPTCHA -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">reCAPTCHA (Spam Protection)</h2>
+      <p class="form-hint">Blocks bot/spam submissions on every form (Contact, Inquiry Popup, Sample Request, and any CMS-built form). Get free keys at <code>google.com/recaptcha/admin</code>.</p>
+      <div>
+        <label class="form-label">Version</label>
+        <select name="recaptcha_version" class="form-input">
+          {% for value, label in settings.RECAPTCHA_VERSION_CHOICES %}
+            <option value="{{ value }}" {% if settings.recaptcha_version == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">v3 is invisible (recommended — no checkbox shown to visitors). v2 shows the classic "I'm not a robot" checkbox.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Site Key</label>
+          <input type="text" name="recaptcha_site_key" value="{{ settings.recaptcha_site_key }}" class="form-input font-mono"/>
+        </div>
+        <div>
+          <label class="form-label">Secret Key</label>
+          <input type="password" name="recaptcha_secret_key" value="{{ settings.recaptcha_secret_key }}" class="form-input font-mono" autocomplete="off"/>
+          <p class="form-hint">Never shown on the public site — used only for server-side verification.</p>
+        </div>
+        <div>
+          <label class="form-label">v3 Minimum Score (0.0–1.0)</label>
+          <input type="number" step="0.01" min="0" max="1" name="recaptcha_v3_min_score" value="{{ settings.recaptcha_v3_min_score }}" class="form-input font-mono"/>
+          <p class="form-hint">v3 only — submissions scoring below this are rejected as spam. Google recommends 0.5.</p>
+        </div>
       </div>
     </div>
 

@@ -1,0 +1,83 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}{% if category %}Edit{% else %}New{% endif %} Application Category{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'application_category_list' %}" class="hover:text-accent">Applications</a><span class="text-gray-300">/</span><span>{% if category %}{{ category.label }}{% else %}New{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if category %}Edit Category{% else %}New Category{% endif %}</h1>
+    <div class="flex gap-3">
+      <a href="{% url 'application_category_list' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Label *</label>
+      <input type="text" name="label" value="{{ category.label|default:'' }}" required class="form-input" placeholder="Kitchens"/>
+    </div>
+
+    {% if not category %}
+    <div>
+      <label class="form-label">Slug *</label>
+      <input type="text" name="slug" required class="form-input" placeholder="kitchens"/>
+      <p class="form-hint">Used in the URL /applications/&lt;slug&gt;. Cannot be changed later.</p>
+    </div>
+    {% else %}
+    <div>
+      <label class="form-label">Slug</label>
+      <input type="text" value="{{ category.slug }}" class="form-input" disabled/>
+    </div>
+    {% endif %}
+
+    <div>
+      <label class="form-label">Description</label>
+      <textarea name="description" rows="3" class="form-input resize-none">{{ category.description|default:'' }}</textarea>
+    </div>
+
+    <div>
+      <label class="form-label">Accent Colour <span class="normal-case font-normal text-gray-400">(hex, used on cards/badges)</span></label>
+      <input type="text" name="accent" value="{{ category.accent|default:'' }}" class="form-input" placeholder="#85addc"/>
+    </div>
+
+    <div>
+      <label class="form-label">Hero Image <span class="normal-case font-normal text-gray-400">(top banner)</span></label>
+      <div class="mp-field" x-data="{ v: '{{ category.image|default:''|escapejs }}' }">
+        <div class="flex gap-2">
+          <input type="text" name="image" x-model="v" class="form-input flex-1" placeholder="Path or URL"/>
+          <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                  onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+            Media Library
+          </button>
+        </div>
+        <template x-if="v">
+          <img :src="v" alt="" class="mt-2 h-28 rounded-xl object-cover border border-surface-200 dark:border-dark-600"/>
+        </template>
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="enabled" {% if not category or category.enabled %}checked{% endif %} class="rounded border-gray-300"/>
+      <span>Visible on the site</span>
+    </label>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Gallery Images</label>
+      <p class="form-hint">Upload photos for this category — add, remove or reorder them here. This is the day-to-day way to add pictures under Applications.</p>
+    </div>
+    {% include "dashboard/homepage/_repeater.html" with field=gallery_field %}
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'application_category_list' %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+</form>
+
+{% include "dashboard/partials/media_picker.html" %}
+{% endblock %}

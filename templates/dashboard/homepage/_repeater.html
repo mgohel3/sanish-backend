@@ -29,10 +29,16 @@
       </div>
 
       {% for sf in field.fields %}
-      <div>
+      <div{% if sf.hide_if %} x-show="!rows[i]['{{ sf.hide_if }}']" x-cloak{% endif %}>
         <label class="form-label !text-[10px]">{{ sf.label }}</label>
         {% if sf.type == "textarea" %}
           <textarea rows="2" class="form-input text-sm resize-y" x-model="rows[i]['{{ sf.name }}']"></textarea>
+        {% elif sf.type == "select" %}
+          <select class="form-input text-sm" x-model{% if sf.bool_select %}.boolean{% endif %}="rows[i]['{{ sf.name }}']">
+            {% for opt in sf.options %}
+            <option value="{{ opt.value }}">{{ opt.label }}</option>
+            {% endfor %}
+          </select>
         {% elif sf.type == "bool" %}
           <input type="checkbox" class="rounded border-gray-300" x-model="rows[i]['{{ sf.name }}']" />
         {% elif sf.type == "image" or sf.type == "video" or sf.type == "media" %}
@@ -45,6 +51,11 @@
           </div>
         {% else %}
           <input type="text" class="form-input text-sm" x-model="rows[i]['{{ sf.name }}']" />
+        {% endif %}
+        {% if sf.help %}<p class="text-[10px] text-gray-400 mt-1">{{ sf.help }}</p>{% endif %}
+        {% if sf.help_when_true or sf.help_when_false %}
+        <p class="text-[10px] text-gray-400 mt-1" x-show="!!rows[i]['{{ sf.show_key|default:sf.name }}']" x-cloak>{{ sf.help_when_true }}</p>
+        <p class="text-[10px] text-gray-400 mt-1" x-show="!rows[i]['{{ sf.show_key|default:sf.name }}']" x-cloak>{{ sf.help_when_false }}</p>
         {% endif %}
       </div>
       {% endfor %}

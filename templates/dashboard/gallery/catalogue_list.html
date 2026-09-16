@@ -1,0 +1,47 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}Design Gallery{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Design Gallery</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Design Gallery</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        The catalogues shown on /applications. Open one to upload, reorder or remove its photos.
+      </p>
+    </div>
+    <a href="{% url 'gallery_catalogue_create' %}" class="btn-primary">+ New Catalogue</a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for cat in catalogues %}
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+      <a href="{% url 'gallery_image_list' cat.pk %}" class="block relative bg-gray-100 dark:bg-dark-700" style="aspect-ratio: 3/2;">
+        {% if cat.cover_image %}
+        <img src="{{ cat.cover_image|cms_preview_src }}" alt="" class="w-full h-full object-cover"/>
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">No cover set</div>
+        {% endif %}
+      </a>
+      <div class="p-4 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-gray-800 dark:text-white">{{ cat.label }}</span>
+          {% if cat.enabled %}<span class="badge badge-green">Enabled</span>
+          {% else %}<span class="badge badge-yellow">Hidden</span>{% endif %}
+        </div>
+        <p class="text-xs text-gray-400 font-mono">{{ cat.slug }}</p>
+        <p class="text-xs text-gray-500">{{ cat.images.count }} photo{{ cat.images.count|pluralize }}</p>
+        <div class="flex items-center gap-2 pt-2">
+          <a href="{% url 'gallery_image_list' cat.pk %}" class="btn-primary py-1.5 px-3 text-xs flex-1 text-center">Manage Photos</a>
+          <a href="{% url 'gallery_catalogue_edit' cat.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Settings</a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-400 py-12 text-center col-span-full">No catalogues yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

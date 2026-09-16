@@ -1,0 +1,41 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Help{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Help</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto pb-24">
+
+  {% include "dashboard/help/_topnav.html" %}
+
+  <div class="lg:flex lg:gap-10 lg:items-start">
+
+    {# ── Welcome content ─────────────────────────────────────── #}
+    <div class="min-w-0 flex-1 max-w-[720px]">
+      <p class="text-xs font-semibold uppercase tracking-wide text-accent mb-1">Help Center</p>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Sanish CMS Help Center</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        For the Sanish team only — not shown to website visitors. Pick a section on the right, or jump into a topic below.
+      </p>
+
+      <article class="help-prose">
+        {{ landing_html|safe }}
+      </article>
+    </div>
+
+    {# ── Browse by section (mirrors the "On this page" rail on article pages) ── #}
+    <aside class="lg:w-72 flex-shrink-0 lg:sticky lg:top-6">
+      <p class="px-1 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Browse by section</p>
+      <div class="space-y-2">
+        {% for group in groups %}
+        <a href="{% url 'help_article' group.articles.0.slug %}"
+           class="block px-4 py-3 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-700/40 hover:border-accent/40 hover:shadow-card transition-all">
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ group.title }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ group.articles|length }} page{{ group.articles|length|pluralize }}</p>
+        </a>
+        {% endfor %}
+      </div>
+    </aside>
+
+  </div>
+</div>
+{% endblock %}

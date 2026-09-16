@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib import messages
+from django.db.models import Count
 from accounts.permissions import ContentManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from catalog.models import Category, Collection
@@ -8,8 +9,11 @@ from catalog.models import Category, Collection
 
 class CategoryListView(ContentManagerRequiredMixin, View):
     def get(self, request):
+        categories = list(Category.objects.annotate(product_count=Count("products")))
         return render(request, "dashboard/categories/list.html", {
-            "categories": Category.objects.all(),
+            "categories": categories,
+            "total_categories": len(categories),
+            "total_products": sum(c.product_count for c in categories),
             "active_nav": "categories",
         })
 
@@ -78,8 +82,11 @@ class CategoryDeleteView(ContentManagerRequiredMixin, LoggedActionMixin, View):
 
 class CollectionListView(ContentManagerRequiredMixin, View):
     def get(self, request):
+        collections = list(Collection.objects.annotate(product_count=Count("products")))
         return render(request, "dashboard/collections/list.html", {
-            "collections": Collection.objects.all(),
+            "collections": collections,
+            "total_collections": len(collections),
+            "total_products": sum(c.product_count for c in collections),
             "active_nav": "collections",
         })
 
@@ -99,6 +106,7 @@ class CollectionCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View)
             seo_title=d.get("seo_title", ""),
             meta_description=d.get("meta_description", ""),
             meta_keywords=d.get("meta_keywords", ""),
+            pdf_catalog_id=d.get("pdf_catalog_id") or None,
             status=d.get("status", "draft"),
         )
         self.log_action("Created collection", col)
@@ -122,6 +130,7 @@ class CollectionEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         col.seo_title = d.get("seo_title", "")
         col.meta_description = d.get("meta_description", "")
         col.meta_keywords = d.get("meta_keywords", "")
+        col.pdf_catalog_id = d.get("pdf_catalog_id") or None
         col.status = d.get("status", "draft")
         col.save()
         self.log_action("Updated collection", col)

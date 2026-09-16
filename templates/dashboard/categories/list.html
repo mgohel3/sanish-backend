@@ -15,6 +15,7 @@
         <tr>
           <th>Name</th>
           <th>Slug</th>
+          <th>Products</th>
           <th>Status</th>
           <th class="text-right">Actions</th>
         </tr>
@@ -24,6 +25,7 @@
         <tr>
           <td class="font-medium text-gray-800 dark:text-white">{{ cat.name }}</td>
           <td class="font-mono text-xs text-gray-500">{{ cat.slug }}</td>
+          <td><a href="{% url 'product_list' %}?category={{ cat.pk }}" class="badge badge-gray hover:underline">{{ cat.product_count }} product{{ cat.product_count|pluralize }}</a></td>
           <td>
             {% if cat.status == 'published' %}<span class="badge badge-green">Published</span>
             {% else %}<span class="badge badge-yellow">Draft</span>{% endif %}
@@ -39,8 +41,15 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="py-12 text-center text-gray-400">No categories yet.</td></tr>
+        <tr><td colspan="5" class="py-12 text-center text-gray-400">No categories yet.</td></tr>
         {% endfor %}
+        {% if categories %}
+        <tr class="font-semibold bg-gray-50 dark:bg-white/5">
+          <td colspan="2">Total</td>
+          <td>{{ total_categories }} categor{{ total_categories|pluralize:"y,ies" }} · {{ total_products }} product{{ total_products|pluralize }}</td>
+          <td colspan="2"></td>
+        </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>

@@ -1,0 +1,82 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Forms{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Forms</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Forms</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Every CMS-managed form on the site. Add, remove or reorder a form's fields
+        without touching code, then point any page/block at it by its slug.
+      </p>
+    </div>
+    <a href="{% url 'form_create' %}" class="btn-primary">+ New form</a>
+  </div>
+
+  <div class="card p-0 overflow-hidden">
+    <ul class="divide-y divide-gray-50 dark:divide-dark-700/60">
+      {% for f in forms %}
+      <li class="flex items-center gap-4 px-5 py-4 bg-white dark:bg-dark-800">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-900 dark:text-white truncate">{{ f.name }}</span>
+            {% if f.is_system %}<span class="badge-gray">System</span>{% endif %}
+            {% if f.target_pipeline == "inquiry" %}<span class="badge-gray">→ Leads</span>{% endif %}
+          </div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            <code>{{ f.slug }}</code> · {{ f.fields.count }} field{{ f.fields.count|pluralize }}
+          </div>
+        </div>
+        {% if f.target_pipeline == "inquiry" %}
+        <a href="{% url 'inquiry_list' %}?type={{ f.inquiry_type|default:'contact' }}" class="btn-ghost text-xs">View in Leads</a>
+        {% else %}
+        <a href="{% url 'form_submission_list' f.slug %}" class="btn-ghost text-xs">
+          Submissions ({{ f.submissions.count }})
+        </a>
+        {% endif %}
+        <a href="{% url 'form_settings_edit' f.slug %}" class="btn-ghost text-xs">Settings</a>
+        <a href="{% url 'form_field_list' f.slug %}" class="btn-secondary text-xs">Manage fields</a>
+      </li>
+      {% empty %}
+      <li class="px-5 py-10 text-center text-gray-400 text-sm">
+        No forms yet. <a href="{% url 'form_create' %}" class="text-accent">Create the first one.</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div>
+    <h2 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">Built-in Forms</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      Forms already on the site, built directly into the code before this Forms section existed.
+      Their fields aren't editable here yet — shown so you can see every form on the site in one
+      place. Submissions still go to <a href="{% url 'inquiry_list' %}" class="text-accent">Leads</a> exactly as before.
+    </p>
+  </div>
+
+  <div class="card p-0 overflow-hidden">
+    <ul class="divide-y divide-gray-50 dark:divide-dark-700/60">
+      {% for f in legacy_forms %}
+      <li class="flex items-center gap-4 px-5 py-4 bg-white dark:bg-dark-800">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-900 dark:text-white truncate">{{ f.name }}</span>
+            <span class="badge-gray">Code-managed</span>
+          </div>
+          <div class="text-xs text-gray-400 mt-0.5">{{ f.location }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">Fields: {{ f.fields }}</div>
+        </div>
+        {% if f.inquiry_type %}
+        <a href="{% url 'inquiry_list' %}?type={{ f.inquiry_type }}" class="btn-ghost text-xs">View submissions</a>
+        {% else %}
+        <a href="{% url 'inquiry_list' %}" class="btn-ghost text-xs">View submissions</a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ article.title }} · Help{% endblock %}
+{% block breadcrumbs %}
+  <span class="text-gray-300">/</span><a href="{% url 'help_index' %}" class="hover:text-accent">Help</a>
+  <span class="text-gray-300">/</span><span>{{ article.group_title }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto pb-24">
+
+  {% include "dashboard/help/_topnav.html" with current_group_id=article.group_id current_slug=article.slug %}
+
+  <div class="lg:flex lg:gap-10 lg:items-start">
+
+    {# ── Article content ─────────────────────────────────────── #}
+    <div class="min-w-0 flex-1 max-w-[800px]">
+      <p class="text-xs font-semibold uppercase tracking-wide text-accent mb-1">{{ article.group_title }}</p>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ article.title }}</h1>
+
+      <article class="help-prose">
+        {{ article.html|safe }}
+      </article>
+
+      <div class="mt-10 pt-6 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-4">
+        {% if article.prev %}
+        <a href="{% url 'help_article' article.prev.slug %}" class="group flex-1 max-w-[48%] p-4 rounded-2xl border border-gray-100 dark:border-white/10 hover:border-accent/40 hover:bg-gray-50 dark:hover:bg-dark-700/40 transition-colors">
+          <p class="text-xs text-gray-400 mb-0.5">← Previous</p>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-accent truncate">{{ article.prev.title }}</p>
+        </a>
+        {% else %}<div></div>{% endif %}
+        {% if article.next %}
+        <a href="{% url 'help_article' article.next.slug %}" class="group flex-1 max-w-[48%] p-4 rounded-2xl border border-gray-100 dark:border-white/10 hover:border-accent/40 hover:bg-gray-50 dark:hover:bg-dark-700/40 transition-colors text-right">
+          <p class="text-xs text-gray-400 mb-0.5">Next →</p>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-accent truncate">{{ article.next.title }}</p>
+        </a>
+        {% else %}<div></div>{% endif %}
+      </div>
+    </div>
+
+    {# ── On this page ─────────────────────────────────────────── #}
+    {% if article.toc %}
+    <aside class="hidden xl:block w-56 flex-shrink-0 sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+      <p class="px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">On this page</p>
+      <nav class="space-y-0.5 text-sm">
+        {% for item in article.toc %}
+        <a href="#{{ item.id }}"
+           class="block py-1 rounded-lg text-gray-500 hover:text-accent dark:text-gray-400 dark:hover:text-white truncate {% if item.level == 2 %}px-3 font-medium{% else %}pl-6 pr-3 text-xs{% endif %}">
+          {{ item.text }}
+        </a>
+        {% endfor %}
+      </nav>
+    </aside>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

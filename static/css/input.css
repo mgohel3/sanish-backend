@@ -21,7 +21,7 @@
   .btn-primary {
     @apply inline-flex items-center gap-2 bg-accent text-white font-medium px-6 py-2.5
            rounded-pill shadow-sm hover:bg-accent-hover hover:shadow-card
-           active:scale-95 transition-all duration-150 text-sm;
+           active:scale-95 transition-all duration-150 text-sm border-0;
   }
   .btn-secondary {
     @apply inline-flex items-center gap-2 border border-accent text-accent font-medium
@@ -31,12 +31,12 @@
   .btn-ghost {
     @apply inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium
            px-4 py-2 rounded-2xl hover:bg-gray-100 dark:hover:bg-dark-700
-           active:scale-95 transition-all duration-150 text-sm;
+           active:scale-95 transition-all duration-150 text-sm border-0 bg-transparent;
   }
   .btn-danger {
     @apply inline-flex items-center gap-2 bg-red-500 text-white font-medium px-6 py-2.5
            rounded-pill shadow-sm hover:bg-red-600 hover:shadow-card
-           active:scale-95 transition-all duration-150 text-sm;
+           active:scale-95 transition-all duration-150 text-sm border-0;
   }
 
   /* ── Inputs ──────────────────────────────────────────────────────────────── */
@@ -68,6 +68,10 @@
     @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide
            text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-dark-700;
   }
+  /* .data-table th's own text-left beats a plain .text-right utility on
+     specificity, so give the aligned variants their own higher-specificity rule. */
+  .data-table th.text-right { text-align: right; }
+  .data-table th.text-center { text-align: center; }
   .data-table td {
     @apply px-4 py-3.5 border-b border-gray-50 dark:border-dark-700/50
            text-gray-700 dark:text-gray-300;

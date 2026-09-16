@@ -1,0 +1,64 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Case Studies{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'application_category_list' %}" class="hover:text-accent">Applications</a><span class="text-gray-300">/</span><span>Case Studies</span>{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Case Studies</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">The project cards shown inside each application category.</p>
+    </div>
+    <a href="{% url 'application_project_create' %}" class="btn-primary">+ New Project</a>
+  </div>
+
+  <form method="get" class="flex items-center gap-3">
+    <select name="category" class="form-input form-select max-w-xs" onchange="this.form.submit()">
+      <option value="">All categories</option>
+      {% for c in categories %}
+      <option value="{{ c.pk }}" {% if selected_category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Year</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+        <tr>
+          <td class="font-medium text-gray-800 dark:text-white">{{ p.label }}</td>
+          <td class="text-xs text-gray-500">{{ p.category.label }}</td>
+          <td class="text-xs text-gray-500">{{ p.location|default:"—" }}</td>
+          <td class="text-xs text-gray-500">{{ p.year|default:"—" }}</td>
+          <td>
+            {% if p.enabled %}<span class="badge badge-green">Enabled</span>
+            {% else %}<span class="badge badge-yellow">Hidden</span>{% endif %}
+          </td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
+              <a href="{% url 'application_project_edit' p.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
+              <form method="post" action="{% url 'application_project_delete' p.pk %}" onsubmit="return confirm('Delete “{{ p.label|escapejs }}”?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-ghost py-1.5 px-3 text-xs text-red-400">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-12 text-center text-gray-400">No projects yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

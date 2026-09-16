@@ -1,0 +1,57 @@
+{% load homepage_extras %}
+{% comment %}
+Shared "Background" controls appended to every block edit form (homepage/form.html
+and pages/form.html) — colour, and/or an image with an adjustable colour overlay.
+Lives outside each block type's own "fields" list (see
+dashboard.views.homepage.BACKGROUND_FIELDS) so every block gets it uniformly.
+Must be included inside the #block-fields container so the live-preview JS
+picks these inputs up automatically.
+{% endcomment %}
+<div class="pt-5 mt-5 border-t border-gray-100 dark:border-dark-700/60"
+     x-data="{
+       color: '{{ values|dictkey:'bg_color'|escapejs }}',
+       image: '{{ values|dictkey:'bg_image'|escapejs }}',
+       opacity: '{{ values|dictkey:'bg_overlay_opacity'|default_if_none:'40' }}' || '40',
+     }">
+  <label class="form-label">Background <span class="normal-case font-normal text-gray-400">(optional — overrides the section's default background)</span></label>
+
+  <div class="mt-3 space-y-4">
+    <!-- Colour -->
+    <div>
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Colour</p>
+      <div class="flex items-center gap-2">
+        <input type="color" x-model="color"
+               :value="color || '#ffffff'"
+               class="h-9 w-12 rounded-lg border border-surface-200 dark:border-dark-600 cursor-pointer bg-transparent p-0.5" />
+        <input type="text" name="bg_color" x-model="color" placeholder="#ffffff or blank for default"
+               class="form-input flex-1" />
+        <button type="button" class="btn-ghost text-xs whitespace-nowrap" @click="color = ''">Clear</button>
+      </div>
+    </div>
+
+    <!-- Image -->
+    <div class="mp-field">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Image <span class="font-normal">(covers the colour above; the colour becomes a tint overlay on top of it)</span></p>
+      <div class="flex gap-2">
+        <input type="text" name="bg_image" x-model="image" class="form-input flex-1" placeholder="Path or URL" />
+        <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input[name=bg_image]'), accept: 'image' })">
+          Media Library
+        </button>
+        <button type="button" class="btn-ghost text-xs whitespace-nowrap" @click="image = ''">Clear</button>
+      </div>
+      <template x-if="image">
+        <img :src="image" alt="" class="mt-2 h-20 rounded-xl object-cover border border-surface-200 dark:border-dark-600" />
+      </template>
+    </div>
+
+    <!-- Overlay opacity (only meaningful once an image is set) -->
+    <div x-show="image">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+        Colour overlay strength — <span x-text="opacity"></span>%
+      </p>
+      <input type="range" name="bg_overlay_opacity" x-model="opacity" min="0" max="100" step="5" class="w-full" />
+      <p class="form-hint">0% shows the image as-is; higher values tint/darken it with the colour above.</p>
+    </div>
+  </div>
+</div>

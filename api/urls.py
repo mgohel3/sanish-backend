@@ -8,6 +8,10 @@ from .views import (
     BlogPostListView, BlogPostDetailView,
     DealerListView, InquiryCreateView,
     RobotsView, SiteSettingsView, NavLinksView, HomePageView, SitePageView,
+    FormDefinitionView, FormSubmitView, MenuView,
+    ApplicationCategoryListView, ApplicationProjectListView, ApplicationProjectDetailView,
+    GalleryCatalogueListView, GalleryCatalogueDetailView,
+    FaqListView,
 )
 
 urlpatterns = [
@@ -39,4 +43,18 @@ urlpatterns = [
     path("homepage/", HomePageView.as_view(), name="api_homepage"),
     # CMS-managed page blocks (public read — ordered, enabled only)
     path("pages/<slug:slug>/", SitePageView.as_view(), name="api_site_page"),
+    # CMS-managed forms (public read of schema + public submit)
+    path("forms/<slug:slug>/",        FormDefinitionView.as_view(), name="api_form_detail"),
+    path("forms/<slug:slug>/submit/", FormSubmitView.as_view(),     name="api_form_submit"),
+    # CMS-managed hierarchical menus (public read)
+    path("menus/<slug:slug>/", MenuView.as_view(), name="api_menu_detail"),
+    # Applications (use-case categories + case studies)
+    path("applications/categories/",       ApplicationCategoryListView.as_view(),  name="api_application_categories"),
+    path("applications/projects/",         ApplicationProjectListView.as_view(),   name="api_application_projects"),
+    path("applications/projects/<slug:slug>/", ApplicationProjectDetailView.as_view(), name="api_application_project_detail"),
+    # Design Gallery (the real /applications catalogues — S'Shades, Thre3, etc.)
+    path("gallery/catalogues/",             GalleryCatalogueListView.as_view(),   name="api_gallery_catalogues"),
+    path("gallery/catalogues/<slug:slug>/", GalleryCatalogueDetailView.as_view(), name="api_gallery_catalogue_detail"),
+    # FAQs (public read — CMS-managed, gathered from blog posts)
+    path("faqs/", FaqListView.as_view(), name="api_faqs"),
 ]

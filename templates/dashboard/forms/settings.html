@@ -1,0 +1,148 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if form_obj %}{{ form_obj.name }} Settings{% else %}New Form{% endif %}{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'form_list' %}" class="hover:text-accent">Forms</a><span class="text-gray-300">/</span><span>{% if form_obj %}{{ form_obj.name }}{% else %}New{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+      {% if form_obj %}Form settings{% else %}New form{% endif %}
+    </h1>
+    <div class="flex gap-3">
+      {% if form_obj %}
+      <a href="{% url 'form_field_list' form_obj.slug %}" class="btn-secondary">Manage fields</a>
+      {% endif %}
+      <a href="{% url 'form_list' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  {% if form_obj %}
+  <p class="text-sm text-gray-500 dark:text-gray-400 -mt-2">
+    This page is for form-level settings. To add, remove or reorder this form's fields, use
+    <a href="{% url 'form_field_list' form_obj.slug %}" class="text-accent">Manage fields</a>.
+  </p>
+  {% endif %}
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Form name</label>
+      <input type="text" name="name" value="{{ form_obj.name|default:'' }}" class="form-input" required />
+    </div>
+
+    {% if not form_obj %}
+    <div>
+      <label class="form-label">Slug</label>
+      <input type="text" name="slug" value="" class="form-input" placeholder="quote-request" required />
+      <p class="form-hint">Used to reference this form from a page or block. Cannot be changed later.</p>
+    </div>
+    {% else %}
+    <div>
+      <label class="form-label">Slug</label>
+      <input type="text" value="{{ form_obj.slug }}" class="form-input" disabled />
+    </div>
+    {% endif %}
+
+    <div>
+      <label class="form-label">Description <span class="normal-case font-normal text-gray-400">(CMS only)</span></label>
+      <input type="text" name="description" value="{{ form_obj.description|default:'' }}" class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">Submit button label</label>
+      <input type="text" name="submit_label" value="{{ form_obj.submit_label|default:'Submit' }}" class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">Success message</label>
+      <input type="text" name="success_message" value="{{ form_obj.success_message|default:"Thank you! We'll be in touch shortly." }}" class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">Notify emails <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="notify_emails" value="{{ form_obj.notify_emails|default:'' }}" class="form-input" placeholder="sales@example.com, info@example.com" />
+      <p class="form-hint">Comma-separated. Leave blank to use the site's default notify list.</p>
+    </div>
+    <div>
+      <label class="form-label">Where submissions go</label>
+      <select name="target_pipeline" class="form-input">
+        <option value="submission" {% if not form_obj or form_obj.target_pipeline == "submission" %}selected{% endif %}>Generic submission (Forms → Submissions)</option>
+        <option value="inquiry" {% if form_obj.target_pipeline == "inquiry" %}selected{% endif %}>Leads pipeline (same as the Contact form)</option>
+      </select>
+      {% if form_obj.is_system %}
+      <p class="form-hint">This is a system form powering a live page/popup — changing this changes where its real submissions are stored.</p>
+      {% endif %}
+    </div>
+    <div>
+      <label class="form-label">Leads type <span class="normal-case font-normal text-gray-400">(only used when routing to the Leads pipeline)</span></label>
+      <select name="inquiry_type" class="form-input">
+        <option value="" {% if not form_obj.inquiry_type %}selected{% endif %}>Contact (default)</option>
+        <option value="contact" {% if form_obj.inquiry_type == "contact" %}selected{% endif %}>Contact</option>
+        <option value="dealer" {% if form_obj.inquiry_type == "dealer" %}selected{% endif %}>Dealer</option>
+        <option value="architect" {% if form_obj.inquiry_type == "architect" %}selected{% endif %}>Architect</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <h2 class="text-sm font-bold text-gray-900 dark:text-white">Auto-reply to submitter</h2>
+      <p class="form-hint mt-0.5">Automatically email the person who filled out this form, like a WordPress confirmation email.</p>
+    </div>
+    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <input type="checkbox" name="auto_reply_enabled" {% if form_obj.auto_reply_enabled %}checked{% endif %} class="rounded" />
+      Send an auto-reply email to the submitter
+    </label>
+    <div>
+      <label class="form-label">Auto-reply subject</label>
+      <input type="text" name="auto_reply_subject"
+             value="{{ form_obj.auto_reply_subject|default:default_auto_reply_subject }}"
+             class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">Auto-reply body</label>
+      <textarea name="auto_reply_body" rows="7" class="form-input">{{ form_obj.auto_reply_body|default:default_auto_reply_body }}</textarea>
+      <p class="form-hint">
+        Placeholders: <code>{% templatetag openvariable %}name{% templatetag closevariable %}</code>,
+        <code>{% templatetag openvariable %}email{% templatetag closevariable %}</code>,
+        <code>{% templatetag openvariable %}site_name{% templatetag closevariable %}</code>,
+        and <code>{% templatetag openvariable %}field_name{% templatetag closevariable %}</code> for any field's own machine name on this form.
+        The submitter's email is picked up automatically from this form's Email-type field.
+      </p>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <h2 class="text-sm font-bold text-gray-900 dark:text-white">Webhook / CRM integration</h2>
+      <p class="form-hint mt-0.5">Send every submission to an external URL as JSON — for a CRM, Zapier, Make, Google Sheets, etc.</p>
+    </div>
+    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <input type="checkbox" name="webhook_enabled" {% if form_obj.webhook_enabled %}checked{% endif %} class="rounded" />
+      Send submissions to a webhook URL
+    </label>
+    <div>
+      <label class="form-label">Webhook URL</label>
+      <input type="url" name="webhook_url" value="{{ form_obj.webhook_url|default:'' }}" class="form-input"
+             placeholder="https://hooks.example-crm.com/incoming/xxxx" />
+    </div>
+    <div>
+      <label class="form-label">Secret <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="webhook_secret" value="{{ form_obj.webhook_secret|default:'' }}" class="form-input" />
+      <p class="form-hint">
+        Sent as the <code>X-Webhook-Secret</code> header on every request, so the receiving system can verify it came from us.
+      </p>
+    </div>
+    <p class="form-hint">
+      Payload: <code>{"form": "slug", "form_name": "…", "submitted_at": "…", "source_page": "…", "data": { …every field… }}</code>
+    </p>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    {% if form_obj %}
+    <a href="{% url 'form_field_list' form_obj.slug %}" class="btn-secondary">Manage fields</a>
+    {% endif %}
+    <a href="{% url 'form_list' %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" x-data="{ dark: localStorage.getItem('sanish-theme') === 'dark' }"
+      :class="{ 'dark': dark }" class="h-full">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verify — Sanish CMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: {
+          surface: { 50:'#FBF8F5', 100:'#F6F1F8' },
+          dark:    { 900:'#1A1822', 800:'#23202E' },
+          accent:  { DEFAULT:'#8EA9C4', hover:'#7a98b5' },
+        },
+        fontFamily: { sans:['Inter','ui-sans-serif','sans-serif'] },
+      }},
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="h-full bg-surface-50 dark:bg-dark-900 font-sans flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+
+  <!-- Brand -->
+  <div class="text-center mb-8">
+    <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center mx-auto mb-4 shadow-lg ring-1 ring-gray-100">
+      <img src="{% static 'img/favicon.svg' %}" alt="Sanish Laminate" class="w-8 h-8" />
+    </div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Check your email</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      {% if email %}We sent a 6-digit code to <span class="font-medium">{{ email }}</span>{% else %}Enter the 6-digit code we emailed you{% endif %}
+    </p>
+  </div>
+
+  <!-- Card -->
+  <div class="bg-white dark:bg-dark-800 rounded-[28px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] p-8">
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium
+                {% if message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400
+                {% else %}bg-emerald-50 text-emerald-700{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">Verification code</label>
+        <input type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+               autocomplete="one-time-code" autofocus required
+               class="w-full rounded-2xl border border-gray-200 dark:border-white/10 bg-surface-50 dark:bg-dark-700
+                      px-4 py-3 text-center text-lg tracking-[0.5em] font-semibold
+                      focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20
+                      dark:text-white"/>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-accent hover:bg-[#7a98b5] text-white font-semibold py-3 rounded-[999px]
+                     shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-150 text-sm mt-2">
+        Verify &amp; Sign In
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'cms_resend_otp' %}" class="mt-4 text-center">
+      {% csrf_token %}
+      <button type="submit" class="text-xs font-medium text-accent hover:underline">
+        Didn't get it? Resend code
+      </button>
+    </form>
+  </div>
+
+  <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
+    <a href="{% url 'cms_login' %}" class="hover:underline">&larr; Back to sign in</a>
+  </p>
+</div>
+</body>
+</html>

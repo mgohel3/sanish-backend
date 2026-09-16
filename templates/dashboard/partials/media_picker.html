@@ -114,13 +114,14 @@ x-model / preview bindings update.
       get uploadAccept() {
         if (this.type === 'image') return 'image/*';
         if (this.type === 'video') return 'video/*';
+        if (this.type === 'pdf') return '.pdf';
         return 'image/*,video/*,.pdf';
       },
       open(detail) {
         this.targetEl = detail.el ||
           (detail.selector ? document.querySelector(detail.selector) : null);
         this.onSelect = typeof detail.onSelect === 'function' ? detail.onSelect : null;
-        if (detail.accept === 'image' || detail.accept === 'video') {
+        if (detail.accept === 'image' || detail.accept === 'video' || detail.accept === 'pdf') {
           this.type = detail.accept;
           this.lockType = true;
         } else {

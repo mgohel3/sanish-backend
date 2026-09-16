@@ -10,8 +10,21 @@
     <div>
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white"
-            x-data
-            x-text="(()=>{ const h=new Date().getHours(); const g=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening'; const n='{% if request.user.first_name %}{{ request.user.first_name }}{% else %}{{ request.user.username }}{% endif %}'; return g+', '+n; })()">
+            x-data="{
+              name: '{% if request.user.first_name %}{{ request.user.first_name }}{% else %}{{ request.user.username }}{% endif %}',
+              greeting: '',
+              updateGreeting() {
+                const h = new Date().getHours();
+                const g = (h < 5) ? 'Working late?'
+                        : (h < 12) ? 'Good Morning'
+                        : (h < 17) ? 'Good Afternoon'
+                        : (h < 21) ? 'Good Evening'
+                        : 'Working late?';
+                this.greeting = g + ', ' + this.name;
+              }
+            }"
+            x-init="updateGreeting(); setInterval(() => updateGreeting(), 60000)"
+            x-text="greeting">
         </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Here's what's happening with Sanish Laminate today.</p>
       </div>
@@ -24,8 +37,7 @@
   </div>
 
   <!-- Stat cards -->
-  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-    {% with items=stats.items %}
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 flex flex-col gap-2">
       <div class="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center">
         <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -71,6 +83,17 @@
     </div>
 
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 flex flex-col gap-2">
+      <div class="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+      </div>
+      <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.blog_posts }}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Blog Posts</p>
+      <a href="{% url 'blog_list' %}" class="text-xs text-accent hover:underline mt-auto">View all →</a>
+    </div>
+
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 flex flex-col gap-2">
       <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
         <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
           <path stroke-linecap="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414"/>
@@ -80,10 +103,160 @@
       <p class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">New Inquiries</p>
       <a href="{% url 'inquiry_list' %}" class="text-xs text-accent hover:underline mt-auto">View all →</a>
     </div>
-    {% endwith %}
+  </div>
+
+  <!-- Product Overview (detailed) -->
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Product Overview</h2>
+      <a href="{% url 'product_list' %}" class="text-xs text-accent hover:underline">View all →</a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Published vs Draft summary -->
+      <div class="lg:col-span-1 flex flex-col gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-accent/10 flex flex-col items-center justify-center flex-shrink-0">
+            <span class="text-lg font-bold text-accent">{{ product_overview.total }}</span>
+            <span class="text-[9px] text-accent/70 uppercase tracking-wide">Total</span>
+          </div>
+          <div class="flex-1">
+            <div class="w-full h-2.5 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full" style="width: {{ product_overview.published_pct }}%"></div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1.5">{{ product_overview.published_pct }}% published</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <a href="{% url 'product_list' %}?status=published" class="rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ product_overview.published }}</p>
+            <p class="text-xs text-emerald-600/80 dark:text-emerald-400/70 font-medium uppercase tracking-wide mt-0.5">Published</p>
+          </a>
+          <a href="{% url 'product_list' %}?status=draft" class="rounded-2xl p-4 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+            <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ product_overview.draft }}</p>
+            <p class="text-xs text-amber-600/80 dark:text-amber-400/70 font-medium uppercase tracking-wide mt-0.5">Draft</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- Collection-wise breakdown -->
+      <div class="lg:col-span-2">
+        <p class="text-xs text-gray-400 font-medium uppercase tracking-wide mb-3">By Collection</p>
+        {% if product_overview.collections %}
+        <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+          {% for col in product_overview.collections %}
+          <a href="{% url 'product_list' %}?collection={{ col.id }}" class="flex items-center gap-3 group">
+            <span class="text-sm text-gray-700 dark:text-gray-200 w-32 truncate flex-shrink-0" title="{{ col.name }}">{{ col.name }}</span>
+            <div class="flex-1 h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden">
+              <div class="h-full bg-accent rounded-full" style="width: {% widthratio col.product_count product_overview.total 100 %}%"></div>
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 w-24 flex-shrink-0 text-right">
+              {{ col.product_count }} <span class="text-gray-300 dark:text-gray-600">·</span> {{ col.published_count }} live
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 py-6 text-center">No collections yet</p>
+        {% endif %}
+      </div>
+
+    </div>
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <!-- Needs Attention -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4">Needs Attention</h2>
+      {% if stats.inquiries or stats.draft_products or stats.draft_blog or stats.draft_cities %}
+      <div class="space-y-2">
+        {% if stats.inquiries %}
+        <a href="{% url 'inquiry_list' %}?status=new" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-100 dark:hover:bg-dark-700 transition-colors group">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-white">{{ stats.inquiries }} new inquir{{ stats.inquiries|pluralize:"y,ies" }}</p>
+            <p class="text-xs text-gray-400">Awaiting first response</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 group-hover:text-accent transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+        {% endif %}
+        {% if stats.draft_products %}
+        <a href="{% url 'product_list' %}?status=draft" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-100 dark:hover:bg-dark-700 transition-colors group">
+          <div class="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-white">{{ stats.draft_products }} draft product{{ stats.draft_products|pluralize }}</p>
+            <p class="text-xs text-gray-400">Not yet published</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 group-hover:text-accent transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+        {% endif %}
+        {% if stats.draft_blog %}
+        <a href="{% url 'blog_list' %}?status=draft" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-100 dark:hover:bg-dark-700 transition-colors group">
+          <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-white">{{ stats.draft_blog }} draft blog post{{ stats.draft_blog|pluralize }}</p>
+            <p class="text-xs text-gray-400">Not yet published</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 group-hover:text-accent transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+        {% endif %}
+        {% if stats.draft_cities %}
+        <a href="{% url 'city_page_list' %}?status=draft" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-100 dark:hover:bg-dark-700 transition-colors group">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-white">{{ stats.draft_cities }} draft city page{{ stats.draft_cities|pluralize }}</p>
+            <p class="text-xs text-gray-400">Not yet published</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 group-hover:text-accent transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="flex flex-col items-center justify-center py-8 text-center">
+        <svg class="w-8 h-8 text-emerald-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <p class="text-sm text-gray-400">All caught up — nothing pending.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Latest Inquiries -->
+    <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Latest Inquiries</h2>
+        <a href="{% url 'inquiry_list' %}" class="text-xs text-accent hover:underline">View all</a>
+      </div>
+      {% if recent_inquiries %}
+      <div class="space-y-3">
+        {% for inq in recent_inquiries %}
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5">
+            {{ inq.name|first|upper|default:"?" }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-gray-800 dark:text-gray-200 truncate">
+              <span class="font-medium">{{ inq.name }}</span>
+              <span class="badge badge-blue ml-1">{{ inq.get_type_display }}</span>
+            </p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ inq.city|default:inq.email }} · {{ inq.created|timesince }} ago</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 text-center py-8">No new inquiries</p>
+      {% endif %}
+    </div>
 
     <!-- Quick Actions -->
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
@@ -131,50 +304,35 @@
         </a>
       </div>
     </div>
-
-    <!-- Recent Activity -->
-    <div class="xl:col-span-2 bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Recent Activity</h2>
-        <a href="{% url 'activity_log' %}" class="text-xs text-accent hover:underline">View all</a>
-      </div>
-      {% if recent_activities %}
-      <div class="space-y-3">
-        {% for log in recent_activities %}
-        <div class="flex items-start gap-3">
-          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5">
-            {{ log.user.first_name.0|upper|default:"?" }}
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm text-gray-800 dark:text-gray-200">
-              <span class="font-medium">{{ log.user.get_full_name|default:log.user.username|default:"System" }}</span>
-              {{ log.action }}
-              {% if log.object_repr %}<span class="text-accent">{{ log.object_repr }}</span>{% endif %}
-            </p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ log.timestamp|timesince }} ago</p>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <p class="text-sm text-gray-400 text-center py-8">No recent activity</p>
-      {% endif %}
-    </div>
   </div>
 
-  <!-- GA4 Traffic Widget (Phase 2 Stub) -->
+  <!-- Recent Activity -->
   <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Website Traffic</h2>
-      <span class="badge badge-yellow">Phase 2</span>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Recent Activity</h2>
+      <a href="{% url 'activity_log' %}" class="text-xs text-accent hover:underline">View all</a>
     </div>
-    <div class="h-32 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-dark-600 rounded-2xl">
-      <div class="text-center">
-        <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <p class="text-sm text-gray-400">GA4 Traffic widget — coming in Phase 2</p>
-        <p class="text-xs text-gray-300 mt-1">Connect GA4 code in SEO Settings to enable</p>
+    {% if recent_activities %}
+    <div class="space-y-3">
+      {% for log in recent_activities %}
+      <div class="flex items-start gap-3">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5">
+          {{ log.user.first_name.0|upper|default:"?" }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-gray-800 dark:text-gray-200">
+            <span class="font-medium">{{ log.user.get_full_name|default:log.user.username|default:"System" }}</span>
+            {{ log.action }}
+            {% if log.object_repr %}<span class="text-accent">{{ log.object_repr }}</span>{% endif %}
+          </p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ log.timestamp|timesince }} ago</p>
+        </div>
       </div>
+      {% endfor %}
     </div>
+    {% else %}
+    <p class="text-sm text-gray-400 text-center py-8">No recent activity</p>
+    {% endif %}
   </div>
 
 </div>

@@ -25,15 +25,30 @@ _CTA_FIELDS = [
 ]
 
 _HERO_SLIDE_FIELDS = [
-    {"name": "image", "type": "image", "label": "Image (desktop)"},
-    {"name": "mobile_image", "type": "image", "label": "Image (mobile / portrait)"},
-    {"name": "tag", "type": "text", "label": "Eyebrow tag"},
-    {"name": "line1", "type": "text", "label": "Headline line 1"},
-    {"name": "line2", "type": "text", "label": "Headline line 2"},
-    {"name": "sub", "type": "textarea", "label": "Sub copy"},
-    {"name": "cta_label", "type": "text", "label": "Primary button label"},
-    {"name": "cta_url", "type": "url", "label": "Primary button link"},
-    {"name": "image_only", "type": "bool", "label": "Full-bleed image (hide text)"},
+    {
+        "name": "image_only", "type": "select", "label": "Banner type", "bool_select": True,
+        "options": [
+            {"value": "true", "label": "Image only — full-bleed photo, no text"},
+            {"value": "false", "label": "Image + content — headline, copy & button"},
+        ],
+        "help": "Pick the layout first — it decides which image ratio to upload below.",
+    },
+    {
+        "name": "image", "type": "image", "label": "Image (desktop)",
+        "show_key": "image_only",
+        "help_when_true": "Image only banner: use a 21:9 ratio image (e.g. 2400×1050px) — it fills the whole slide edge-to-edge with no text overlay.",
+        "help_when_false": "Image + content banner: use a 16:9 ratio image (e.g. 1600×900px) — it sits in a rounded panel beside the headline and copy.",
+    },
+    {
+        "name": "mobile_image", "type": "image", "label": "Image (mobile / portrait)",
+        "help": "Optional — shown on phones instead of the desktop image. Recommended ratio 4:5 portrait (e.g. 1080×1350px). Falls back to the desktop image if left blank.",
+    },
+    {"name": "tag", "type": "text", "label": "Eyebrow tag", "hide_if": "image_only"},
+    {"name": "line1", "type": "text", "label": "Headline line 1", "hide_if": "image_only"},
+    {"name": "line2", "type": "text", "label": "Headline line 2", "hide_if": "image_only"},
+    {"name": "sub", "type": "textarea", "label": "Sub copy", "hide_if": "image_only"},
+    {"name": "cta_label", "type": "text", "label": "Primary button label", "hide_if": "image_only"},
+    {"name": "cta_url", "type": "url", "label": "Primary button link", "hide_if": "image_only"},
 ]
 
 
@@ -397,10 +412,13 @@ BLOCK_TYPES: dict = {
             {"name": "map_embed_url", "type": "url", "label": "Google Maps embed URL"},
             {"name": "form_heading", "type": "text", "label": "Form heading"},
             {"name": "form_sub", "type": "textarea", "label": "Form sub copy"},
+            {"name": "form_slug", "type": "text", "label": "CMS form slug (optional)",
+             "help": "Leave blank to keep the built-in enquiry form. Set to a Forms slug to render that CMS-managed form instead."},
         ],
         "defaults": {
             "heading": "Our Headquarters", "address": "", "phones": [], "emails": [],
             "map_embed_url": "", "form_heading": "Post your requirements", "form_sub": "",
+            "form_slug": "",
         },
     },
 
@@ -417,11 +435,134 @@ BLOCK_TYPES: dict = {
         ],
         "defaults": {"heading": "Frequently asked questions", "items": []},
     },
+
+    # ── Ready-made library blocks — drop into any page ──────────────────────
+    "testimonials": {
+        "label": "Testimonials",
+        "description": "Heading over a grid of customer quotes.",
+        "component": "TestimonialsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy"},
+            {"name": "items", "type": "repeater", "label": "Testimonials", "fields": [
+                {"name": "quote", "type": "textarea", "label": "Quote"},
+                {"name": "name", "type": "text", "label": "Name"},
+                {"name": "role", "type": "text", "label": "Role / company"},
+                {"name": "avatar", "type": "image", "label": "Photo (optional)"},
+            ]},
+        ],
+        "defaults": {"heading": "What our customers say", "sub": "", "items": []},
+    },
+
+    "gallery": {
+        "label": "Image Gallery",
+        "description": "Heading over a responsive grid of images.",
+        "component": "GalleryBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy"},
+            {"name": "columns", "type": "select", "label": "Columns", "options": ["3", "2", "4"]},
+            {"name": "images", "type": "repeater", "label": "Images", "fields": [
+                {"name": "image", "type": "image", "label": "Image"},
+                {"name": "caption", "type": "text", "label": "Caption (optional)"},
+            ]},
+        ],
+        "defaults": {"heading": "", "sub": "", "columns": "3", "images": []},
+    },
+
+    "team": {
+        "label": "Team",
+        "description": "Heading over a grid of team member photo + name + role + bio.",
+        "component": "TeamBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy"},
+            {"name": "columns", "type": "select", "label": "Columns", "options": ["3", "4", "2"]},
+            {"name": "members", "type": "repeater", "label": "Members", "fields": [
+                {"name": "photo", "type": "image", "label": "Photo"},
+                {"name": "name", "type": "text", "label": "Name"},
+                {"name": "role", "type": "text", "label": "Role"},
+                {"name": "bio", "type": "textarea", "label": "Bio (optional)"},
+            ]},
+        ],
+        "defaults": {"heading": "Meet the team", "sub": "", "columns": "3", "members": []},
+    },
+
+    "pricing": {
+        "label": "Pricing Table",
+        "description": "Heading over a row of pricing / plan cards.",
+        "component": "PricingBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy"},
+            {"name": "plans", "type": "repeater", "label": "Plans", "fields": [
+                {"name": "title", "type": "text", "label": "Plan name"},
+                {"name": "price", "type": "text", "label": "Price"},
+                {"name": "period", "type": "text", "label": "Billing period (e.g. /month)"},
+                {"name": "features", "type": "textarea", "label": "Features (one per line)"},
+                {"name": "cta_label", "type": "text", "label": "Button label"},
+                {"name": "cta_url", "type": "url", "label": "Button link"},
+                {"name": "highlighted", "type": "bool", "label": "Highlight this plan"},
+            ]},
+        ],
+        "defaults": {"heading": "Pricing", "sub": "", "plans": []},
+    },
+
+    "stats": {
+        "label": "Stats Strip",
+        "description": "A row of big numbers with labels (e.g. years in business, projects completed).",
+        "component": "StatsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading (optional)"},
+            {"name": "stats", "type": "repeater", "label": "Stats", "fields": [
+                {"name": "value", "type": "text", "label": "Value (e.g. 10,000+)"},
+                {"name": "label", "type": "text", "label": "Label"},
+            ]},
+        ],
+        "defaults": {"heading": "", "stats": []},
+    },
+
+    "logos_strip": {
+        "label": "Logos Strip",
+        "description": "A row of partner / certification / press logos.",
+        "component": "LogosStripBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading (optional)"},
+            {"name": "logos", "type": "repeater", "label": "Logos", "fields": [
+                {"name": "image", "type": "image", "label": "Logo"},
+                {"name": "name", "type": "text", "label": "Name (alt text)"},
+            ]},
+        ],
+        "defaults": {"heading": "Trusted by", "logos": []},
+    },
+
+    "video_embed": {
+        "label": "Video",
+        "description": "An embedded YouTube / Vimeo video with an optional heading and caption.",
+        "component": "VideoEmbedBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading (optional)"},
+            {"name": "video_url", "type": "url", "label": "Video URL (YouTube / Vimeo)"},
+            {"name": "caption", "type": "text", "label": "Caption (optional)"},
+        ],
+        "defaults": {"heading": "", "video_url": "", "caption": ""},
+    },
 }
 
 
 # Blocks that make sense to add more than once / freely (shown first in picker)
 GENERIC_BLOCKS = ["rich_text", "image_text", "cta_banner"]
+
+# Blocks the frontend's generic SitePage renderer (sanish-next-fixed
+# PageBlockRenderer.PAGE_BLOCK_REGISTRY) actually knows how to draw. The
+# other entries in BLOCK_TYPES (hero, about, horizontal_showcase, …) are
+# home-page-only components that don't exist as standalone page blocks —
+# picking one of them for a custom/inner page silently renders nothing.
+INNER_PAGE_BLOCKS = [
+    "page_hero", "content_section", "feature_cards", "faq", "contact_details",
+    "rich_text", "image_text", "cta_banner", "testimonials", "gallery",
+    "team", "pricing", "stats", "logos_strip", "video_embed",
+]
 
 # Order the 8 currently-live sections are seeded in
 SEED_ORDER = [

@@ -1,0 +1,68 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if catalogue %}Edit{% else %}New{% endif %} Catalogue{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'gallery_catalogue_list' %}" class="hover:text-accent">Design Gallery</a><span class="text-gray-300">/</span><span>{% if catalogue %}{{ catalogue.label }}{% else %}New{% endif %}</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl mx-auto space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if catalogue %}Catalogue Settings{% else %}New Catalogue{% endif %}</h1>
+    <div class="flex gap-3">
+      <a href="{% url 'gallery_catalogue_list' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <label class="form-label">Label *</label>
+      <input type="text" name="label" value="{{ catalogue.label|default:'' }}" required class="form-input" placeholder="S'Shades"/>
+    </div>
+
+    {% if not catalogue %}
+    <div>
+      <label class="form-label">Slug *</label>
+      <input type="text" name="slug" required class="form-input" placeholder="sshades"/>
+      <p class="form-hint">Used in the URL /applications/gallery/&lt;slug&gt;. Cannot be changed later.</p>
+    </div>
+    {% else %}
+    <div>
+      <label class="form-label">Slug</label>
+      <input type="text" value="{{ catalogue.slug }}" class="form-input" disabled/>
+    </div>
+    {% endif %}
+
+    <div>
+      <label class="form-label">Cover Image <span class="normal-case font-normal text-gray-400">(card thumbnail on /applications — falls back to the first photo if left blank)</span></label>
+      <div class="mp-field" x-data="{
+             v: '{{ catalogue.cover_image|default:''|escapejs }}',
+             frontendUrl: '{{ FRONTEND_URL|escapejs }}',
+             get previewSrc() { return this.v.startsWith('/assets/') ? this.frontendUrl.replace(/\/$/, '') + this.v : this.v; }
+           }">
+        <div class="flex gap-2">
+          <input type="text" name="cover_image" x-model="v" class="form-input flex-1" placeholder="Path or URL"/>
+          <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                  onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+            Media Library
+          </button>
+        </div>
+        <template x-if="v">
+          <img :src="previewSrc" alt="" class="mt-2 h-28 rounded-xl object-cover border border-surface-200 dark:border-dark-600"/>
+        </template>
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="enabled" {% if not catalogue or catalogue.enabled %}checked{% endif %} class="rounded border-gray-300"/>
+      <span>Visible on the site</span>
+    </label>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'gallery_catalogue_list' %}" class="btn-ghost">Cancel</a>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+</form>
+
+{% include "dashboard/partials/media_picker.html" %}
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
 {% block title %}{% if template %}Edit{% else %}New{% endif %} Page Template{% endblock %}
 {% block breadcrumbs %}
   <span class="text-gray-300">/</span><a href="{% url 'page_template_list' %}" class="hover:text-accent">Templates</a>
@@ -8,8 +9,8 @@
 {% block content %}
 <form method="post"
       x-data="{
-        faqs: {{ template.faqs|default:'[]'|safe }},
-        whyUs: {{ template.why_choose_us|default:'[]'|safe }},
+        faqs: {{ template.faqs|jsonify:"[]" }},
+        whyUs: {{ template.why_choose_us|jsonify:"[]" }},
         addFaq() { this.faqs.push({q:'',a:''}); },
         removeFaq(i) { this.faqs.splice(i,1); },
         addWhyUs() { this.whyUs.push({title:'',desc:''}); },

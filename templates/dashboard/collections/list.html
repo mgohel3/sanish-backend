@@ -9,12 +9,13 @@
   </div>
   <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">
     <table class="data-table">
-      <thead><tr><th>Name</th><th>Slug</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+      <thead><tr><th>Name</th><th>Slug</th><th>Products</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
       <tbody>
         {% for col in collections %}
         <tr>
           <td class="font-medium">{{ col.name }}</td>
           <td class="font-mono text-xs text-gray-500">{{ col.slug }}</td>
+          <td><a href="{% url 'product_list' %}?collection={{ col.pk }}" class="badge badge-gray hover:underline">{{ col.product_count }} product{{ col.product_count|pluralize }}</a></td>
           <td>{% if col.status == 'published' %}<span class="badge badge-green">Published</span>{% else %}<span class="badge badge-yellow">Draft</span>{% endif %}</td>
           <td class="text-right">
             <a href="{% url 'collection_edit' col.pk %}" class="btn-ghost py-1.5 px-3 text-xs">Edit</a>
@@ -22,8 +23,15 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="py-12 text-center text-gray-400">No collections yet.</td></tr>
+        <tr><td colspan="5" class="py-12 text-center text-gray-400">No collections yet.</td></tr>
         {% endfor %}
+        {% if collections %}
+        <tr class="font-semibold bg-gray-50 dark:bg-white/5">
+          <td colspan="2">Total</td>
+          <td>{{ total_collections }} collection{{ total_collections|pluralize }} · {{ total_products }} product{{ total_products|pluralize }}</td>
+          <td colspan="2"></td>
+        </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>

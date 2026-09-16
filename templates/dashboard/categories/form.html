@@ -28,8 +28,19 @@
       <input type="text" name="hero_eyebrow" value="{{ category.hero_eyebrow|default:'' }}" class="form-input" placeholder="e.g. Surface Collection"/>
     </div>
     <div>
-      <label class="form-label">Listing Hero Image URL <span class="form-hint">(overrides banner image)</span></label>
-      <input type="text" name="hero_image_url" value="{{ category.hero_image_url|default:'' }}" class="form-input" placeholder="https://…"/>
+      <label class="form-label">Listing Hero Image <span class="form-hint">(overrides banner image)</span></label>
+      <div class="mp-field" x-data="{ v: '{{ category.hero_image_url|default:''|escapejs }}' }">
+        <div class="flex gap-2">
+          <input type="text" name="hero_image_url" x-model="v" class="form-input flex-1" placeholder="https://… or choose below"/>
+          <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                  onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">
+            Media Library
+          </button>
+        </div>
+        <template x-if="v">
+          <img :src="v" alt="" class="mt-2 h-28 rounded-xl object-cover border border-surface-200 dark:border-dark-600"/>
+        </template>
+      </div>
     </div>
     <div>
       <label class="form-label">Status</label>
@@ -85,4 +96,6 @@
     </div>
   </div>
 </form>
+
+{% include "dashboard/partials/media_picker.html" %}
 {% endblock %}

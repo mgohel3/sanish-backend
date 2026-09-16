@@ -6,7 +6,8 @@
 
 {% block content %}
 {{ values|json_script:"initial-values" }}
-<form method="post" class="max-w-3xl mx-auto space-y-6">
+<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_440px] gap-6 items-start max-w-6xl mx-auto">
+<form method="post" class="space-y-6 min-w-0">
   {% csrf_token %}
   <input type="hidden" name="block_type" value="{{ block_type }}" />
 
@@ -41,7 +42,7 @@
   </div>
 
   <!-- Content fields -->
-  <div class="card space-y-5">
+  <div class="card space-y-5" id="block-fields">
     {% for field in config.fields %}
     <div>
       <label class="form-label">{{ field.label }}</label>
@@ -90,6 +91,8 @@
       {% if field.help %}<p class="form-hint">{{ field.help }}</p>{% endif %}
     </div>
     {% endfor %}
+
+    {% include "dashboard/partials/_background_fields.html" %}
   </div>
 
   <div class="flex justify-end gap-3">
@@ -98,13 +101,19 @@
   </div>
 </form>
 
+{% include "dashboard/partials/block_live_preview.html" %}
+</div>
+
 {% include "dashboard/partials/media_picker.html" %}
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    window.__ckEditors = window.__ckEditors || {};
     document.querySelectorAll('textarea[id^="rt_"]').forEach(function (el) {
       ClassicEditor.create(el, {
         toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'blockQuote', 'undo', 'redo'],
+      }).then(function (editor) {
+        window.__ckEditors[el.name] = editor;
       }).catch(function (e) { console.error(e); });
     });
   });

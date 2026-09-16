@@ -17,12 +17,23 @@ from homepage.models import HomeSection
 
 SCALAR_TYPES = {"text", "textarea", "richtext", "url", "image", "video", "media", "select"}
 
+# Every block gets these on top of its own declared fields — a shared
+# background (colour, and/or image with a colour overlay) editors can set on
+# any section without each block type having to declare it itself. Rendered
+# by dashboard/partials/_background_fields.html and read generically here
+# because they live outside ``BLOCK_TYPES[...]["fields"]``.
+BACKGROUND_FIELDS = [
+    {"name": "bg_color", "type": "text"},
+    {"name": "bg_image", "type": "image"},
+    {"name": "bg_overlay_opacity", "type": "number"},
+]
+
 
 def _parse_content(block_type, post):
     """Turn a submitted form into a ``content`` dict for the given block type."""
     cfg = blocks.BLOCK_TYPES.get(block_type, {})
     content = {}
-    for field in cfg.get("fields", []):
+    for field in list(cfg.get("fields", [])) + BACKGROUND_FIELDS:
         name = field["name"]
         ftype = field["type"]
         if ftype == "repeater":
