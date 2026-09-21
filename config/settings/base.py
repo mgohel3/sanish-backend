@@ -115,9 +115,10 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    # Reads are exempt (see api/throttles.py); writes keep the anon/user limits below.
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "api.throttles.ReadExemptAnonThrottle",
+        "api.throttles.ReadExemptUserThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "60/minute",
