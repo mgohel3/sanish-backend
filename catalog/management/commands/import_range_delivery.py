@@ -27,6 +27,9 @@ is used directly as both `file` and `webp_version`, so nothing is stored twice.
 With --sibling-textures every product of a design lists ALL of that design's finish
 textures (alphabetical) in its "Available Textures" swatches, reusing the same files.
 
+With --textures-only the full-sheet and application folders are ignored entirely: a
+product's main image is its own texture, and only texture images are kept.
+
 Nothing is written without confirmation: run with --dry-run first.
 
 Example:
@@ -204,6 +207,10 @@ class Command(BaseCommand):
         parser.add_argument("--keep-files", action="store_true",
                             help="With --purge-old-media: delete the old MediaAsset ROWS but leave "
                                  "every file on disk untouched.")
+        parser.add_argument("--textures-only", action="store_true",
+                            help="Use ONLY the texture images: ignore the full-sheet and application "
+                                 "folders, so each product's main image is its own texture and no "
+                                 "application image is set. Also clears the images of retired products.")
         parser.add_argument("--sibling-textures", action="store_true",
                             help="Show EVERY finish of a design as a texture swatch on each of its "
                                  "products (fixed alphabetical order), not just the product's own finish.")
@@ -256,6 +263,8 @@ class Command(BaseCommand):
                 used_full.add(design)
             if app:
                 used_app.add(design)
+            if opts["textures_only"]:
+                full = app = None
             plan.append(dict(design=design, finish=finish, tokens=tokens, sku=sku,
                              tex=tex, full=full, app=app))
 
@@ -402,6 +411,11 @@ class Command(BaseCommand):
             if retire and opts["retire_missing"] == "draft":
                 n = Product.objects.filter(sku__in=retire).exclude(status="draft").update(status="draft")
                 w(f"retired to draft: {n} (of {len(retire)} not in sheet)")
+                if opts["textures_only"]:
+                    for s_ in retire:
+                        old_asset_ids |= set(existing[s_].product_images.values_list("asset_id", flat=True))
+                    k, _ = ProductImage.objects.filter(product__sku__in=retire).delete()
+                    w(f"cleared old images of the retired products ({k} row(s))")
             elif retire and opts["retire_missing"] == "delete":
                 for s in retire:
                     old_asset_ids |= set(existing[s].product_images.values_list("asset_id", flat=True))
@@ -514,7 +528,7 @@ class Command(BaseCommand):
             old_asset_ids = set()
             for s in touched_skus & set(existing):
                 old_asset_ids |= set(existing[s].product_images.values_list("asset_id", flat=True))
-            if opts["retire_missing"] == "delete":
+            if opts["retire_missing"] == "delete" or opts["textures_only"]:
                 for s in retire:
                     old_asset_ids |= set(existing[s].product_images.values_list("asset_id", flat=True))
             for s in demos + extra_del:
@@ -528,7 +542,7 @@ class Command(BaseCommand):
             # products that will lose their images -> exclude what other (untouched) products still use
             still = set(ProductImage.objects.exclude(
                 product__sku__in=(touched_skus | set(demos) | set(extra_del) |
-                                  (set(retire) if opts["retire_missing"] == "delete" else set()))
+                                  (set(retire) if (opts["retire_missing"] == "delete" or opts["textures_only"]) else set()))
             ).values_list("asset_id", flat=True))
         else:
             still = set(ProductImage.objects.values_list("asset_id", flat=True))
