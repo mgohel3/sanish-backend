@@ -24,6 +24,9 @@ Images are resized (aspect kept, never cropped) and written as WebP under
 MEDIA_ROOT/products/<collection>/{full,application,texture}/.  The WebP file
 is used directly as both `file` and `webp_version`, so nothing is stored twice.
 
+With --sibling-textures every product of a design lists ALL of that design's finish
+textures (alphabetical) in its "Available Textures" swatches, reusing the same files.
+
 Nothing is written without confirmation: run with --dry-run first.
 
 Example:
@@ -201,6 +204,9 @@ class Command(BaseCommand):
         parser.add_argument("--keep-files", action="store_true",
                             help="With --purge-old-media: delete the old MediaAsset ROWS but leave "
                                  "every file on disk untouched.")
+        parser.add_argument("--sibling-textures", action="store_true",
+                            help="Show EVERY finish of a design as a texture swatch on each of its "
+                                 "products (fixed alphabetical order), not just the product's own finish.")
         parser.add_argument("--reuse-existing", action="store_true",
                             help="Skip re-writing image files that already exist at the destination.")
         parser.add_argument("--dry-run", action="store_true")
@@ -276,6 +282,12 @@ class Command(BaseCommand):
         w(f"images per product: full-sheet={sum(1 for p in plan if p['full'])} "
           f"application={sum(1 for p in plan if p['app'])} texture={sum(1 for p in plan if p['tex'])} "
           f"| no image at all={len(no_image)}")
+        if opts["sibling_textures"]:
+            by_d = Counter(p["design"] for p in plan if p["tex"])
+            w(f"  sibling textures: each product shows all finishes of its design -> "
+              f"{sum(n * n for n in by_d.values())} swatch rows (vs {sum(by_d.values())} own-finish only); "
+              f"{sum(n for n in by_d.values() if n > 1)} products in {sum(1 for n in by_d.values() if n > 1)} "
+              f"multi-finish designs change")
         w(f"  main image will fall back to the texture for "
           f"{sum(1 for p in plan if not p['full'] and p['tex'])} product(s) (no full sheet)")
         d_no_full = sorted({p['design'] for p in plan if not p['full']})
@@ -354,12 +366,16 @@ class Command(BaseCommand):
                                             title=f"{design} — application", folder=f_app,
                                             max_edge=opts["app_max_edge"], q=q,
                                             alt=f"Sanish {cfg['label']} design {design} applied to interior joinery")
-                tex_asset = None
-                if p["tex"]:
-                    tex_asset = self._asset(asset_cache, p["tex"], f"{base}/texture/{design}-{'-'.join(p['tokens'])}.webp",
-                                            title=f"{design} {label_finish}", folder=f_tex,
-                                            max_edge=opts["tex_max_edge"], q=q,
-                                            alt=f"Sanish {cfg['label']} design {design} — {label_finish} finish texture")
+                tex_assets = []            # [(finish label, MediaAsset)] in display order
+                tex_source = ([sp for sp in plan if sp["design"] == design and sp["tex"]]
+                              if opts["sibling_textures"] else ([p] if p["tex"] else []))
+                for sp in sorted(tex_source, key=lambda sp: " ".join(t for t in sp["tokens"] if t != "H")):
+                    lbl = " ".join(t for t in sp["tokens"] if t != "H")
+                    tex_assets.append((lbl, self._asset(
+                        asset_cache, sp["tex"], f"{base}/texture/{sp['design']}-{'-'.join(sp['tokens'])}.webp",
+                        title=f"{sp['design']} {lbl}", folder=f_tex,
+                        max_edge=opts["tex_max_edge"], q=q,
+                        alt=f"Sanish {cfg['label']} design {sp['design']} — {lbl} finish texture")))
 
                 product.status = "published"
                 product.save()
@@ -373,9 +389,10 @@ class Command(BaseCommand):
                 if app_asset:
                     ProductImage.objects.create(product=product, asset=app_asset, position=pos, role="application")
                     pos += 1
-                if tex_asset:
+                for lbl, tex_asset in tex_assets:
                     ProductImage.objects.create(product=product, asset=tex_asset, position=pos,
-                                                role="texture", label=label_finish)
+                                                role="texture", label=lbl)
+                    pos += 1
                 created += is_new
                 updated += (not is_new)
                 if i % 25 == 0:
