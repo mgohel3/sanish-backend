@@ -106,6 +106,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "product_type", "surface_category",
             "design_type", "color", "badge", "accent_color",
             "features", "tech_specs",
+            "show_thickness", "show_dimensions",
             "primary_image", "image_urls", "related_slugs", "status",
         )
 
