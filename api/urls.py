@@ -2,10 +2,10 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
-    ProductListView, ProductDetailView,
+    ProductListView, ProductDetailView, ProductPreviewDetailView,
     CategoryListView, CollectionListView,
-    CityPageListView, CityPageDetailView,
-    BlogPostListView, BlogPostDetailView,
+    CityPageListView, CityPageDetailView, CityPagePreviewDetailView,
+    BlogPostListView, BlogPostDetailView, BlogPostPreviewDetailView,
     DealerListView, InquiryCreateView,
     RobotsView, SiteSettingsView, NavLinksView, HomePageView, SitePageView,
     FormDefinitionView, FormSubmitView, MenuView,
@@ -16,17 +16,20 @@ from .views import (
 
 urlpatterns = [
     # Products
-    path("products/",             ProductListView.as_view(),   name="api_products"),
-    path("products/<slug:slug>/", ProductDetailView.as_view(), name="api_product_detail"),
+    path("products/",                        ProductListView.as_view(),          name="api_products"),
+    path("products/preview/<slug:slug>/",    ProductPreviewDetailView.as_view(), name="api_product_preview"),
+    path("products/<slug:slug>/",            ProductDetailView.as_view(),       name="api_product_detail"),
     # Categories & Collections
     path("categories/",   CategoryListView.as_view(),   name="api_categories"),
     path("collections/",  CollectionListView.as_view(),  name="api_collections"),
     # City pages
-    path("city-pages/",             CityPageListView.as_view(),   name="api_city_pages"),
-    path("city-pages/<slug:slug>/", CityPageDetailView.as_view(), name="api_city_page_detail"),
+    path("city-pages/",                      CityPageListView.as_view(),         name="api_city_pages"),
+    path("city-pages/preview/<slug:slug>/",  CityPagePreviewDetailView.as_view(), name="api_city_page_preview"),
+    path("city-pages/<slug:slug>/",          CityPageDetailView.as_view(),       name="api_city_page_detail"),
     # Blog
-    path("blog/",             BlogPostListView.as_view(),   name="api_blog"),
-    path("blog/<slug:slug>/", BlogPostDetailView.as_view(), name="api_blog_detail"),
+    path("blog/",                     BlogPostListView.as_view(),          name="api_blog"),
+    path("blog/preview/<slug:slug>/", BlogPostPreviewDetailView.as_view(), name="api_blog_preview"),
+    path("blog/<slug:slug>/",         BlogPostDetailView.as_view(),        name="api_blog_detail"),
     # Dealers & Inquiries
     path("dealers/",    DealerListView.as_view(),    name="api_dealers"),
     path("inquiries/",  InquiryCreateView.as_view(), name="api_inquiries"),

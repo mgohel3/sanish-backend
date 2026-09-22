@@ -314,15 +314,35 @@ class ProductBulkStatusView(ContentManagerRequiredMixin, LoggedActionMixin, View
         return redirect("product_list")
 
 
+def _frontend_to_slug(value: str) -> str:
+    """Exact port of sanish-next's `toSlug()` (src/lib/catalog.ts) — deliberately
+    NOT Django's `slugify`, which normalises unicode/apostrophes differently and
+    would risk a mismatch against the frontend's own canonical-URL check."""
+    value = (value or "").strip().lower()
+    value = re.sub(r"['’]", "", value)
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    return value.strip("-")
+
+
 class ProductPreviewView(ContentManagerRequiredMixin, View):
+    """Sends the editor to the *real* Next.js product page instead of a
+    hand-built mock, so preview always matches what the storefront will
+    actually show — including for a draft that isn't live yet. Auth is a
+    short-lived signed token (api/preview_tokens.py); the frontend page
+    uses it to fetch via the preview-only API endpoint, bypassing the
+    published-only filter."""
     def get(self, request, pk):
+        from django.conf import settings
+        from api.preview_tokens import make_preview_token
+
         product = get_object_or_404(Product, pk=pk)
-        return render(request, "dashboard/preview/product.html", {
-            "product":        product,
-            "preview_title":  product.name,
-            "preview_status": product.status,
-            "edit_url":       f"/cms/products/{pk}/",
-        })
+        category_slug = _frontend_to_slug(product.category.name) if product.category_id else "laminates"
+        collection_slug = _frontend_to_slug(product.collection.name) if product.collection_id else "none"
+        token = make_preview_token("product", product.slug)
+        return redirect(
+            f"{settings.FRONTEND_URL}/products/{category_slug}/{collection_slug}/{product.slug}"
+            f"?preview={token}"
+        )
 
 
 # ── Bulk Export / Import (WooCommerce-style CSV) ──────────────────────────────

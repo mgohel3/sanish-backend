@@ -177,14 +177,16 @@ class BlogPostBulkDeleteView(ContentManagerRequiredMixin, LoggedActionMixin, Vie
 
 
 class BlogPostPreviewView(ContentManagerRequiredMixin, View):
+    """Sends the editor to the real Next.js blog post page instead of a
+    hand-built mock — see ProductPreviewView (dashboard/views/products.py)
+    for the same pattern and why."""
     def get(self, request, pk):
+        from django.conf import settings
+        from api.preview_tokens import make_preview_token
+
         post = get_object_or_404(BlogPost, pk=pk)
-        return render(request, "dashboard/preview/blog_post.html", {
-            "post":           post,
-            "preview_title":  post.title,
-            "preview_status": post.status,
-            "edit_url":       f"/cms/blog/{pk}/",
-        })
+        token = make_preview_token("blogpost", post.slug)
+        return redirect(f"{settings.FRONTEND_URL}/blog/{post.slug}?preview={token}")
 
 
 class BlogCategoryListView(ContentManagerRequiredMixin, View):

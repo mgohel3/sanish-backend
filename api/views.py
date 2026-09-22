@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from rest_framework import generics, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
 
 from catalog.models import Category, Collection, Product
 from pages.models import CityPage, SitePage
@@ -32,6 +33,7 @@ from applications.serializers import (
 from gallery.serializers import GalleryCatalogueDetailSerializer
 from faq.serializers import FaqSerializer
 from .throttles import InquiryThrottle, FormSubmitThrottle
+from .preview_tokens import verify_preview_token
 
 
 # ── Products ──────────────────────────────────────────────────────────────────
@@ -67,6 +69,25 @@ class ProductDetailView(generics.RetrieveAPIView):
     lookup_field     = "slug"
 
 
+class ProductPreviewDetailView(generics.RetrieveAPIView):
+    """Same shape as ProductDetailView but ignores `status` and instead requires
+    a signed `?token=` (minted by the CMS's Preview button) — lets the real
+    Next.js page render a draft product exactly as the public site would once
+    it's published. See api/preview_tokens.py. Looked up by slug (not pk) so
+    the frontend page — which only ever has the slug from its URL — needs no
+    extra id param."""
+    queryset         = Product.objects.all()
+    serializer_class = ProductDetailSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field     = "slug"
+
+    def get_object(self):
+        obj = super().get_object()
+        if not verify_preview_token("product", obj.slug, self.request.query_params.get("token", "")):
+            raise NotFound("Invalid or expired preview link.")
+        return obj
+
+
 # ── Categories ────────────────────────────────────────────────────────────────
 
 class CategoryListView(generics.ListAPIView):
@@ -100,6 +121,20 @@ class CityPageDetailView(generics.RetrieveAPIView):
     lookup_field     = "slug"
 
 
+class CityPagePreviewDetailView(generics.RetrieveAPIView):
+    """Preview counterpart of CityPageDetailView — see ProductPreviewDetailView."""
+    queryset         = CityPage.objects.all()
+    serializer_class = CityPageDetailSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field     = "slug"
+
+    def get_object(self):
+        obj = super().get_object()
+        if not verify_preview_token("citypage", obj.slug, self.request.query_params.get("token", "")):
+            raise NotFound("Invalid or expired preview link.")
+        return obj
+
+
 # ── Blog ──────────────────────────────────────────────────────────────────────
 
 class BlogPostListView(generics.ListAPIView):
@@ -116,6 +151,20 @@ class BlogPostDetailView(generics.RetrieveAPIView):
     serializer_class = BlogPostDetailSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field     = "slug"
+
+
+class BlogPostPreviewDetailView(generics.RetrieveAPIView):
+    """Preview counterpart of BlogPostDetailView — see ProductPreviewDetailView."""
+    queryset         = BlogPost.objects.all()
+    serializer_class = BlogPostDetailSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field     = "slug"
+
+    def get_object(self):
+        obj = super().get_object()
+        if not verify_preview_token("blogpost", obj.slug, self.request.query_params.get("token", "")):
+            raise NotFound("Invalid or expired preview link.")
+        return obj
 
 
 # ── Dealers ───────────────────────────────────────────────────────────────────

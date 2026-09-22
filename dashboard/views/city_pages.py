@@ -173,16 +173,16 @@ class CityPageDeleteView(SEOManagerRequiredMixin, LoggedActionMixin, View):
 
 
 class CityPagePreviewView(SEOManagerRequiredMixin, View):
+    """Sends the editor to the real Next.js city-page route instead of a
+    hand-built mock — see ProductPreviewView (dashboard/views/products.py)
+    for the same pattern and why."""
     def get(self, request, pk):
+        from django.conf import settings
+        from api.preview_tokens import make_preview_token
+
         page = get_object_or_404(CityPage, pk=pk)
-        resolved = page.resolved()
-        return render(request, "dashboard/preview/city_page.html", {
-            "page":           page,
-            "resolved":       resolved,
-            "preview_title":  str(page),
-            "preview_status": page.status,
-            "edit_url":       f"/cms/city-pages/{pk}/",
-        })
+        token = make_preview_token("citypage", page.slug)
+        return redirect(f"{settings.FRONTEND_URL}/{page.slug}?preview={token}")
 
 
 # ── Bulk Import ───────────────────────────────────────────────────────────────
