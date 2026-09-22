@@ -29,7 +29,7 @@ from django.db import transaction
 
 from catalog.models import Collection, Product, ProductImage
 from catalog.management.commands.import_range_delivery import (
-    RANGES, PROTECTED_FOLDERS, read_products, index_design_dir,
+    RANGES, PROTECTED_FOLDERS, read_products, index_design_dir, open_srgb,
 )
 from media_library.models import MediaAsset, MediaFolder
 
@@ -139,21 +139,16 @@ class Command(BaseCommand):
     # ── helpers ──────────────────────────────────────────────────────────
     def _asset(self, src, rel_dest, *, title, alt, folder, max_edge, q):
         from io import BytesIO
-        from PIL import Image, ImageOps
+        from PIL import Image
         Image.MAX_IMAGE_PIXELS = None
         media_root = Path(settings.MEDIA_ROOT)
         abs_dest = media_root / rel_dest
-        with Image.open(src) as im:
-            try:
-                im.draft("RGB", (max_edge, max_edge))
-            except Exception:
-                pass
-            im = ImageOps.exif_transpose(im).convert("RGB")
-            if max(im.size) > max_edge:
-                im.thumbnail((max_edge, max_edge), Image.LANCZOS)
-            width, height = im.size
-            buf = BytesIO()
-            im.save(buf, format="WEBP", quality=q, method=5)
+        im = open_srgb(src, max_edge=max_edge)
+        if max(im.size) > max_edge:
+            im.thumbnail((max_edge, max_edge), Image.LANCZOS)
+        width, height = im.size
+        buf = BytesIO()
+        im.save(buf, format="WEBP", quality=q, method=5)
         abs_dest.parent.mkdir(parents=True, exist_ok=True)
         abs_dest.write_bytes(buf.getvalue())
         asset = MediaAsset.objects.filter(file=rel_dest).first()

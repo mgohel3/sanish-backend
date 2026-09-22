@@ -50,7 +50,7 @@ from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageCms
 
 # Client scans can be enormous (some > 400 megapixels). Trusted local files.
 Image.MAX_IMAGE_PIXELS = None
@@ -128,6 +128,41 @@ def parse_texture_stem(stem):
 
 def degrade(code, tokens):
     return code + " " + " ".join(t for t in tokens if t != "H")
+
+
+_SRGB_PROFILE = ImageCms.createProfile("sRGB")
+
+
+def open_srgb(path, max_edge=None):
+    """Open an image and return it as a correctly colour-managed RGB image.
+
+    The client's scans are a mix of RGB and CMYK JPEGs, many carrying an
+    embedded ICC profile (frequently a print/CMYK profile even on files
+    Pillow reports as RGB). A plain ``.convert("RGB")`` ignores that profile
+    and applies a generic formula instead — for a CMYK source this produces a
+    visibly wrong colour cast (confirmed: a near-white cream texture came out
+    pale green). Whenever a profile is embedded, transform through it to
+    sRGB properly; otherwise fall back to a plain conversion (with a fast
+    JPEG DCT-scaled decode, since these can be huge scans and there is no
+    profile to lose fidelity for). sRGB-to-sRGB (the common case for plain
+    photos) is a no-op, so this is always safe.
+    """
+    im = Image.open(path)
+    icc = im.info.get("icc_profile")
+    if icc:
+        try:
+            src_profile = ImageCms.ImageCmsProfile(BytesIO(icc))
+            im = ImageCms.profileToProfile(im, src_profile, _SRGB_PROFILE, outputMode="RGB")
+            return ImageOps.exif_transpose(im)
+        except Exception:
+            pass
+        im = Image.open(path)
+    if max_edge:
+        try:
+            im.draft("RGB", (max_edge, max_edge))
+        except Exception:
+            pass
+    return ImageOps.exif_transpose(im).convert("RGB")
 
 
 def read_products(xlsx_path):
@@ -462,17 +497,12 @@ class Command(BaseCommand):
                     width, height = w0, h0
                     copied = True
             if not copied:
-                with Image.open(src_path) as im:
-                    try:                   # JPEG DCT down-scaling: huge speed-up on giant scans
-                        im.draft("RGB", (max_edge, max_edge))
-                    except Exception:
-                        pass
-                    im = ImageOps.exif_transpose(im).convert("RGB")
-                    if max(im.size) > max_edge:
-                        im.thumbnail((max_edge, max_edge), Image.LANCZOS)
-                    width, height = im.size
-                    buf = BytesIO()
-                    im.save(buf, format="WEBP", quality=q, method=5)
+                im = open_srgb(src_path, max_edge=max_edge)
+                if max(im.size) > max_edge:
+                    im.thumbnail((max_edge, max_edge), Image.LANCZOS)
+                width, height = im.size
+                buf = BytesIO()
+                im.save(buf, format="WEBP", quality=q, method=5)
                 abs_dest.parent.mkdir(parents=True, exist_ok=True)
                 abs_dest.write_bytes(buf.getvalue())
         asset = MediaAsset.objects.filter(file=rel_dest).first()
