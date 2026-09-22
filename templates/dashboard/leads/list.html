@@ -60,25 +60,34 @@
         <thead>
           <tr>
             <th class="w-8"><input type="checkbox" class="select-all-group" onclick="toggleGroup(this)"></th>
-            <th>Contact</th><th>Type</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th>
+            <th>Contact</th><th>Type</th><th>Message</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th>
           </tr>
         </thead>
         <tbody>
           {% for inq in group.list %}
-          <tr x-data="{ expanded: false }">
+          <tr>
             <td><input type="checkbox" name="ids" value="{{ inq.pk }}" class="row-check" onclick="updateBulkBar()"></td>
             <td>
               <div>
                 <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
                 <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
-                <button @click="expanded = !expanded" class="text-xs text-accent hover:underline mt-0.5" x-text="expanded ? 'Hide message' : 'View message'"></button>
-                <div x-show="expanded" x-transition class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300">
-                  {{ inq.message|default:"(no message)" }}
-                </div>
               </div>
             </td>
             <td><span class="badge badge-blue">{{ inq.get_type_display }}</span></td>
-            <td class="text-sm text-gray-500">{{ inq.city }}</td>
+            <td class="max-w-[260px]">
+              {% if inq.message %}
+              <details class="group">
+                <summary class="text-xs text-accent hover:underline cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <span class="group-open:hidden">View message</span>
+                  <span class="hidden group-open:inline">Hide message</span>
+                </summary>
+                <div class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line break-words">{{ inq.message }}</div>
+              </details>
+              {% else %}
+              <span class="text-xs text-gray-400">(no message)</span>
+              {% endif %}
+            </td>
+            <td class="text-sm text-gray-500">{{ inq.city|default:"—" }}</td>
             <td>
               {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
               {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
