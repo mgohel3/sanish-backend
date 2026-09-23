@@ -37,7 +37,7 @@ from media_library.models import MediaAsset, MediaFolder
 
 SHORT_DESC = (
     "A solid-shade decorative laminate from the Sanish {range} range (shade "
-    "{code}) — an even, contemporary {thickness} surface that pairs easily with "
+    "{code}) — an even, contemporary surface that pairs easily with "
     "wood, metal and stone in modern interiors."
 )
 
@@ -48,8 +48,7 @@ DESCRIPTION = (
     "across large runs of shutters, wardrobe fronts and wall panelling.</p>"
     "<p>Like every Sanish laminate it is scratch resistant, moisture proof and easy "
     "to wipe clean — equally suited to kitchens, wardrobes, retail joinery and "
-    "commercial fit-outs. Supplied in standard 8ft × 4ft (2440 × 1220 mm) sheets at "
-    "{thickness} thickness.</p>"
+    "commercial fit-outs. Supplied in standard 8ft × 4ft (2440 × 1220 mm) sheets.</p>"
     "<p>Shades in this range follow the factory shade code. For exact colour "
     "matching, request a physical sample or download the {range} catalogue from the "
     "catalogue page.</p>"

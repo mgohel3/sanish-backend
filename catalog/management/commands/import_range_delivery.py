@@ -77,12 +77,12 @@ IMG_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 
 SHORT_DESC = (
     "A decorative laminate from the Sanish {range} range — design {design_no} "
-    "in the {finish} finish, at {thickness} thickness."
+    "in the {finish} finish."
 )
 DESCRIPTION = (
     "<p>{name} is part of the Sanish <strong>{range}</strong> collection — design "
     "{design_no} in the {finish} finish. Supplied in standard 8ft × 4ft "
-    "(2440 × 1220 mm) sheets at {thickness} thickness.</p>"
+    "(2440 × 1220 mm) sheets.</p>"
     "<p>Like every Sanish laminate it is scratch resistant, moisture proof and easy "
     "to wipe clean, suited to kitchens, wardrobes, retail joinery and commercial "
     "fit-outs.</p>"
