@@ -64,7 +64,7 @@ class Command(BaseCommand):
             raise CommandError(str(exc))
 
         rows = read_products(opts["xlsx"])
-        full_idx, strays, dupes = index_design_dir(opts["full"])
+        full_idx, _full_by_pair, strays, dupes = index_design_dir(opts["full"])
 
         products = []
         for design, finish in rows:

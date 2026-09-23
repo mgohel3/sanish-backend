@@ -65,6 +65,8 @@ RANGES = {
                   main="Thre3", tex="Thre3 Textures", app="Thre3 Application"),
     "cool-colour": dict(label="Cool Colour", collection="cool-colour",
                         main="Cool Colours", tex="Cool Colours Textures", app="Cool Colours Application"),
+    "perspective-v4": dict(label="Perspective V4", collection="perspective-v4",
+                           main="Perspective V4", tex="Perspective V4 Textures", app="Perspective V4 Application"),
 }
 
 # Media Library folders that must never be purged, whatever the range.
@@ -183,23 +185,43 @@ def read_products(xlsx_path):
 
 
 def index_design_dir(folder):
-    """{design -> Path} for '<design>.jpg' files; also returns strays."""
-    files, strays, dupes = {}, [], []
+    """{design -> Path} for '<design>.jpg' files (one photo shared by every
+    finish of that design — the normal case for every range so far).
+
+    Also recognises '<design> <FINISH>.jpg' files (same naming as textures)
+    as a *per-finish override*, returned separately in `by_pair` — needed for
+    ranges (e.g. Perspective V4 / 0.8mm) where different finishes of the same
+    design number were photographed as genuinely different full-sheet/
+    application shots, not one photo reused across the whole design. A file
+    matching either shape is "recognised"; only files matching neither are a
+    stray.
+    """
+    files, by_pair, strays, dupes = {}, {}, [], []
     for f in sorted(Path(folder).iterdir()):
         if f.suffix.lower() not in IMG_EXTS:
             continue
         stem = f.stem.strip()
-        if not DESIGN_STEM_RE.match(stem):
-            strays.append(f.name)
+        if DESIGN_STEM_RE.match(stem):
+            if stem in files:
+                dupes.append(f.name)
+                if f.stat().st_size > files[stem].stat().st_size:
+                    files[stem] = f
+                continue
+            files[stem] = f
             continue
-        if stem in files:
-            dupes.append(f.name)
-            # keep the bigger file
-            if f.stat().st_size > files[stem].stat().st_size:
-                files[stem] = f
+        parsed = parse_texture_stem(stem)
+        if parsed:
+            code, tokens = parsed
+            key = (code, tuple(tokens))
+            if key in by_pair:
+                dupes.append(f.name)
+                if f.stat().st_size > by_pair[key].stat().st_size:
+                    by_pair[key] = f
+                continue
+            by_pair[key] = f
             continue
-        files[stem] = f
-    return files, strays, dupes
+        strays.append(f.name)
+    return files, by_pair, strays, dupes
 
 
 def index_texture_dir(folder):
@@ -270,18 +292,20 @@ class Command(BaseCommand):
             raise CommandError(str(exc))
 
         rows = read_products(opts["xlsx"])
-        full_idx, full_strays, full_dupes = index_design_dir(opts["full"])
-        app_idx, app_strays, app_dupes = index_design_dir(opts["application"])
+        full_idx, full_by_pair, full_strays, full_dupes = index_design_dir(opts["full"])
+        app_idx, app_by_pair, app_strays, app_dupes = index_design_dir(opts["application"])
         tex_exact, tex_degraded, tex_bad = index_texture_dir(opts["texture"])
 
         w = self.stdout.write
         w(f"\n=== {cfg['label']} ({'DRY RUN' if dry else 'LIVE'}) ===")
         w(f"sheet: {len(rows)} products, {len({d for d, _ in rows})} designs | "
-          f"files: full={len(full_idx)} application={len(app_idx)} texture={sum(len(v) for v in tex_degraded.values())}")
+          f"files: full={len(full_idx) + len(full_by_pair)} application={len(app_idx) + len(app_by_pair)} "
+          f"texture={sum(len(v) for v in tex_degraded.values())}")
 
         # ── plan every product ────────────────────────────────────────────
         plan = []
         used_tex, used_full, used_app = set(), set(), set()
+        used_full_pairs, used_app_pairs = set(), set()
         for design, finish in rows:
             tokens = finish_tokens(finish)
             sku = f"{design} {finish}"
@@ -292,15 +316,27 @@ class Command(BaseCommand):
                     tex = cands[0]
             if tex is not None:
                 used_tex.add(tex.name)
-            full = full_idx.get(design)
-            app = app_idx.get(design)
+            # A '<design> <FINISH>.jpg' file (per-finish override — different
+            # finishes of the same design photographed separately) always
+            # wins over the plain '<design>.jpg' shared photo, when present.
+            pair_key = (design, tuple(tokens))
+            full = full_by_pair.get(pair_key)
+            full_is_pair = full is not None
+            if full is None:
+                full = full_idx.get(design)
+            app = app_by_pair.get(pair_key)
+            app_is_pair = app is not None
+            if app is None:
+                app = app_idx.get(design)
             if full:
-                used_full.add(design)
+                (used_full_pairs if full_is_pair else used_full).add(pair_key if full_is_pair else design)
             if app:
-                used_app.add(design)
+                (used_app_pairs if app_is_pair else used_app).add(pair_key if app_is_pair else design)
             if opts["textures_only"]:
                 full = app = None
+                full_is_pair = app_is_pair = False
             plan.append(dict(design=design, finish=finish, tokens=tokens, sku=sku,
+                             full_is_pair=full_is_pair, app_is_pair=app_is_pair,
                              tex=tex, full=full, app=app))
 
         sheet_skus = {p["sku"] for p in plan}
@@ -339,8 +375,13 @@ class Command(BaseCommand):
         w(f"  designs with NO full sheet: {len(d_no_full)}  {d_no_full[:14]}{' …' if len(d_no_full) > 14 else ''}")
         w(f"  designs with NO application image: {len(d_no_app)}  {d_no_app[:14]}{' …' if len(d_no_app) > 14 else ''}")
         sheet_designs = {p['design'] for p in plan}
-        w(f"  stray full-sheet files (design not in sheet): {sorted(set(full_idx) - sheet_designs)} + odd names {full_strays}")
-        w(f"  stray application files (design not in sheet): {sorted(set(app_idx) - sheet_designs)} + odd names {app_strays}")
+        sheet_pairs = {(p['design'], tuple(p['tokens'])) for p in plan}
+        stray_full_pairs = sorted(set(full_by_pair) - sheet_pairs)
+        stray_app_pairs = sorted(set(app_by_pair) - sheet_pairs)
+        w(f"  stray full-sheet files (design not in sheet): {sorted(set(full_idx) - sheet_designs)}"
+          f"{f' + per-finish {stray_full_pairs}' if stray_full_pairs else ''} + odd names {full_strays}")
+        w(f"  stray application files (design not in sheet): {sorted(set(app_idx) - sheet_designs)}"
+          f"{f' + per-finish {stray_app_pairs}' if stray_app_pairs else ''} + odd names {app_strays}")
         all_tex_files = {f.name for v in tex_degraded.values() for f in v}
         w(f"  stray texture files (not matched to any product): {sorted(all_tex_files - used_tex)} + unparseable {tex_bad}")
         if full_dupes or app_dupes:
@@ -396,8 +437,16 @@ class Command(BaseCommand):
 
                 gallery_asset = None
                 if p["full"]:
-                    gallery_asset = self._asset(asset_cache, p["full"], f"{base}/full/{design}.webp",
-                                                title=design, folder=f_main, max_edge=opts["max_edge"], q=q,
+                    # Per-finish override files get their own destination path/asset —
+                    # sharing the plain '<design>.webp' path with a sibling finish that
+                    # uses a DIFFERENT source photo would silently collide (the asset
+                    # cache + MediaAsset dedupe on destination path) and both products
+                    # would end up showing whichever was written first.
+                    full_dest = f"{base}/full/{design}-{'-'.join(p['tokens'])}.webp" if p["full_is_pair"] \
+                        else f"{base}/full/{design}.webp"
+                    gallery_asset = self._asset(asset_cache, p["full"], full_dest,
+                                                title=f"{design} {label_finish}" if p["full_is_pair"] else design,
+                                                folder=f_main, max_edge=opts["max_edge"], q=q,
                                                 alt=f"Sanish {cfg['label']} laminate — design {design}")
                 elif p["tex"]:
                     gallery_asset = self._asset(asset_cache, p["tex"], f"{base}/texture/{design}-{'-'.join(p['tokens'])}.webp",
@@ -406,8 +455,11 @@ class Command(BaseCommand):
                                                 alt=f"Sanish {cfg['label']} design {design} — {label_finish} finish")
                 app_asset = None
                 if p["app"]:
-                    app_asset = self._asset(asset_cache, p["app"], f"{base}/application/{design}.webp",
-                                            title=f"{design} — application", folder=f_app,
+                    app_dest = f"{base}/application/{design}-{'-'.join(p['tokens'])}.webp" if p["app_is_pair"] \
+                        else f"{base}/application/{design}.webp"
+                    app_asset = self._asset(asset_cache, p["app"], app_dest,
+                                            title=f"{design} {label_finish} — application" if p["app_is_pair"]
+                                            else f"{design} — application", folder=f_app,
                                             max_edge=opts["app_max_edge"], q=q,
                                             alt=f"Sanish {cfg['label']} design {design} applied to interior joinery")
                 tex_assets = []            # [(finish label, MediaAsset)] in display order
