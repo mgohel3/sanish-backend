@@ -19,6 +19,8 @@
         metaTitle: '{{ page.seo_title|default:''|escapejs }}',
         metaDesc:  '{{ page.meta_description|default:''|escapejs }}',
         templateId: '{{ page.template_id|default:''|escapejs }}',
+        slug: '{{ page.slug|default:''|escapejs }}',
+        overrideCanonical: {{ page.canonical_url|yesno:'true,false' }},
         addFaq() { this.faqs.push({q:'',a:''}); },
         removeFaq(i) { this.faqs.splice(i,1); },
         addWhyUs() { this.whyUs.push({title:'',desc:''}); },
@@ -85,6 +87,11 @@
           <div>
             <label class="form-label">State</label>
             <input type="text" name="state" value="{{ page.state|default:'' }}" class="form-input" placeholder="Gujarat"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="form-label">URL Slug</label>
+            <input type="text" name="slug" x-model="slug" class="form-input" placeholder="{{ page.slug|default:'auto-generated-from-template-city-state' }}"/>
+            <p class="form-hint">Leave blank to auto-generate from the template + city + state. This also drives the Canonical URL below unless you override that separately.</p>
           </div>
         </div>
       </div>
@@ -203,7 +210,18 @@
           <textarea name="meta_description" x-model="metaDesc" rows="3" class="form-input resize-none"></textarea>
         </div>
         <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ page.meta_keywords|default:'' }}" class="form-input"/></div>
-        <div><label class="form-label">Canonical URL</label><input type="url" name="canonical_url" value="{{ page.canonical_url|default:'' }}" class="form-input" placeholder="https://…"/></div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0">Canonical URL</label>
+            <button type="button" @click="overrideCanonical = !overrideCanonical" class="text-xs text-accent hover:underline" x-text="overrideCanonical ? '⬤ Override active' : '◯ Auto (from slug)'"></button>
+          </div>
+          <input type="url" name="canonical_url" value="{{ page.canonical_url|default:'' }}"
+                 x-show="overrideCanonical" placeholder="https://…" class="form-input border-accent ring-1 ring-accent/20"/>
+          <div x-show="!overrideCanonical" x-cloak
+               class="form-input opacity-60 cursor-not-allowed truncate"
+               x-text="'{{ site_url }}/' + (slug || '…') + '/'"></div>
+          <p class="form-hint">Auto mode always follows the URL Slug above — switch to override only to point this page's canonical at a different URL.</p>
+        </div>
 
         <!-- Schema Type -->
         <div>

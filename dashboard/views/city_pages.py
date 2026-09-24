@@ -4,11 +4,13 @@ City Pages dashboard views — single create, bulk CSV/Excel import, manage temp
 import csv
 import io
 import json
+from django.conf import settings
 from django.db import transaction
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib import messages
 from django.http import HttpResponse
+from django.utils.text import slugify
 
 import openpyxl
 
@@ -17,6 +19,29 @@ from dashboard.mixins import LoggedActionMixin
 from pages.models import PageTemplate, CityPage
 from catalog.models import Product
 from media_library.models import MediaAsset
+
+
+def _resolve_slug(raw_slug, template, city, state, *, exclude_pk=None):
+    """A staff-entered slug wins (slugified); otherwise fall back to the
+    template's auto pattern, exactly like before this field existed.
+    Returns (slug, error) — error is a user-facing string, or None."""
+    custom = slugify((raw_slug or "").strip())
+    slug = custom or template.build_slug(city, state)
+    qs = CityPage.objects.filter(slug=slug)
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    if qs.exists():
+        return slug, f"URL slug “{slug}” is already used by another city page — choose a different one."
+    return slug, None
+
+
+def _resolve_canonical(raw_canonical, slug):
+    """A staff-entered canonical URL wins verbatim; otherwise auto-build it
+    from the production site origin + this page's slug."""
+    custom = (raw_canonical or "").strip()
+    if custom:
+        return custom
+    return f"{settings.SITE_URL.rstrip('/')}/{slug}/"
 
 
 class CityPageIndexView(SEOManagerRequiredMixin, View):
@@ -80,15 +105,24 @@ class CityPageCreateView(SEOManagerRequiredMixin, LoggedActionMixin, View):
             "products":  Product.objects.filter(status="published"),
             "selected_template": template,
             "schema_choices": CityPage._meta.get_field("schema_type").choices,
+            "site_url": settings.SITE_URL.rstrip("/"),
             "active_nav": "city_pages",
         })
 
     def post(self, request):
         d = request.POST
+        template = get_object_or_404(PageTemplate, pk=d["template"])
+        city, state = d["city"], d.get("state", "")
+        slug, slug_error = _resolve_slug(d.get("slug"), template, city, state)
+        if slug_error:
+            messages.error(request, slug_error)
+            return redirect(f"{request.path}?template={template.pk}")
+
         page = CityPage(
-            template_id     = d["template"],
-            city            = d["city"],
-            state           = d.get("state", ""),
+            template        = template,
+            city            = city,
+            state           = state,
+            slug            = slug,
             h1_title        = d.get("h1_title") or None,
             hero_heading    = d.get("hero_heading") or None,
             hero_description = d.get("hero_description") or None,
@@ -99,7 +133,7 @@ class CityPageCreateView(SEOManagerRequiredMixin, LoggedActionMixin, View):
             seo_title       = d.get("seo_title", ""),
             meta_description = d.get("meta_description", ""),
             meta_keywords   = d.get("meta_keywords", ""),
-            canonical_url   = d.get("canonical_url", ""),
+            canonical_url   = _resolve_canonical(d.get("canonical_url"), slug),
             og_title        = d.get("og_title", ""),
             og_description  = d.get("og_description", ""),
             twitter_title   = d.get("twitter_title", ""),
@@ -127,15 +161,24 @@ class CityPageEditView(SEOManagerRequiredMixin, LoggedActionMixin, View):
             "products":  Product.objects.filter(status="published"),
             "selected_template": page.template,
             "schema_choices": CityPage._meta.get_field("schema_type").choices,
+            "site_url": settings.SITE_URL.rstrip("/"),
             "active_nav": "city_pages",
         })
 
     def post(self, request, pk):
         page = get_object_or_404(CityPage, pk=pk)
         d = request.POST
-        page.template_id     = d["template"]
-        page.city            = d["city"]
-        page.state           = d.get("state", "")
+        template = get_object_or_404(PageTemplate, pk=d["template"])
+        city, state = d["city"], d.get("state", "")
+        slug, slug_error = _resolve_slug(d.get("slug"), template, city, state, exclude_pk=page.pk)
+        if slug_error:
+            messages.error(request, slug_error)
+            return redirect("city_page_edit", pk=pk)
+
+        page.template        = template
+        page.city            = city
+        page.state           = state
+        page.slug             = slug
         page.h1_title        = d.get("h1_title") or None
         page.hero_heading    = d.get("hero_heading") or None
         page.hero_description = d.get("hero_description") or None
@@ -146,15 +189,13 @@ class CityPageEditView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         page.seo_title       = d.get("seo_title", "")
         page.meta_description = d.get("meta_description", "")
         page.meta_keywords   = d.get("meta_keywords", "")
-        page.canonical_url   = d.get("canonical_url", "")
+        page.canonical_url   = _resolve_canonical(d.get("canonical_url"), slug)
         page.og_title        = d.get("og_title", "")
         page.og_description  = d.get("og_description", "")
         page.twitter_title   = d.get("twitter_title", "")
         page.twitter_description = d.get("twitter_description", "")
         page.schema_type     = d.get("schema_type", "")
         page.status          = d.get("status", "draft")
-        # Force slug regeneration if city/state changed
-        page.slug = ""
         page.save()
         rel_ids = d.getlist("related_products")
         page.related_products.set(rel_ids)

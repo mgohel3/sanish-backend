@@ -140,6 +140,14 @@ CORS_ALLOWED_ORIGINS = [
 # The live Next.js site's origin — used to embed the real block components as
 # a live preview iframe in the CMS block editor (see dashboard/pages/form.html).
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+# The PRODUCTION site's public origin — deliberately separate from FRONTEND_URL
+# (which points at staging while the site is being built). Used only to
+# auto-generate canonical URLs (e.g. City Pages), so a canonical tag always
+# points at the real domain even when the CMS itself is being edited on
+# staging. Update this once the production domain goes live if it ever
+# changes.
+SITE_URL = os.environ.get("SITE_URL", "https://sanishlaminate.com")
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
 # ── Email ─────────────────────────────────────────────────────────────────────
