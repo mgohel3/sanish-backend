@@ -43,7 +43,8 @@ class SiteSettings(models.Model):
     # ── Header / Top-bar ──────────────────────────────────────────────────────
     topbar_badge     = models.CharField(max_length=100, blank=True, default="Premium Surface Manufacturing")
     header_cta_label = models.CharField(max_length=60, blank=True, default="Download Catalogue")
-    header_cta_url   = models.CharField(max_length=300, blank=True, default="#")
+    header_cta_url   = models.CharField(max_length=300, blank=True, default="/collection",
+                                          help_text="Where the header's CTA button links to, e.g. /collection or a full URL")
 
     # ── Footer ────────────────────────────────────────────────────────────────
     footer_description = models.TextField(blank=True,

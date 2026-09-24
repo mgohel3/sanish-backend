@@ -7,10 +7,47 @@ from pathlib import Path
 from django.conf import settings
 from django.core.files.base import ContentFile
 
+# Longest edge a manually-uploaded image gets resized to before WebP encoding.
+# Client photos routinely arrive as 10-20MB, 5000px+ scans — encoding those at
+# full resolution is what made every CMS upload feel like it hangs (each one
+# blocks the request for several seconds), and the site never displays
+# anything anywhere near that large anyway. Matches the size used by the bulk
+# range-import tooling (import_range_delivery.py's --max-edge default).
+UPLOAD_MAX_EDGE = 2000
+
+
+def _to_srgb_rgb(img):
+    """Colour-manage an opened Pillow image to sRGB, honouring an embedded ICC
+    profile if present. Without this, a CMYK JPEG (common in client scans —
+    every texture folder handled on this project so far has been 100% CMYK)
+    gets a plain `.convert("RGB")`, which ignores the profile and produces a
+    visible colour cast — confirmed earlier on this project as a real,
+    client-visible bug for the bulk-import pipeline, and the manual upload
+    path here had the exact same bug, just never caught because nobody
+    uploaded a CMYK file through it and looked closely."""
+    from PIL import ImageCms, ImageOps
+
+    icc = img.info.get("icc_profile")
+    if icc:
+        try:
+            src_profile = ImageCms.ImageCmsProfile(io.BytesIO(icc))
+            dst_profile = ImageCms.createProfile("sRGB")
+            img = ImageCms.profileToProfile(img, src_profile, dst_profile, outputMode="RGB")
+            return ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGBA")
+    else:
+        img = img.convert("RGB")
+    return ImageOps.exif_transpose(img)
+
 
 def convert_to_webp(asset):
     """
-    Converts an image MediaAsset to WebP format.
+    Converts an image MediaAsset to WebP format — colour-managed (see
+    _to_srgb_rgb) and capped to UPLOAD_MAX_EDGE so a single large upload
+    doesn't stall the request for several seconds.
     Returns the relative path of the saved WebP file, or None on failure.
     """
     try:
@@ -20,13 +57,9 @@ def convert_to_webp(asset):
         # Open via storage backend (works for both local and R2)
         with default_storage.open(asset.file.name) as f:
             img = Image.open(f)
-            img.load()
-
-        # Convert RGBA → RGB for JPEG-based WebP compat
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGBA")
-        else:
-            img = img.convert("RGB")
+            img = _to_srgb_rgb(img)
+            if max(img.size) > UPLOAD_MAX_EDGE:
+                img.thumbnail((UPLOAD_MAX_EDGE, UPLOAD_MAX_EDGE), Image.LANCZOS)
 
         # Also capture dimensions while we have the image open
         if not asset.width or not asset.height:
