@@ -1,0 +1,440 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Media Library{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Media Library</span>{% endblock %}
+
+{% block content %}
+<style>[x-cloak]{display:none!important;}</style>
+<div class="space-y-6"
+     x-data="mediaLibrary()"
+     @keydown.escape.window="editOpen = false"
+     @mousedown="startDrag($event)"
+     :class="{ 'select-none': dragging }">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Media Library</h1>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ total_count }} item(s) total</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <form method="post" onsubmit="return confirm('Scan the server media folder and register any files that are not yet in the library?');">
+        {% csrf_token %}<input type="hidden" name="action" value="scan_disk"/>
+        <button type="submit" class="btn-ghost text-sm">Scan disk</button>
+      </form>
+      <form method="post" onsubmit="return confirm('Import images already used by the website frontend into the library?');">
+        {% csrf_token %}<input type="hidden" name="action" value="import_frontend"/>
+        <button type="submit" class="btn-ghost text-sm">Import frontend images</button>
+      </form>
+      <button type="button" class="btn-primary" @click="uploadOpen = !uploadOpen">Upload files</button>
+    </div>
+  </div>
+
+  <!-- ── Upload panel ───────────────────────────────────────────────────── -->
+  <form method="post" enctype="multipart/form-data" x-show="uploadOpen" x-cloak x-transition
+        class="bg-white dark:bg-[#23202E] rounded-2xl shadow-card p-4 flex flex-wrap items-end gap-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="upload"/>
+    <div class="flex-1 min-w-[220px]">
+      <label class="form-label">Choose images / videos / PDFs</label>
+      <input type="file" name="files" multiple required
+             accept="image/*,video/*,.pdf,.svg"
+             class="block w-full text-sm text-gray-600 dark:text-gray-300
+                    file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0
+                    file:text-sm file:font-semibold file:bg-accent file:text-white
+                    hover:file:bg-[#7a98b5] cursor-pointer"/>
+    </div>
+    <div class="min-w-[160px]">
+      <label class="form-label">Add to folder</label>
+      <select name="upload_folder" class="form-input form-select">
+        <option value="">Uncategorized</option>
+        {% for f in folders %}<option value="{{ f.pk }}">{{ f.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">Upload</button>
+  </form>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+
+    <!-- ── Folder sidebar ─────────────────────────────────────────────── -->
+    <aside class="space-y-1">
+      <p class="form-label">Folders</p>
+      {% url 'media_library' as media_url %}
+      <a href="{{ media_url }}{% if type_f %}?type={{ type_f }}{% endif %}"
+         class="flex items-center justify-between px-3 py-2 rounded-xl text-sm
+                {% if not folder %}bg-accent/10 text-accent font-semibold{% else %}hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300{% endif %}">
+        <span>All media</span><span class="text-xs text-gray-400">{{ total_count }}</span>
+      </a>
+      <a href="{{ media_url }}?folder=none{% if type_f %}&type={{ type_f }}{% endif %}"
+         class="flex items-center justify-between px-3 py-2 rounded-xl text-sm
+                {% if folder == 'none' %}bg-accent/10 text-accent font-semibold{% else %}hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300{% endif %}">
+        <span>Uncategorized</span><span class="text-xs text-gray-400">{{ uncategorized_count }}</span>
+      </a>
+
+      {% for f in folders %}
+      <div x-data="{ ren: false }" class="group">
+        <div class="flex items-center gap-1">
+          <a href="{{ media_url }}?folder={{ f.pk }}{% if type_f %}&type={{ type_f }}{% endif %}"
+             class="flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm
+                    {% if folder == f.pk|stringformat:'s' %}bg-accent/10 text-accent font-semibold{% else %}hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300{% endif %}">
+            <span class="truncate">{{ f.name }}</span><span class="text-xs text-gray-400 ml-2">{{ f.n }}</span>
+          </a>
+          <button type="button" @click="ren = !ren" title="Rename"
+                  class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+          <form method="post" onsubmit="return confirm('Delete this folder? Its media will move to Uncategorized.');">
+            {% csrf_token %}<input type="hidden" name="action" value="folder_delete"/><input type="hidden" name="pk" value="{{ f.pk }}"/>
+            <button type="submit" title="Delete folder"
+                    class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </form>
+        </div>
+        <form method="post" x-show="ren" x-cloak class="flex gap-1 mt-1 px-1">
+          {% csrf_token %}<input type="hidden" name="action" value="folder_rename"/><input type="hidden" name="pk" value="{{ f.pk }}"/>
+          <input type="text" name="name" value="{{ f.name }}" class="form-input text-xs py-1 flex-1"/>
+          <button type="submit" class="btn-primary text-xs py-1 px-2">Save</button>
+        </form>
+      </div>
+      {% endfor %}
+
+      <form method="post" class="flex gap-1 pt-2">
+        {% csrf_token %}<input type="hidden" name="action" value="folder_create"/>
+        <input type="text" name="name" placeholder="New folder…" class="form-input text-xs py-1 flex-1"/>
+        <button type="submit" class="btn-ghost text-xs py-1 px-2">Add</button>
+      </form>
+    </aside>
+
+    <!-- ── Right column ───────────────────────────────────────────────── -->
+    <div class="space-y-4">
+
+      <!-- Filters -->
+      <form method="get" class="flex flex-wrap gap-3 items-end">
+        {% if folder %}<input type="hidden" name="folder" value="{{ folder }}"/>{% endif %}
+        <div class="flex-1 min-w-[160px]"><label class="form-label">Search</label>
+          <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Title, alt text or filename…"/></div>
+        <div class="min-w-[120px]">
+          <label class="form-label">Type</label>
+          <select name="type" class="form-input form-select">
+            <option value="">All types</option>
+            {% for val, label in type_choices %}
+            <option value="{{ val }}" {% if type_f == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        <a href="{% url 'media_library' %}" class="btn-ghost">Clear</a>
+      </form>
+
+      <!-- Bulk toolbar -->
+      <div class="flex flex-wrap items-center gap-3 bg-white dark:bg-[#23202E] rounded-2xl shadow-card px-4 py-3">
+        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+          <input type="checkbox" @change="toggleAll($event)" :checked="allSelected" class="rounded"/>
+          Select all
+        </label>
+        <span class="text-sm text-gray-500" x-text="selected.length + ' selected'"></span>
+      </div>
+
+      <!-- Grid -->
+      <div class="relative" x-ref="grid">
+        <div x-show="dragging" x-cloak
+             class="fixed border-2 border-accent bg-accent/10 pointer-events-none z-30 rounded-sm"
+             :style="marqueeStyle"></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+          {% for asset in assets %}
+          <div class="media-card group relative bg-white dark:bg-[#23202E] rounded-2xl shadow-card overflow-hidden ring-2 cursor-pointer"
+               data-id="{{ asset.pk }}"
+               :class="selected.includes('{{ asset.pk }}') ? 'ring-accent' : 'ring-transparent'"
+               @click="selectItem({{ forloop.counter0 }}, $event)">
+            <label class="absolute top-2 left-2 z-10 bg-white/90 dark:bg-black/60 rounded-md p-0.5 cursor-pointer">
+              <input type="checkbox" value="{{ asset.pk }}" @click.prevent.stop="selectItem({{ forloop.counter0 }}, $event)"
+                     :checked="selected.includes('{{ asset.pk }}')" class="rounded"/>
+            </label>
+
+            {% if asset.type == 'image' %}
+            <div class="aspect-square bg-surface-100 dark:bg-dark-700">
+              <img src="{{ asset.url }}" alt="{{ asset.alt_text }}" loading="lazy" class="w-full h-full object-cover pointer-events-none"/>
+            </div>
+            {% elif asset.type == 'pdf' %}
+            <div class="aspect-square bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+              <svg class="w-10 h-10 text-red-400" fill="currentColor" viewBox="0 0 24 24"><path d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7zm5 1l4 4h-4V4z"/></svg>
+            </div>
+            {% elif asset.type == 'video' %}
+            <div class="aspect-square bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+              <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            {% else %}
+            <div class="aspect-square bg-gray-50 dark:bg-white/5 flex items-center justify-center">
+              <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M7 3a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5H7z"/></svg>
+            </div>
+            {% endif %}
+
+            <div class="absolute inset-x-0 bottom-0 top-auto bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 py-2">
+              <button type="button" class="p-2 bg-white/90 rounded-xl hover:bg-white text-gray-700"
+                      @click.stop="openEdit('{{ asset.pk }}')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <a href="{{ asset.original_url }}" target="_blank" @click.stop class="p-2 bg-white/90 rounded-xl hover:bg-white text-gray-700" title="Open original">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              </a>
+            </div>
+
+            <div class="p-2">
+              <p class="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{{ asset.title|default:asset.filename }}</p>
+              <p class="text-[11px] text-gray-400 truncate">{{ asset.filename }}</p>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-span-full py-16 text-center text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p>No media here yet. Upload files, run <b>Scan disk</b>, or <b>Import frontend images</b>.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating bulk action bar -->
+  <div x-show="selected.length > 0"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 translate-y-4"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 translate-y-0"
+       x-transition:leave-end="opacity-0 translate-y-4"
+       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+              bg-gray-900 dark:bg-[#1a1726] text-white rounded-2xl shadow-2xl
+              px-5 py-3 flex flex-wrap items-center gap-4 min-w-[360px]">
+
+    <span class="text-sm font-medium tabular-nums">
+      <span x-text="selected.length"></span> selected
+    </span>
+
+    <div class="flex-1 h-px bg-white/10"></div>
+
+    <form method="post" class="flex items-center gap-2" @submit="syncIds($el)">
+      {% csrf_token %}<input type="hidden" name="action" value="bulk_move"/><input type="hidden" name="ids" :value="selected.join(',')"/>
+      <select name="folder" class="form-input form-select text-sm py-1.5 !bg-white/10 !text-white !border-white/20">
+        <option value="" class="text-gray-900">Uncategorized</option>
+        {% for f in folders %}<option value="{{ f.pk }}" class="text-gray-900">{{ f.name }}</option>{% endfor %}
+      </select>
+      <button type="submit"
+              class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 transition-colors">
+        Move
+      </button>
+    </form>
+
+    <form method="post" @submit="syncIds($el)" onsubmit="return confirm('Delete all selected media?');">
+      {% csrf_token %}<input type="hidden" name="action" value="bulk_delete"/><input type="hidden" name="ids" :value="selected.join(',')"/>
+      <button type="submit"
+              class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-400 transition-colors">
+        Delete selected
+      </button>
+    </form>
+
+    <button type="button"
+            class="ml-1 text-white/40 hover:text-white transition-colors"
+            @click="selected = []">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <!-- ── Edit modal ─────────────────────────────────────────────────────── -->
+  <div x-show="editOpen" x-cloak class="media-modal fixed inset-0 z-50 flex items-center justify-center p-4"
+       @click.self="editOpen = false"
+       @mousedown.stop>
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative bg-white dark:bg-[#23202E] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
+        <h3 class="font-bold text-gray-900 dark:text-white">Media details</h3>
+        <button type="button" @click="editOpen = false" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 grid sm:grid-cols-[200px_1fr] gap-5">
+        <div>
+          <template x-if="cur.type === 'image'">
+            <img :src="cur.url" :alt="cur.alt_text" class="w-full rounded-xl border border-gray-100 dark:border-white/10"/>
+          </template>
+          <template x-if="cur.type !== 'image'">
+            <div class="aspect-square rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-400 text-sm" x-text="cur.type"></div>
+          </template>
+          <dl class="mt-3 text-[11px] text-gray-500 dark:text-gray-400 space-y-0.5">
+            <div><dt class="inline font-semibold">File: </dt><dd class="inline break-all" x-text="cur.filename"></dd></div>
+            <div><dt class="inline font-semibold">Size: </dt><dd class="inline" x-text="(cur.width && cur.height) ? cur.width + '×' + cur.height : '—'"></dd></div>
+            <div><dt class="inline font-semibold">Uploaded: </dt><dd class="inline" x-text="cur.created"></dd></div>
+          </dl>
+        </div>
+
+        <form method="post" class="space-y-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update"/>
+          <input type="hidden" name="pk" :value="cur.id"/>
+          <div>
+            <label class="form-label">Title / name</label>
+            <input type="text" name="title" x-model="cur.title" class="form-input"/>
+          </div>
+          <div>
+            <label class="form-label">Alternative text (alt)</label>
+            <input type="text" name="alt_text" x-model="cur.alt_text" class="form-input"/>
+          </div>
+          <div>
+            <label class="form-label">Caption</label>
+            <input type="text" name="caption" x-model="cur.caption" class="form-input"/>
+          </div>
+          <div>
+            <label class="form-label">Description</label>
+            <textarea name="description" rows="4" x-model="cur.description" class="form-input"></textarea>
+          </div>
+          <div>
+            <label class="form-label">Folder</label>
+            <select name="folder" x-model="cur.folder" class="form-input form-select">
+              <option value="">Uncategorized</option>
+              {% for f in folders %}<option value="{{ f.pk }}">{{ f.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="flex items-center justify-between pt-2">
+            <button type="submit" class="btn-primary">Save changes</button>
+          </div>
+        </form>
+      </div>
+      <div class="px-5 py-3 border-t border-gray-100 dark:border-white/10 flex justify-end">
+        <form method="post" onsubmit="return confirm('Delete this media permanently?');">
+          {% csrf_token %}<input type="hidden" name="action" value="delete"/><input type="hidden" name="pk" :value="cur.id"/>
+          <button type="submit" class="text-sm text-red-600 dark:text-red-400 hover:underline">Delete permanently</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.__mediaAssets = {
+    {% for asset in assets %}
+    "{{ asset.pk }}": {
+      id: "{{ asset.pk }}",
+      type: "{{ asset.type }}",
+      url: "{{ asset.url|escapejs }}",
+      title: "{{ asset.title|escapejs }}",
+      alt_text: "{{ asset.alt_text|escapejs }}",
+      caption: "{{ asset.caption|escapejs }}",
+      description: "{{ asset.description|escapejs }}",
+      folder: "{{ asset.folder_id|default_if_none:'' }}",
+      filename: "{{ asset.filename|escapejs }}",
+      width: {{ asset.width|default:'null' }},
+      height: {{ asset.height|default:'null' }},
+      created: "{{ asset.created|date:'M j, Y' }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function mediaLibraryData() {
+    return {
+      uploadOpen: false,
+      editOpen: false,
+      selected: [],
+      cur: {},
+      // Read from DOM order, not Object.keys() — JS reorders integer-like
+      // object keys (asset pks) numerically, which doesn't match render order.
+      pageIds: Array.from(document.querySelectorAll('.media-card')).map(el => el.dataset.id),
+      lastIndex: null,
+      dragging: false,
+      dragMoved: false,
+      dragStart: { x: 0, y: 0 },
+      dragCurrent: { x: 0, y: 0 },
+      dragBaseSelection: [],
+      get allSelected() {
+        return this.pageIds.length > 0 && this.selected.length === this.pageIds.length;
+      },
+      get marqueeStyle() {
+        const x1 = Math.min(this.dragStart.x, this.dragCurrent.x);
+        const y1 = Math.min(this.dragStart.y, this.dragCurrent.y);
+        const w = Math.abs(this.dragCurrent.x - this.dragStart.x);
+        const h = Math.abs(this.dragCurrent.y - this.dragStart.y);
+        return `left:${x1}px; top:${y1}px; width:${w}px; height:${h}px;`;
+      },
+      toggle(id) {
+        const i = this.selected.indexOf(id);
+        if (i === -1) this.selected.push(id); else this.selected.splice(i, 1);
+      },
+      toggleAll(e) {
+        this.selected = e.target.checked ? [...this.pageIds] : [];
+      },
+      // Click a card/checkbox: shift = range-select from last clicked, plain/ctrl = toggle this one.
+      selectItem(index, e) {
+        const id = this.pageIds[index];
+        if (e.shiftKey && this.lastIndex !== null) {
+          const start = Math.min(this.lastIndex, index);
+          const end = Math.max(this.lastIndex, index);
+          const range = this.pageIds.slice(start, end + 1);
+          const set = new Set(this.selected);
+          range.forEach(rid => set.add(rid));
+          this.selected = [...set];
+        } else {
+          this.toggle(id);
+          this.lastIndex = index;
+        }
+      },
+      // Drag a rectangle anywhere in the panel to select every card it touches (Explorer/Finder style).
+      startDrag(e) {
+        if (e.button !== 0) return;
+        if (e.target.closest('.media-card, button, a, label, input, textarea, select')) return;
+        this.dragStart = { x: e.clientX, y: e.clientY };
+        this.dragCurrent = { ...this.dragStart };
+        this.dragBaseSelection = (e.ctrlKey || e.metaKey || e.shiftKey) ? [...this.selected] : [];
+        this.dragMoved = false;
+        this.dragging = true;
+        const onMove = (ev) => this.onDrag(ev);
+        const onUp = () => {
+          this.dragging = false;
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if (this.dragMoved) {
+            // The mouseup can land on top of a card; swallow the synthetic
+            // click the browser fires next so it doesn't undo the drag-select.
+            document.addEventListener('click', (ce) => {
+              ce.stopPropagation();
+              ce.preventDefault();
+            }, { capture: true, once: true });
+          }
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        e.preventDefault();
+      },
+      onDrag(e) {
+        this.dragCurrent = { x: e.clientX, y: e.clientY };
+        if (Math.abs(this.dragCurrent.x - this.dragStart.x) > 3 || Math.abs(this.dragCurrent.y - this.dragStart.y) > 3) {
+          this.dragMoved = true;
+        }
+        const x1 = Math.min(this.dragStart.x, this.dragCurrent.x);
+        const y1 = Math.min(this.dragStart.y, this.dragCurrent.y);
+        const x2 = Math.max(this.dragStart.x, this.dragCurrent.x);
+        const y2 = Math.max(this.dragStart.y, this.dragCurrent.y);
+        const set = new Set(this.dragBaseSelection);
+        this.$refs.grid.querySelectorAll('.media-card').forEach(card => {
+          const r = card.getBoundingClientRect();
+          if (r.left < x2 && r.right > x1 && r.top < y2 && r.bottom > y1) {
+            set.add(card.dataset.id);
+          }
+        });
+        this.selected = [...set];
+      },
+      syncIds(form) {
+        const f = form.querySelector('input[name="ids"]');
+        if (f) f.value = this.selected.join(',');
+      },
+      openEdit(id) {
+        this.cur = Object.assign({}, window.__mediaAssets[id]);
+        this.editOpen = true;
+      },
+    };
+  }
+  // This inline script runs before the deferred Alpine bundle, so the global
+  // is always defined by the time x-data="mediaLibrary()" is evaluated.
+  window.mediaLibrary = mediaLibraryData;
+</script>
+{% endblock %}

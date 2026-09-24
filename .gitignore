@@ -10,7 +10,7 @@ venv/
 db.sqlite3
 db.sqlite3.bak*
 staticfiles/
-media/
+/media/
 *.log
 
 # Env (contains secrets)
