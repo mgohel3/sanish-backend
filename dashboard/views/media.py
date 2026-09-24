@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib import messages
@@ -10,6 +11,11 @@ from accounts.permissions import ContentManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from media_library.models import MediaAsset, MediaFolder
 from media_library.utils import scan_media_root, import_external_dir, get_import_dirs
+
+# The library had grown past 2,400 assets with no pagination at all — every
+# visit rendered the entire library in one response (~6.5MB of HTML), which
+# is what made the page feel slow/laggy to open. Same page size as Products.
+MEDIA_PER_PAGE = 60
 
 
 class MediaLibraryView(ContentManagerRequiredMixin, LoggedActionMixin, View):
@@ -52,10 +58,23 @@ class MediaLibraryView(ContentManagerRequiredMixin, LoggedActionMixin, View):
 
         folders = MediaFolder.objects.annotate(n=Count("assets")).order_by("name")
 
+        paginator = Paginator(qs, MEDIA_PER_PAGE)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        elided_pages = list(paginator.get_elided_page_range(
+            page_obj.number, on_each_side=2, on_ends=1
+        ))
+        querystring = request.GET.copy()
+        querystring.pop("page", None)
+
         return render(request, self.template_name, {
-            "assets":  qs,
+            "assets":  page_obj,
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "elided_pages": elided_pages,
+            "querystring": querystring.urlencode(),
             "folders": folders,
             "total_count": MediaAsset.objects.count(),
+            "filtered_count": paginator.count,
             "uncategorized_count": MediaAsset.objects.filter(folder__isnull=True).count(),
             "type_f": type_f, "folder": folder, "q": q,
             "type_choices": MediaAsset.TYPE_CHOICES,
