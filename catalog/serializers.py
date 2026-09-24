@@ -82,19 +82,33 @@ class ProductListSerializer(serializers.ModelSerializer):
     image_urls      = serializers.SerializerMethodField()
     related_slugs   = serializers.SerializerMethodField()
 
+    def _gallery_images(self, obj):
+        """The view's queryset prefetches product_images__asset — obj.product_images.all()
+        is served from that cache for free. Filtering in Python here (instead of the
+        obj.primary_image property or a fresh .filter(role=...) call, both of which
+        issue their own query and bypass the prefetch) is what actually makes that
+        prefetch pay off: on the full-catalog listing endpoint this was several
+        thousand redundant queries for one page load (one extra pair per product)."""
+        cache = getattr(obj, "_gallery_images_cache", None)
+        if cache is None:
+            cache = [pi for pi in obj.product_images.all() if pi.role == ProductImage.ROLE_GALLERY]
+            obj._gallery_images_cache = cache
+        return cache
+
     def get_primary_image(self, obj):
-        if obj.primary_image:
-            return MediaAssetSerializer(obj.primary_image, context=self.context).data
+        gallery = self._gallery_images(obj)
+        if gallery:
+            return MediaAssetSerializer(gallery[0].asset, context=self.context).data
         return _placeholder_image(self.context)
 
     def get_image_urls(self, obj):
         attached = [_absolutize(pi.asset.url, self.context)
-                    for pi in obj.product_images.filter(role=ProductImage.ROLE_GALLERY)
+                    for pi in self._gallery_images(obj)
                     if pi.asset and pi.asset.url]
         return attached or list(obj.image_urls or []) or [_absolutize(PLACEHOLDER_IMAGE_PATH, self.context)]
 
     def get_related_slugs(self, obj):
-        return list(obj.related_products.values_list("slug", flat=True))
+        return [p.slug for p in obj.related_products.all()]
 
     class Meta:
         model  = Product
@@ -125,16 +139,33 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     application_image = serializers.SerializerMethodField()
     texture_variants = serializers.SerializerMethodField()
 
+    def _images_by_role(self, obj):
+        """Group this product's images by role from a single pass over
+        obj.product_images.all() — reused by every get_*() below instead of
+        each running its own .filter(role=...) query. When the view's
+        queryset prefetches product_images (see ProductDetailView),
+        .all() is served from that prefetch cache for free; even without
+        it, this still collapses 4 separate queries into 1. Ordering
+        matches the model's default (`position`), same as the old
+        per-role .filter() calls."""
+        cache = getattr(obj, "_images_by_role_cache", None)
+        if cache is None:
+            cache = {ProductImage.ROLE_GALLERY: [], ProductImage.ROLE_APPLICATION: [], ProductImage.ROLE_TEXTURE: []}
+            for pi in obj.product_images.all():
+                cache.setdefault(pi.role, []).append(pi)
+            obj._images_by_role_cache = cache
+        return cache
+
     def get_images(self, obj):
         data = MediaAssetSerializer(
-            [pi.asset for pi in obj.product_images.filter(role=ProductImage.ROLE_GALLERY)],
+            [pi.asset for pi in self._images_by_role(obj)[ProductImage.ROLE_GALLERY]],
             many=True, context=self.context,
         ).data
         return data or ([] if obj.image_urls else [_placeholder_image(self.context)])
 
     def get_image_urls(self, obj):
         attached = [_absolutize(pi.asset.url, self.context)
-                    for pi in obj.product_images.filter(role=ProductImage.ROLE_GALLERY)
+                    for pi in self._images_by_role(obj)[ProductImage.ROLE_GALLERY]
                     if pi.asset and pi.asset.url]
         return attached or list(obj.image_urls or []) or [_absolutize(PLACEHOLDER_IMAGE_PATH, self.context)]
 
@@ -142,7 +173,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         """The single 'applied in a room' shot, shown below the title — a Media
         Library image tagged with the Application role, falling back to the
         external application_image_url when none is attached."""
-        pi = obj.product_images.filter(role=ProductImage.ROLE_APPLICATION).first()
+        app_images = self._images_by_role(obj)[ProductImage.ROLE_APPLICATION]
+        pi = app_images[0] if app_images else None
         if pi and pi.asset and pi.asset.url:
             return _absolutize(pi.asset.url, self.context)
         return obj.application_image_url or ""
@@ -151,7 +183,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         """[{label, image}, …] texture-finish thumbnails shown near the title —
         Media Library images tagged with the Texture role, falling back to the
         external texture_variants list when none are attached."""
-        texture_images = list(obj.product_images.filter(role=ProductImage.ROLE_TEXTURE))
+        texture_images = self._images_by_role(obj)[ProductImage.ROLE_TEXTURE]
         if texture_images:
             return [
                 {

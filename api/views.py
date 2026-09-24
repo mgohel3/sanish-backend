@@ -63,7 +63,11 @@ class ProductListView(generics.ListAPIView):
 
 
 class ProductDetailView(generics.RetrieveAPIView):
-    queryset         = Product.objects.filter(status="published")
+    queryset = (
+        Product.objects.filter(status="published")
+        .select_related("category", "collection", "pdf_catalog")
+        .prefetch_related("product_images__asset", "related_products")
+    )
     serializer_class = ProductDetailSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field     = "slug"
