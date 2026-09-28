@@ -1,10 +1,12 @@
 import json
 
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 from accounts.permissions import ContentManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from blog.models import BlogPost, BlogCategory, Tag
@@ -18,6 +20,29 @@ LAYOUT_VALUES = {c[0] for c in BlogPost.LAYOUT_CHOICES}
 
 def _clean_layout(value):
     return value if value in LAYOUT_VALUES else BlogPost.LAYOUT_SIDEBAR
+
+
+def _resolve_slug(raw_slug, title, *, exclude_pk=None):
+    """A staff-entered slug wins (slugified); otherwise falls back to the
+    title, same as BlogPost.save() already does when slug is left blank.
+    Returns (slug, error) — error is a user-facing string, or None."""
+    custom = slugify((raw_slug or "").strip())
+    slug = custom or slugify(title)
+    qs = BlogPost.objects.filter(slug=slug)
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    if qs.exists():
+        return slug, f"URL slug “{slug}” is already used by another post — choose a different one."
+    return slug, None
+
+
+def _resolve_canonical(raw_canonical, slug):
+    """A staff-entered canonical URL wins verbatim; otherwise auto-build it
+    from the production site origin + this post's slug."""
+    custom = (raw_canonical or "").strip()
+    if custom:
+        return custom
+    return f"{settings.SITE_URL.rstrip('/')}/blog/{slug}/"
 
 
 def _clean_faqs(raw_json):
@@ -77,14 +102,22 @@ class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             "tags":           Tag.objects.all(),
             "authors":        User.objects.filter(is_active=True).order_by("first_name", "username"),
             "layout_choices": BlogPost.LAYOUT_CHOICES,
+            "site_url":       settings.SITE_URL.rstrip("/"),
             "active_nav":     "blog",
         })
 
     def post(self, request):
         d = request.POST
+        title = d["title"]
+        slug, slug_error = _resolve_slug(d.get("slug"), title)
+        if slug_error:
+            messages.error(request, slug_error)
+            return redirect("blog_post_create")
+
         author_id = d.get("author")
         post = BlogPost(
-            title=d["title"],
+            title=title,
+            slug=slug,
             excerpt=d.get("excerpt", ""),
             content=d.get("content", ""),
             layout=_clean_layout(d.get("layout")),
@@ -94,6 +127,7 @@ class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             seo_title=d.get("seo_title", ""),
             meta_description=d.get("meta_description", ""),
             meta_keywords=d.get("meta_keywords", ""),
+            canonical_url=_resolve_canonical(d.get("canonical_url"), slug),
             auto_faq_schema=bool(d.get("auto_faq_schema")),
             faqs=_clean_faqs(d.get("faqs_json")),
             show_author=bool(d.get("show_author")),
@@ -121,13 +155,21 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             "tags":           Tag.objects.all(),
             "authors":        User.objects.filter(is_active=True).order_by("first_name", "username"),
             "layout_choices": BlogPost.LAYOUT_CHOICES,
+            "site_url":       settings.SITE_URL.rstrip("/"),
             "active_nav":     "blog",
         })
 
     def post(self, request, pk):
         post = get_object_or_404(BlogPost, pk=pk)
         d = request.POST
-        post.title = d["title"]
+        title = d["title"]
+        slug, slug_error = _resolve_slug(d.get("slug"), title, exclude_pk=post.pk)
+        if slug_error:
+            messages.error(request, slug_error)
+            return redirect("blog_post_edit", pk=pk)
+
+        post.title = title
+        post.slug = slug
         post.excerpt = d.get("excerpt", "")
         post.content = d.get("content", "")
         post.layout = _clean_layout(d.get("layout"))
@@ -139,6 +181,7 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         post.seo_title = d.get("seo_title", "")
         post.meta_description = d.get("meta_description", "")
         post.meta_keywords = d.get("meta_keywords", "")
+        post.canonical_url = _resolve_canonical(d.get("canonical_url"), slug)
         post.auto_faq_schema = bool(d.get("auto_faq_schema"))
         post.faqs = _clean_faqs(d.get("faqs_json"))
         post.show_author = bool(d.get("show_author"))

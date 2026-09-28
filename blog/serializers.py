@@ -65,7 +65,7 @@ class BlogPostDetailSerializer(_ImageMixin, serializers.ModelSerializer):
             "id", "title", "slug", "excerpt", "layout", "image", "featured_image", "content",
             "categories", "tags", "author",
             "show_author", "show_share", "show_related",
-            "seo_title", "meta_description", "meta_keywords",
+            "seo_title", "meta_description", "meta_keywords", "canonical_url",
             "status", "published_at", "created", "updated",
             "faqs", "auto_faq_schema",
         )

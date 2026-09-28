@@ -87,16 +87,39 @@
 
       <!-- SEO -->
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4"
-           x-data="{ metaTitle: '{{ post.seo_title|default:'' }}', metaDesc: '{{ post.meta_description|default:'' }}' }">
+           x-data="{
+             metaTitle: '{{ post.seo_title|default:'' }}',
+             metaDesc: '{{ post.meta_description|default:'' }}',
+             slug: '{{ post.slug|default:'' }}',
+             overrideCanonical: {{ post.canonical_url|yesno:'true,false' }},
+           }">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">SEO</h2>
         <div class="p-3 rounded-2xl bg-surface-50 dark:bg-dark-700 text-sm">
           <p class="text-[11px] text-gray-400 mb-1">Snippet Preview</p>
           <p class="text-[#1a0dab] dark:text-blue-400 font-medium truncate" x-text="metaTitle || 'Post title…'"></p>
+          <p class="text-xs text-green-700 dark:text-green-500 truncate" x-text="'{{ site_url }}/blog/' + (slug || '…') + '/'"></p>
           <p class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-text="metaDesc || 'Meta description…'"></p>
+        </div>
+        <div>
+          <label class="form-label">URL Slug</label>
+          <input type="text" name="slug" x-model="slug" class="form-input" placeholder="auto-generated-from-title"/>
+          <p class="form-hint">Leave blank to auto-generate from the title. Changing this after the post is published moves its live URL — old links won't redirect.</p>
         </div>
         <div><label class="form-label">SEO Title <span class="normal-case font-normal text-gray-400 ml-1" x-text="'('+metaTitle.length+'/60)'"></span></label><input type="text" name="seo_title" x-model="metaTitle" class="form-input"/></div>
         <div><label class="form-label">Meta Description <span class="normal-case font-normal text-gray-400 ml-1" x-text="'('+metaDesc.length+'/160)'"></span></label><textarea name="meta_description" x-model="metaDesc" rows="3" class="form-input resize-none"></textarea></div>
         <div><label class="form-label">Meta Keywords</label><input type="text" name="meta_keywords" value="{{ post.meta_keywords|default:'' }}" class="form-input"/></div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0">Canonical URL</label>
+            <button type="button" @click="overrideCanonical = !overrideCanonical" class="text-xs text-accent hover:underline" x-text="overrideCanonical ? '⬤ Override active' : '◯ Auto (from slug)'"></button>
+          </div>
+          <input type="url" name="canonical_url" value="{{ post.canonical_url|default:'' }}"
+                 x-show="overrideCanonical" placeholder="https://…" class="form-input border-accent ring-1 ring-accent/20"/>
+          <div x-show="!overrideCanonical" x-cloak
+               class="form-input opacity-60 cursor-not-allowed truncate"
+               x-text="'{{ site_url }}/blog/' + (slug || '…') + '/'"></div>
+          <p class="form-hint">Auto mode always follows the URL Slug above — switch to override only to point this post's canonical at a different URL.</p>
+        </div>
       </div>
     </div>
 

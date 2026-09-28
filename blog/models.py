@@ -81,6 +81,10 @@ class BlogPost(models.Model):
     seo_title         = models.CharField(max_length=255, blank=True)
     meta_description  = models.TextField(max_length=320, blank=True)
     meta_keywords     = models.CharField(max_length=500, blank=True)
+    canonical_url     = models.URLField(
+        blank=True,
+        help_text="Leave blank to auto-generate from the site URL + this post's slug.",
+    )
     og_image          = models.ForeignKey(
         "media_library.MediaAsset", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="blog_og_images",
