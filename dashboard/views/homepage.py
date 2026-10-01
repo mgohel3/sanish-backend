@@ -32,13 +32,18 @@ BACKGROUND_FIELDS = [
 # means use the theme default" convention as BACKGROUND_FIELDS above.
 # Rendered by dashboard/partials/_text_style_fields.html; read generically
 # here because, like the background fields, it lives outside each block
-# type's own declared ``fields``. Not every block's frontend component reads
-# these yet — see the comment on BlockBackground's sibling, the (currently
-# SpecialEdition-only) inline style in SpecialEdition.tsx — but the field is
-# safe to leave set for any block since an unwired block just ignores it.
+# type's own declared ``fields``. This same _parse_content() is imported and
+# reused by dashboard/views/pages.py, so these fields are available on every
+# block in BOTH the Home Page builder and the Pages builder (About Us, etc)
+# uniformly. Not every block's frontend component applies them yet — see
+# src/lib/textStyle.ts and its call sites (SpecialEdition.tsx, TeamBlock.tsx)
+# — but the field is safe to leave set for any block since an unwired block
+# just ignores it (same "field it's not wired into yet" behaviour that was
+# already true for BACKGROUND_FIELDS before most blocks read bg_color).
 TEXT_STYLE_FIELDS = [
     {"name": "text_color", "type": "text"},
     {"name": "heading_font", "type": "text"},
+    {"name": "heading_size", "type": "text"},
 ]
 
 

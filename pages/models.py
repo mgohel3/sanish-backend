@@ -272,11 +272,15 @@ class PageSection(models.Model):
         return _blocks.BLOCK_TYPES.get(self.block_type, {})
 
     def resolved(self) -> dict:
-        """Stored content merged over the block type's defaults."""
+        """Stored content merged over the block type's defaults.
+
+        Same fix as homepage.models.HomeSection.resolved() (2026-10-01): an
+        explicit "" means an editor cleared the field and saved, and must
+        render blank, not silently keep showing the default forever. A key
+        can only be missing from content when the schema gained a field
+        after this section was last saved.
+        """
         data = _blocks.defaults_for(self.block_type)
         if isinstance(self.content, dict):
-            for key, value in self.content.items():
-                if value in ("", None) and key in data:
-                    continue  # keep the default rather than blanking it
-                data[key] = value
+            data.update(self.content)
         return data
