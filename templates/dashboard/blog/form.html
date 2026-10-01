@@ -188,6 +188,12 @@
         <template x-if="img">
           <img :src="img" alt="" class="w-full h-40 object-cover rounded-2xl border border-surface-200 dark:border-dark-600"/>
         </template>
+        <div>
+          <label class="form-label">Alt Text <span class="normal-case font-normal text-gray-400">(SEO &amp; accessibility)</span></label>
+          <input type="text" name="featured_image_alt" value="{{ post.featured_image_alt|default:'' }}" class="form-input"
+                 placeholder="Describe the image for search engines and screen readers…"/>
+          <p class="form-hint mt-1">Shown to search engines and screen readers, not on the page itself. Leave blank to fall back to the Media Library image's own alt text, then the post title.</p>
+        </div>
       </div>
 
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">

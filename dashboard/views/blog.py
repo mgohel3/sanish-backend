@@ -122,6 +122,7 @@ class BlogPostCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             content=d.get("content", ""),
             layout=_clean_layout(d.get("layout")),
             featured_image_url=d.get("featured_image_url", "").strip(),
+            featured_image_alt=d.get("featured_image_alt", "").strip(),
             author=User.objects.filter(pk=author_id).first() if author_id else request.user,
             status=d.get("status", "draft"),
             seo_title=d.get("seo_title", ""),
@@ -174,6 +175,7 @@ class BlogPostEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         post.content = d.get("content", "")
         post.layout = _clean_layout(d.get("layout"))
         post.featured_image_url = d.get("featured_image_url", "").strip()
+        post.featured_image_alt = d.get("featured_image_alt", "").strip()
         author_id = d.get("author")
         if author_id:
             post.author = User.objects.filter(pk=author_id).first()

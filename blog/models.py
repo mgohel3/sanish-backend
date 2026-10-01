@@ -57,6 +57,11 @@ class BlogPost(models.Model):
         max_length=500, blank=True,
         help_text="External banner / featured image URL. Used when no Media Library image is set.",
     )
+    featured_image_alt = models.CharField(
+        max_length=300, blank=True,
+        help_text="Alt text for the banner image (SEO + accessibility). Falls back to the "
+                   "Media Library image's own alt text, then the post title, if left blank.",
+    )
     show_author       = models.BooleanField(
         default=True, help_text="Show the author card in the sidebar.",
     )

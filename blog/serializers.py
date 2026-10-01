@@ -32,6 +32,7 @@ class BlogAuthorSerializer(serializers.Serializer):
 
 class _ImageMixin(serializers.Serializer):
     image = serializers.SerializerMethodField()
+    image_alt = serializers.SerializerMethodField()
 
     def get_image(self, obj):
         if obj.featured_image_url:
@@ -39,6 +40,16 @@ class _ImageMixin(serializers.Serializer):
         if obj.featured_image_id and obj.featured_image:
             return obj.featured_image.url
         return None
+
+    def get_image_alt(self, obj):
+        """Explicit alt text wins; otherwise fall back to the linked Media
+        Library image's own alt text, then the post title — never blank for
+        an image that's actually showing."""
+        if obj.featured_image_alt:
+            return obj.featured_image_alt
+        if obj.featured_image_id and obj.featured_image and obj.featured_image.alt_text:
+            return obj.featured_image.alt_text
+        return obj.title
 
 
 class BlogPostListSerializer(_ImageMixin, serializers.ModelSerializer):
@@ -48,7 +59,7 @@ class BlogPostListSerializer(_ImageMixin, serializers.ModelSerializer):
     class Meta:
         model  = BlogPost
         fields = (
-            "id", "title", "slug", "excerpt", "image", "featured_image",
+            "id", "title", "slug", "excerpt", "image", "image_alt", "featured_image",
             "categories", "status", "published_at", "created",
         )
 
@@ -62,7 +73,7 @@ class BlogPostDetailSerializer(_ImageMixin, serializers.ModelSerializer):
     class Meta:
         model  = BlogPost
         fields = (
-            "id", "title", "slug", "excerpt", "layout", "image", "featured_image", "content",
+            "id", "title", "slug", "excerpt", "layout", "image", "image_alt", "featured_image", "content",
             "categories", "tags", "author",
             "show_author", "show_share", "show_related",
             "seo_title", "meta_description", "meta_keywords", "canonical_url",
