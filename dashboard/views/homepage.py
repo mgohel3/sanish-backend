@@ -28,12 +28,25 @@ BACKGROUND_FIELDS = [
     {"name": "bg_overlay_opacity", "type": "number"},
 ]
 
+# Optional per-section text styling — same "available on every block, blank
+# means use the theme default" convention as BACKGROUND_FIELDS above.
+# Rendered by dashboard/partials/_text_style_fields.html; read generically
+# here because, like the background fields, it lives outside each block
+# type's own declared ``fields``. Not every block's frontend component reads
+# these yet — see the comment on BlockBackground's sibling, the (currently
+# SpecialEdition-only) inline style in SpecialEdition.tsx — but the field is
+# safe to leave set for any block since an unwired block just ignores it.
+TEXT_STYLE_FIELDS = [
+    {"name": "text_color", "type": "text"},
+    {"name": "heading_font", "type": "text"},
+]
+
 
 def _parse_content(block_type, post):
     """Turn a submitted form into a ``content`` dict for the given block type."""
     cfg = blocks.BLOCK_TYPES.get(block_type, {})
     content = {}
-    for field in list(cfg.get("fields", [])) + BACKGROUND_FIELDS:
+    for field in list(cfg.get("fields", [])) + BACKGROUND_FIELDS + TEXT_STYLE_FIELDS:
         name = field["name"]
         ftype = field["type"]
         if ftype == "repeater":
