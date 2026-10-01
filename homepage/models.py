@@ -39,11 +39,20 @@ class HomeSection(models.Model):
         return blocks.BLOCK_TYPES.get(self.block_type, {})
 
     def resolved(self) -> dict:
-        """Stored content merged over the block type's defaults."""
+        """Stored content merged over the block type's defaults.
+
+        Every field ``_parse_content`` (dashboard/views/homepage.py) ever
+        writes is always present in ``content`` after a save — blank fields
+        included, as "" rather than an absent key. So a key can only be
+        missing from ``content`` here for one reason: it didn't exist in the
+        schema yet when this section was last saved (e.g. a field added to a
+        block type after older sections were already created) — that's the
+        only case that should fall back to the default. An explicit "" means
+        an editor cleared the field and saved, and must render blank, not
+        silently keep showing the default forever (bug fixed 2026-10-01 —
+        the previous version treated "" the same as "never set").
+        """
         data = blocks.defaults_for(self.block_type)
         if isinstance(self.content, dict):
-            for key, value in self.content.items():
-                if value in ("", None) and key in data:
-                    continue  # keep the default rather than blanking it
-                data[key] = value
+            data.update(self.content)
         return data
