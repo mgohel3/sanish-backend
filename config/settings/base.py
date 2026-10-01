@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "seo",
     "blog",
     "faq",
+    "testimonials",
     "leads",
     "formbuilder",
     "menus",

@@ -12,6 +12,7 @@ from .views import (
     ApplicationCategoryListView, ApplicationProjectListView, ApplicationProjectDetailView,
     GalleryCatalogueListView, GalleryCatalogueDetailView,
     FaqListView,
+    CarpenterTestimonialListView,
 )
 
 urlpatterns = [
@@ -60,4 +61,6 @@ urlpatterns = [
     path("gallery/catalogues/<slug:slug>/", GalleryCatalogueDetailView.as_view(), name="api_gallery_catalogue_detail"),
     # FAQs (public read — CMS-managed, gathered from blog posts)
     path("faqs/", FaqListView.as_view(), name="api_faqs"),
+    # Carpenter Testimonials (public read — CMS-managed, /rewards carousel)
+    path("testimonials/carpenters/", CarpenterTestimonialListView.as_view(), name="api_carpenter_testimonials"),
 ]

@@ -14,6 +14,7 @@ from menus.models import Menu, MenuItem
 from applications.models import ApplicationCategory, ApplicationProject
 from gallery.models import GalleryCatalogue
 from faq.models import Faq
+from testimonials.models import CarpenterTestimonial
 from seo.models import GlobalSEO, SiteSettings, ThemeSettings
 from media_library.utils import absolutize_media_urls
 
@@ -32,6 +33,7 @@ from applications.serializers import (
 )
 from gallery.serializers import GalleryCatalogueDetailSerializer
 from faq.serializers import FaqSerializer
+from testimonials.serializers import CarpenterTestimonialSerializer
 from .throttles import InquiryThrottle, FormSubmitThrottle
 from .preview_tokens import verify_preview_token
 
@@ -474,5 +476,15 @@ class FaqListView(generics.ListAPIView):
     """Public read — ``GET /api/faqs/``. Active entries, ordered."""
     queryset           = Faq.objects.filter(is_active=True).select_related("source_post")
     serializer_class   = FaqSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = None
+
+
+# ── Carpenter Testimonials (CMS-managed, /rewards carousel) ──────────────────
+
+class CarpenterTestimonialListView(generics.ListAPIView):
+    """Public read — ``GET /api/testimonials/carpenters/``. Active entries, ordered."""
+    queryset           = CarpenterTestimonial.objects.filter(is_active=True)
+    serializer_class   = CarpenterTestimonialSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class   = None

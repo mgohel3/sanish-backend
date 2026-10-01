@@ -63,6 +63,10 @@ from dashboard.views.faq import (
     FaqListView, FaqCreateView, FaqEditView, FaqDeleteView,
     FaqReorderView, FaqToggleView,
 )
+from dashboard.views.testimonials import (
+    TestimonialListView, TestimonialCreateView, TestimonialEditView, TestimonialDeleteView,
+    TestimonialReorderView, TestimonialToggleView,
+)
 from dashboard.views.help import HelpIndexView, HelpArticleView
 
 urlpatterns = [
@@ -223,6 +227,14 @@ urlpatterns = [
     path("faqs/<int:pk>/",     FaqEditView.as_view(),     name="faq_edit"),
     path("faqs/<int:pk>/delete/", FaqDeleteView.as_view(), name="faq_delete"),
     path("faqs/<int:pk>/toggle/", FaqToggleView.as_view(), name="faq_toggle"),
+
+    # Carpenter Testimonials
+    path("testimonials/",              TestimonialListView.as_view(),     name="testimonial_list"),
+    path("testimonials/reorder/",      TestimonialReorderView.as_view(),  name="testimonial_reorder"),
+    path("testimonials/create/",       TestimonialCreateView.as_view(),   name="testimonial_create"),
+    path("testimonials/<int:pk>/",     TestimonialEditView.as_view(),     name="testimonial_edit"),
+    path("testimonials/<int:pk>/delete/", TestimonialDeleteView.as_view(), name="testimonial_delete"),
+    path("testimonials/<int:pk>/toggle/", TestimonialToggleView.as_view(), name="testimonial_toggle"),
 
     # Help
     path("help/", HelpIndexView.as_view(), name="help_index"),
