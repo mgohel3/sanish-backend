@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from .models import Category, Collection, Product, ProductImage
 from media_library.models import MediaAsset
@@ -15,6 +17,12 @@ def _absolutize(url, context):
         return url
     request = context.get("request") if context else None
     return request.build_absolute_uri(url) if request is not None else url
+
+
+def _finish_label(finish):
+    """A product's own finish as the label its texture swatch is stored under
+    ("SM" -> "SM", "H RM" -> "RM": the import drops the "H" token from labels)."""
+    return " ".join(t.upper() for t in re.findall(r"[A-Za-z]+", finish or "") if t.upper() != "H")
 
 
 def _placeholder_image(context):
@@ -95,15 +103,39 @@ class ProductListSerializer(serializers.ModelSerializer):
             obj._gallery_images_cache = cache
         return cache
 
+    def _thumbnail_images(self, obj):
+        """Card thumbnails: the product's OWN finish texture first (so sibling
+        finishes of one design, which share a full sheet, each look different
+        in listings), then the gallery/full-sheet images. A product with no
+        texture of its own falls back to the full sheet exactly as before.
+        Same prefetch-friendly single pass over product_images.all() as above."""
+        cache = getattr(obj, "_thumbnail_images_cache", None)
+        if cache is None:
+            # A few legacy products have a blank `finish` but carry it in the SKU
+            # ("6754 HZ") -- fall back to the code after the design number.
+            own = _finish_label(obj.finish) or _finish_label(
+                re.sub(r"^\s*\d+(?:-\d+)?", "", obj.sku or ""))
+            texture = None
+            if own:
+                for pi in obj.product_images.all():
+                    if (pi.role == ProductImage.ROLE_TEXTURE and pi.asset_id
+                            and _finish_label(pi.label) == own):
+                        texture = pi
+                        break
+            gallery = self._gallery_images(obj)
+            cache = ([texture] + gallery) if texture else gallery
+            obj._thumbnail_images_cache = cache
+        return cache
+
     def get_primary_image(self, obj):
-        gallery = self._gallery_images(obj)
-        if gallery:
-            return MediaAssetSerializer(gallery[0].asset, context=self.context).data
+        thumbs = self._thumbnail_images(obj)
+        if thumbs:
+            return MediaAssetSerializer(thumbs[0].asset, context=self.context).data
         return _placeholder_image(self.context)
 
     def get_image_urls(self, obj):
         attached = [_absolutize(pi.asset.url, self.context)
-                    for pi in self._gallery_images(obj)
+                    for pi in self._thumbnail_images(obj)
                     if pi.asset and pi.asset.url]
         return attached or list(obj.image_urls or []) or [_absolutize(PLACEHOLDER_IMAGE_PATH, self.context)]
 
