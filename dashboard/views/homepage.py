@@ -77,6 +77,8 @@ def _clean_field_style(raw):
         out["bold"] = True
     if data.get("italic") is True:
         out["italic"] = True
+    if data.get("underline") is True:
+        out["underline"] = True
     return out
 
 
