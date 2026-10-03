@@ -15,6 +15,25 @@ PAGE_TEMPLATES = {
         "blocks": [],
     },
 
+    "events_media": {
+        "label": "Events & Media",
+        "description": "Hero plus a filterable photo & video gallery for events, meetups and gatherings.",
+        "blocks": [
+            ("page_hero", "Hero", "", {
+                "eyebrow": "Events & Media",
+                "title": "Moments from the Sanish Community",
+                "description": "Photos and videos from our events, carpenter meetups and gatherings.",
+                "image": "/assets/img/about-page-banner.jpg", "image_fill": True,
+            }),
+            ("media_gallery", "Events & Media Gallery", "", {
+                "heading": "Event Gallery",
+                "sub": "",
+                "columns": "3",
+                "items": [],
+            }),
+        ],
+    },
+
     "landing": {
         "label": "Landing Page",
         "description": "Hero, intro, feature cards, testimonials and a closing call-to-action.",

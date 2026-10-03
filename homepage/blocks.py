@@ -470,6 +470,27 @@ BLOCK_TYPES: dict = {
         "defaults": {"heading": "", "sub": "", "columns": "3", "images": []},
     },
 
+    "media_gallery": {
+        "label": "Events & Media Gallery",
+        "description": "Photos and videos from events and meetups — filter tabs per event, 24 per page, click to open in a viewer.",
+        "component": "MediaGalleryBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy"},
+            {"name": "columns", "type": "select", "label": "Columns", "options": ["3", "2", "4"]},
+            {"name": "items", "type": "repeater", "label": "Photos & videos", "fields": [
+                {"name": "image", "type": "image", "label": "Photo (or cover image for a video)"},
+                {"name": "video", "type": "video", "label": "Video (optional)",
+                 "help": "Leave blank for a photo. For a video: pick an uploaded MP4 with Library, or paste a YouTube / Vimeo link "
+                         "(links have no size limit — best for long event films)."},
+                {"name": "caption", "type": "text", "label": "Caption (optional)"},
+                {"name": "category", "type": "text", "label": "Event / album (optional)",
+                 "help": "Items with the same name are grouped under one filter tab, e.g. “Carpenter Meet 2026”."},
+            ]},
+        ],
+        "defaults": {"heading": "", "sub": "", "columns": "3", "items": []},
+    },
+
     "team": {
         "label": "Team",
         "description": "Heading over a grid of team member photo + name + role + bio.",
@@ -560,7 +581,7 @@ GENERIC_BLOCKS = ["rich_text", "image_text", "cta_banner"]
 # picking one of them for a custom/inner page silently renders nothing.
 INNER_PAGE_BLOCKS = [
     "page_hero", "content_section", "feature_cards", "faq", "contact_details",
-    "rich_text", "image_text", "cta_banner", "testimonials", "gallery",
+    "rich_text", "image_text", "cta_banner", "testimonials", "gallery", "media_gallery",
     "team", "pricing", "stats", "logos_strip", "video_embed",
 ]
 
