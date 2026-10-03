@@ -1,14 +1,16 @@
 {% load homepage_extras %}
 {% comment %}
-Per-field text style toolbar (bold / italic / colour / font / size / alignment) shown
-above each plain-text field of a block, in both the Home Page and Pages builders.
-Everything blank = the theme's own styling. Saved as a hidden `<field>__style` JSON input,
-parsed by dashboard.views.homepage._parse_content into content["field_styles"][field] and
-applied on the site by src/components/FieldStyles.tsx.
+Per-field text style toolbar: bold / italic / colour / font / size (px) / alignment. Shown above each
+plain-text field of a block in both the Home Page and Pages builders. Blank = the theme's own styling.
+Saved as hidden `<field>__style` JSON, parsed by dashboard.views.homepage._parse_content into
+content["field_styles"][field] and applied on the site by src/components/FieldStyles.tsx.
+Inline styles on purpose: the compiled dashboard CSS doesn't include every utility class.
 {% endcomment %}
-<div class="mb-1.5 flex flex-wrap items-center gap-1.5 text-xs rounded-xl border border-surface-200 dark:border-dark-600 bg-surface-50 dark:bg-dark-700/40 px-2 py-1"
+<div style="margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border-radius:14px;border:1px solid #e5e7eb;background:rgba(0,0,0,.025)"
      x-data='{
        st: Object.assign({}, ((({{ values|dictkey:"field_styles"|jsonify:"{}" }}) || {})["{{ field.name }}"]) || {}),
+       sizes: [10,11,12,13,14,16,18,20,22,24,28,32,36,40,48,56,64,72,80],
+       fonts: ["Playfair Display","Cormorant Garamond","Lora","Merriweather","Poppins","Montserrat","Roboto","Open Sans","Oswald","Dancing Script"],
        get json() {
          const o = {};
          for (const k in this.st) { if (this.st[k]) o[k] = this.st[k]; }
@@ -17,42 +19,38 @@ applied on the site by src/components/FieldStyles.tsx.
      }'>
   <input type="hidden" name="{{ field.name }}__style" :value="json" />
 
-  <button type="button" title="Bold" class="w-7 h-7 rounded-lg font-bold border border-transparent hover:border-gray-300"
-          :class="st.bold ? 'bg-accent text-white' : 'text-gray-700 dark:text-gray-200'" @click="st.bold = !st.bold">B</button>
-  <button type="button" title="Italic" class="w-7 h-7 rounded-lg italic font-serif border border-transparent hover:border-gray-300"
-          :class="st.italic ? 'bg-accent text-white' : 'text-gray-700 dark:text-gray-200'" @click="st.italic = !st.italic">I</button>
+  <button type="button" title="Bold" @click="st.bold = !st.bold"
+          style="width:30px;height:30px;border-radius:50%;font-weight:800;font-size:13px;border:1px solid #d1d5db"
+          :style="st.bold ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">B</button>
+  <button type="button" title="Italic" @click="st.italic = !st.italic"
+          style="width:30px;height:30px;border-radius:50%;font-style:italic;font-family:serif;font-size:14px;border:1px solid #d1d5db"
+          :style="st.italic ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">I</button>
 
-  <span class="w-px h-5 bg-gray-200 dark:bg-dark-600 mx-0.5"></span>
-
-  <label class="flex items-center gap-1 cursor-pointer" title="Text colour">
-    <span class="font-semibold text-gray-700 dark:text-gray-200 px-1" :style="st.color ? 'color:' + st.color : ''">A</span>
-    <input type="color" :value="st.color || '#1e1e2e'" @input="st.color = $event.target.value"
-           class="h-6 w-7 rounded border border-surface-200 dark:border-dark-600 cursor-pointer bg-transparent p-0" />
-    <button type="button" x-show="st.color" x-cloak class="text-gray-400 hover:text-red-500" title="Use theme colour" @click.prevent="st.color = ''">✕</button>
+  <label title="Text colour" style="display:flex;align-items:center;gap:4px;cursor:pointer">
+    <input type="color" :value="st.color || '#1e1e2e'" @input="st.color = $event.target.value" />
+    <button type="button" x-show="st.color" x-cloak title="Back to theme colour" @click.prevent="st.color = ''"
+            style="font-size:11px;color:#9ca3af">✕</button>
   </label>
 
-  <span class="w-px h-5 bg-gray-200 dark:bg-dark-600 mx-0.5"></span>
-
-  <select x-model="st.font" title="Font" class="form-input !py-1 !px-2 !w-auto text-xs">
+  <select x-model="st.font" title="Font" style="height:30px;width:auto;max-width:150px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
     <option value="">Font: default</option>
-    <option value="sans">Sans</option>
-    <option value="serif">Serif / display</option>
+    <option value="sans">Sans (site)</option>
+    <option value="serif">Serif (site)</option>
+    <template x-for="f in fonts" :key="f"><option :value="f" x-text="f"></option></template>
   </select>
-  <select x-model="st.size" title="Size" class="form-input !py-1 !px-2 !w-auto text-xs">
+
+  <select x-model="st.size" title="Font size (px)" style="height:30px;width:auto;max-width:120px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
     <option value="">Size: default</option>
-    <option value="sm">Smaller</option>
-    <option value="lg">Larger</option>
-    <option value="xl">Extra large</option>
+    <template x-for="s in sizes" :key="s"><option :value="String(s)" x-text="s + ' px'"></option></template>
   </select>
 
-  <span class="w-px h-5 bg-gray-200 dark:bg-dark-600 mx-0.5"></span>
-
-  <template x-for="a in [['left','⇤'],['center','↔'],['right','⇥']]" :key="a[0]">
-    <button type="button" :title="'Align ' + a[0]" class="w-7 h-7 rounded-lg border border-transparent hover:border-gray-300"
-            :class="st.align === a[0] ? 'bg-accent text-white' : 'text-gray-700 dark:text-gray-200'"
-            @click="st.align = (st.align === a[0] ? '' : a[0])" x-text="a[1]"></button>
+  <template x-for="a in [['left','M3 6h18M3 12h12M3 18h16'],['center','M3 6h18M7 12h10M5 18h14'],['right','M3 6h18M9 12h12M5 18h16']]" :key="a[0]">
+    <button type="button" :title="'Align ' + a[0]" @click="st.align = (st.align === a[0] ? '' : a[0])"
+            style="width:30px;height:30px;border-radius:50%;border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center"
+            :style="st.align === a[0] ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="a[1]"/></svg>
+    </button>
   </template>
 
-  <button type="button" x-show="json" x-cloak class="ml-auto text-gray-400 hover:text-red-500 px-1"
-          @click="st = {}">Reset</button>
+  <button type="button" x-show="json" x-cloak @click="st = {}" style="margin-left:auto;font-size:12px;color:#9ca3af;padding:0 6px">Reset</button>
 </div>

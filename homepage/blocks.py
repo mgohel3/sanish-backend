@@ -478,6 +478,7 @@ BLOCK_TYPES: dict = {
             {"name": "heading", "type": "text", "label": "Heading"},
             {"name": "sub", "type": "textarea", "label": "Sub copy"},
             {"name": "columns", "type": "select", "label": "Columns", "options": ["3", "2", "4"]},
+            {"name": "album_order", "type": "text", "ui": "hidden", "label": "Album order"},
             {"name": "items", "type": "repeater", "ui": "media_grid", "label": "Photos & videos", "fields": [
                 {"name": "image", "type": "image", "label": "Photo (or cover image for a video)"},
                 {"name": "video", "type": "video", "label": "Video (optional)",
@@ -488,7 +489,7 @@ BLOCK_TYPES: dict = {
                  "help": "Items with the same name are grouped under one filter tab, e.g. “Carpenter Meet 2026”."},
             ]},
         ],
-        "defaults": {"heading": "", "sub": "", "columns": "3", "items": []},
+        "defaults": {"heading": "", "sub": "", "columns": "3", "album_order": "", "items": []},
     },
 
     "team": {

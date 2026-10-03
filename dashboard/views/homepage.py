@@ -48,7 +48,8 @@ TEXT_STYLE_FIELDS = [
 ]
 
 
-_STYLE_FONTS = {"sans", "serif"}
+_STYLE_FONTS = {"sans", "serif", "Playfair Display", "Cormorant Garamond", "Lora", "Merriweather",
+                "Poppins", "Montserrat", "Roboto", "Open Sans", "Oswald", "Dancing Script"}
 _STYLE_SIZES = {"sm", "lg", "xl"}
 _STYLE_ALIGN = {"left", "center", "right"}
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{3,8}$")
@@ -67,8 +68,9 @@ def _clean_field_style(raw):
         out["color"] = data["color"]
     if data.get("font") in _STYLE_FONTS:
         out["font"] = data["font"]
-    if data.get("size") in _STYLE_SIZES:
-        out["size"] = data["size"]
+    size = str(data.get("size", ""))
+    if size in _STYLE_SIZES or (size.isdigit() and 8 <= int(size) <= 160):
+        out["size"] = size
     if data.get("align") in _STYLE_ALIGN:
         out["align"] = data["align"]
     if data.get("bold") is True:

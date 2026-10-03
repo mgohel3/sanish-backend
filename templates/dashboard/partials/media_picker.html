@@ -14,7 +14,11 @@ Open it from any button with plain JS — no Alpine context needed on the trigge
 is set to the asset URL and native `input`/`change` events are fired so Alpine
 x-model / preview bindings update.
 {% endcomment %}
-<style>[x-cloak]{display:none!important;}</style>
+<style>[x-cloak]{display:none!important;}
+input[type=color]{-webkit-appearance:none;appearance:none;width:34px!important;height:34px!important;min-width:34px;padding:0!important;border-radius:9999px!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #cfd3da;overflow:hidden;cursor:pointer;background:transparent}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:none;border-radius:9999px}
+input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
 <div id="media-picker-root" x-data="mediaPicker()" x-cloak
      @open-media-picker.window="open($event.detail)">
   <div x-show="shown" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center p-4">

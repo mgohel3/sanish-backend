@@ -43,7 +43,7 @@
 
   <!-- Content fields -->
   <div class="card space-y-5" id="block-fields">
-    {% for field in config.fields %}
+    {% for field in config.fields %}{% if field.ui != "hidden" %}
     <div>
       <label class="form-label">{{ field.label }}</label>
       {% if field.type == "text" or field.type == "textarea" %}{% if "link" not in field.name and "url" not in field.name and "href" not in field.name %}
@@ -93,7 +93,7 @@
 
       {% if field.help %}<p class="form-hint">{{ field.help }}</p>{% endif %}
     </div>
-    {% endfor %}
+    {% endif %}{% endfor %}
 
     {% include "dashboard/partials/_background_fields.html" %}
     {% include "dashboard/partials/_text_style_fields.html" %}
