@@ -125,8 +125,6 @@ via the hidden `album_order` input (names joined with "|").
         <span x-show="r.category" x-cloak style="position:absolute;right:6px;bottom:6px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.92);color:#374151;font-size:10px;padding:2px 7px;border-radius:999px" x-text="r.category"></span>
 
         <!-- hover toolbar: drag · edit · remove -->
-        <div x-show="hovId === r._id || dragId === r._id" x-cloak
-             style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45),rgba(0,0,0,0) 45%);pointer-events:none"></div>
         <div x-show="hovId === r._id" x-cloak
              style="position:absolute;right:6px;top:6px;display:flex;gap:5px">
           <span title="Drag to reorder" style="width:28px;height:28px;border-radius:50%;background:#fff;color:#374151;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:grab">
