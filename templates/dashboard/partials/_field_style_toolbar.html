@@ -21,14 +21,14 @@ Inline styles on purpose: the compiled dashboard CSS doesn't include every utili
 
   <span role="button" tabindex="0" title="Bold" @click="st.bold = !st.bold"
           style="width:30px;height:30px;border-radius:50%;font-weight:800;font-size:13px;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
-          :style="st.bold ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">B</span>
+          :style="st.bold ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">B</span>
   <span role="button" tabindex="0" title="Italic" @click="st.italic = !st.italic"
           style="width:30px;height:30px;border-radius:50%;font-style:italic;font-family:serif;font-size:14px;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
-          :style="st.italic ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">I</span>
+          :style="st.italic ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">I</span>
 
   <span role="button" tabindex="0" title="Underline" @click="st.underline = !st.underline"
           style="width:30px;height:30px;border-radius:50%;text-decoration:underline;font-size:13px;font-weight:600;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
-          :style="st.underline ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">U</span>
+          :style="st.underline ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">U</span>
 
   <label title="Text colour" style="display:flex;align-items:center;gap:4px;cursor:pointer">
     <input type="color" :value="st.color || '#1e1e2e'" @input="st.color = $event.target.value" />
@@ -55,7 +55,7 @@ Inline styles on purpose: the compiled dashboard CSS doesn't include every utili
   <template x-for="a in [['left','M3 6h18M3 12h12M3 18h16'],['center','M3 6h18M7 12h10M5 18h14'],['right','M3 6h18M9 12h12M5 18h16']]" :key="a[0]">
     <span role="button" tabindex="0" :title="'Align ' + a[0]" @click="st.align = (st.align === a[0] ? '' : a[0])"
             style="width:30px;height:30px;border-radius:50%;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
-            :style="st.align === a[0] ? 'background:#7c5cff;color:#fff;border-color:#7c5cff' : 'background:#fff;color:#374151'">
+            :style="st.align === a[0] ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="a[1]"/></svg>
     </span>
   </template>

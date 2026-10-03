@@ -13,7 +13,7 @@ via the hidden `album_order` input (names joined with "|").
 
   <!-- add area -->
   <div style="border:2px dashed #d1d5db;border-radius:18px;padding:18px;text-align:center;transition:.15s"
-       :style="over ? 'border-color:#7c5cff;background:rgba(124,92,255,.06)' : ''"
+       :style="over ? { 'border-color': '#7c5cff', 'background': 'rgba(124,92,255,.06)' } : {}"
        @dragover.prevent="if (!dragId) over = true" @dragleave.prevent="over = false"
        @drop.prevent="over = false; if (!dragId) uploadFiles($event.dataTransfer.files)">
     <p style="font-size:13px;color:#6b7280;margin-bottom:10px">
@@ -97,7 +97,7 @@ via the hidden `album_order` input (names joined with "|").
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px">
     <template x-for="r in visible" :key="r._id">
       <div draggable="true" style="position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#f3f4f6;cursor:grab;outline-offset:0"
-           :style="(selId === r._id ? 'outline:3px solid #7c5cff;' : '') + (overId === r._id && dragId !== r._id ? 'box-shadow:-5px 0 0 0 #7c5cff;' : '') + (dragId === r._id ? 'opacity:.4;' : '')"
+           :style="{ 'outline': selId === r._id ? '3px solid #7c5cff' : '', 'box-shadow': (overId === r._id && dragId !== r._id) ? '-5px 0 0 0 #7c5cff' : '', 'opacity': dragId === r._id ? '.4' : '' }"
            class="group"
            @click="selId = r._id"
            @mouseenter="hovId = r._id" @mouseleave="hovId = null"
@@ -117,7 +117,7 @@ via the hidden `album_order` input (names joined with "|").
         <!-- select circle -->
         <span @click.stop="toggleCheck(r._id)" title="Select"
               style="position:absolute;left:6px;top:6px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;cursor:pointer"
-              :style="checked.includes(r._id) ? 'background:#7c5cff' : 'background:rgba(0,0,0,.25)'">
+              :style="{ 'background': checked.includes(r._id) ? '#7c5cff' : 'rgba(0,0,0,.25)' }">
           <span x-show="checked.includes(r._id)">✓</span>
         </span>
 
