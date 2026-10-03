@@ -34,9 +34,13 @@ Inline styles on purpose: the compiled dashboard CSS doesn't include every utili
 
   <select x-model="st.font" title="Font" style="height:30px;width:auto;max-width:150px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
     <option value="">Font: default</option>
-    <option value="sans">Sans (site)</option>
-    <option value="serif">Serif (site)</option>
-    <template x-for="f in fonts" :key="f"><option :value="f" x-text="f"></option></template>
+    <optgroup label="Theme fonts">
+      <option value="serif">Vogue — headings (theme)</option>
+      <option value="sans">Heebo — body (theme)</option>
+    </optgroup>
+    <optgroup label="More fonts">
+      <template x-for="f in fonts" :key="f"><option :value="f" x-text="f"></option></template>
+    </optgroup>
   </select>
 
   <select x-model="st.size" title="Font size (px)" style="height:30px;width:auto;max-width:120px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
