@@ -46,6 +46,9 @@
     {% for field in config.fields %}
     <div>
       <label class="form-label">{{ field.label }}</label>
+      {% if field.type == "text" or field.type == "textarea" %}{% if "link" not in field.name and "url" not in field.name and "href" not in field.name %}
+      {% include "dashboard/partials/_field_style_toolbar.html" %}
+      {% endif %}{% endif %}
 
       {% if field.type == "textarea" %}
         <textarea name="{{ field.name }}" rows="3" class="form-input resize-y">{{ values|dictkey:field.name }}</textarea>
@@ -67,7 +70,7 @@
         </select>
 
       {% elif field.type == "repeater" %}
-        {% include "dashboard/homepage/_repeater.html" with field=field %}
+        {% if field.ui == "media_grid" %}{% include "dashboard/homepage/_media_grid.html" with field=field %}{% else %}{% include "dashboard/homepage/_repeater.html" with field=field %}{% endif %}
 
       {% elif field.type == "image" or field.type == "video" or field.type == "media" %}
         <div class="mp-field" x-data="{ v: '{{ values|dictkey:field.name|escapejs }}' }">

@@ -3,6 +3,7 @@ Home Page block manager — reorder, enable/disable, edit and add the blocks tha
 make up the public home page. Content is stored on ``HomeSection.content`` (JSON)
 and shaped by ``homepage.blocks.BLOCK_TYPES``.
 """
+import re
 import json
 
 from django.contrib import messages
@@ -47,6 +48,36 @@ TEXT_STYLE_FIELDS = [
 ]
 
 
+_STYLE_FONTS = {"sans", "serif"}
+_STYLE_SIZES = {"sm", "lg", "xl"}
+_STYLE_ALIGN = {"left", "center", "right"}
+_HEX_RE = re.compile(r"^#[0-9a-fA-F]{3,8}$")
+
+
+def _clean_field_style(raw):
+    """Validate one ``<field>__style`` JSON blob from the dashboard's field toolbar."""
+    try:
+        data = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    out = {}
+    if isinstance(data.get("color"), str) and _HEX_RE.match(data["color"]):
+        out["color"] = data["color"]
+    if data.get("font") in _STYLE_FONTS:
+        out["font"] = data["font"]
+    if data.get("size") in _STYLE_SIZES:
+        out["size"] = data["size"]
+    if data.get("align") in _STYLE_ALIGN:
+        out["align"] = data["align"]
+    if data.get("bold") is True:
+        out["bold"] = True
+    if data.get("italic") is True:
+        out["italic"] = True
+    return out
+
+
 def _parse_content(block_type, post):
     """Turn a submitted form into a ``content`` dict for the given block type."""
     cfg = blocks.BLOCK_TYPES.get(block_type, {})
@@ -68,6 +99,14 @@ def _parse_content(block_type, post):
             content[name] = (float(val) if "." in val else int(val)) if val else None
         elif ftype in SCALAR_TYPES:
             content[name] = post.get(name, "").strip()
+    # Per-field text styles from the field toolbar (blank = theme default).
+    field_styles = {}
+    for field in cfg.get("fields", []):
+        if field["type"] in ("text", "textarea"):
+            st = _clean_field_style(post.get(f"{field['name']}__style", ""))
+            if st:
+                field_styles[field["name"]] = st
+    content["field_styles"] = field_styles
     return content
 
 

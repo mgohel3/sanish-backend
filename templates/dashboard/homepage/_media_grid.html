@@ -1,0 +1,181 @@
+{% load homepage_extras %}
+{% comment %}
+Simple visual editor for the Events & Media Gallery block (field ui == "media_grid").
+A thumbnail grid instead of the generic repeater: add many photos/videos at once from the
+Media Library, drag files straight in, or paste a YouTube / Vimeo link. Click a thumbnail
+to add a caption / album. Saves the same `items` JSON ({image, video, caption, category})
+as the old repeater, via the hidden <field>_json input.
+{% endcomment %}
+<div x-data='mediaGridEditor({{ values|dictkey:field.name|jsonify }}, "{% url "media_upload_ajax" %}", "{{ csrf_token }}")'
+     class="space-y-3">
+  <input type="hidden" name="{{ field.name }}_json" :value="serialised" />
+
+  <!-- add area -->
+  <div class="rounded-2xl border-2 border-dashed p-5 text-center transition-colors"
+       :class="over ? 'border-accent bg-accent/5' : 'border-gray-300 dark:border-dark-600'"
+       @dragover.prevent="over = true" @dragleave.prevent="over = false"
+       @drop.prevent="over = false; uploadFiles($event.dataTransfer.files)">
+    <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+      Drag photos &amp; videos here, or
+    </p>
+    <div class="flex flex-wrap justify-center gap-2">
+      <button type="button" class="btn-primary text-sm" @click="pickMany()">＋ Add photos &amp; videos</button>
+      <label class="btn-secondary text-sm cursor-pointer">
+        Upload from computer
+        <input type="file" class="hidden" multiple accept="image/*,video/*"
+               @change="uploadFiles($event.target.files); $event.target.value = ''" />
+      </label>
+      <button type="button" class="btn-secondary text-sm" @click="showLink = !showLink">▶ Add YouTube / Vimeo link</button>
+    </div>
+    <div x-show="showLink" x-cloak class="mt-3 flex gap-2 max-w-xl mx-auto">
+      <input type="text" x-model="link" @keydown.enter.prevent="addLink()" class="form-input flex-1 text-sm"
+             placeholder="https://www.youtube.com/watch?v=…" />
+      <button type="button" class="btn-primary text-sm" @click="addLink()">Add</button>
+    </div>
+    <p x-show="busy > 0" x-cloak class="mt-3 text-xs text-gray-500">Uploading… <span x-text="busy"></span> left</p>
+    <p x-show="err" x-cloak class="mt-3 text-xs text-red-500" x-text="err"></p>
+  </div>
+
+  <p class="text-xs text-gray-400" x-show="rows.length === 0" x-cloak>Nothing added yet.</p>
+  <p class="text-xs text-gray-400" x-show="rows.length > 0" x-cloak>
+    <span x-text="rows.length"></span> item(s) · click a thumbnail to add a caption or album · use ◀ ▶ to reorder
+  </p>
+
+  <!-- thumbnails -->
+  <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+    <template x-for="(r, i) in rows" :key="i">
+      <div class="group relative aspect-square rounded-xl overflow-hidden bg-surface-100 dark:bg-dark-600 cursor-pointer ring-2"
+           :class="sel === i ? 'ring-accent' : 'ring-transparent hover:ring-gray-300'"
+           @click="sel = (sel === i ? null : i)">
+        <template x-if="thumb(r)">
+          <img :src="thumb(r)" alt="" loading="lazy" class="w-full h-full object-cover" />
+        </template>
+        <template x-if="!thumb(r) && isFileVideo(r.video)">
+          <video :src="r.video + '#t=0.5'" preload="metadata" muted playsinline class="w-full h-full object-cover pointer-events-none"></video>
+        </template>
+        <template x-if="!thumb(r) && !isFileVideo(r.video)">
+          <div class="w-full h-full flex items-center justify-center text-xs text-gray-400 px-2 text-center" x-text="r.video ? 'Video link' : 'No image'"></div>
+        </template>
+        <span x-show="r.video" x-cloak class="absolute left-1.5 bottom-1.5 bg-black/70 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">▶ VIDEO</span>
+        <span x-show="r.category" x-cloak class="absolute left-1.5 top-1.5 max-w-[70%] truncate bg-white/90 text-gray-700 text-[10px] px-1.5 py-0.5 rounded-full" x-text="r.category"></span>
+        <div class="absolute right-1.5 bottom-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button type="button" class="w-6 h-6 rounded-full bg-white/95 text-gray-700 text-xs shadow" title="Move earlier" @click.stop="move(i, -1)">◀</button>
+          <button type="button" class="w-6 h-6 rounded-full bg-white/95 text-gray-700 text-xs shadow" title="Move later" @click.stop="move(i, 1)">▶</button>
+        </div>
+        <button type="button" title="Remove"
+                class="absolute right-1.5 top-1.5 w-6 h-6 rounded-full bg-white/95 text-red-500 text-sm leading-none shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                @click.stop="remove(i)">✕</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- details for the selected item -->
+  <template x-if="sel !== null && rows[sel]">
+    <div class="rounded-2xl border border-gray-200 dark:border-dark-600 p-4 space-y-3 bg-surface-50 dark:bg-dark-700/40">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-500" x-text="'Item ' + (sel + 1) + (rows[sel].video ? ' · video' : ' · photo')"></span>
+        <button type="button" class="btn-ghost !px-2 !py-1 text-xs" @click="sel = null">Done</button>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label !text-[10px]">Caption (optional)</label>
+          <input type="text" class="form-input text-sm" x-model="rows[sel].caption" />
+        </div>
+        <div>
+          <label class="form-label !text-[10px]">Event / album (optional)</label>
+          <input type="text" class="form-input text-sm" x-model="rows[sel].category" list="mg-albums-{{ field.name }}" placeholder="e.g. Carpenter Meet 2026" />
+          <datalist id="mg-albums-{{ field.name }}">
+            <template x-for="a in albums" :key="a"><option :value="a"></option></template>
+          </datalist>
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div x-show="rows[sel].video" x-cloak>
+          <label class="form-label !text-[10px]">Video file or link</label>
+          <input type="text" class="form-input text-sm" x-model="rows[sel].video" />
+        </div>
+        <div>
+          <label class="form-label !text-[10px]" x-text="rows[sel].video ? 'Cover image (optional)' : 'Photo'"></label>
+          <div class="mp-field flex gap-2">
+            <input type="text" class="form-input text-sm flex-1" x-model="rows[sel].image" />
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Change</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  function mediaGridEditor(initial, uploadUrl, csrf) {
+    return {
+      rows: (initial || []).map(function (r) {
+        return { image: r.image || '', video: r.video || '', caption: r.caption || '', category: r.category || '' };
+      }),
+      sel: null, busy: 0, over: false, showLink: false, link: '', err: '',
+      get serialised() { return JSON.stringify(this.rows); },
+      get albums() {
+        return Array.from(new Set(this.rows.map(function (r) { return r.category; }).filter(Boolean)));
+      },
+      isFileVideo: function (u) { return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u || ''); },
+      ytId: function (u) {
+        var m = (u || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/))([\w-]{11})/);
+        return m ? m[1] : '';
+      },
+      thumb: function (r) {
+        if (r.image) return r.image;
+        var id = this.ytId(r.video);
+        return id ? 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg' : '';
+      },
+      addAssets: function (items) {
+        var self = this;
+        items.forEach(function (it) {
+          var isVid = it.type === 'video' || self.isFileVideo(it.url);
+          self.rows.push({ image: isVid ? '' : it.url, video: isVid ? it.url : '', caption: '', category: '' });
+        });
+        if (items.length === 1) this.sel = this.rows.length - 1;
+      },
+      pickMany: function () {
+        var self = this;
+        openMediaPicker({ multiple: true, accept: '', onSelectMany: function (items) { self.addAssets(items); } });
+      },
+      addLink: function () {
+        var u = (this.link || '').trim();
+        if (!u) return;
+        this.rows.push({ image: '', video: u, caption: '', category: '' });
+        this.link = ''; this.showLink = false; this.sel = this.rows.length - 1;
+      },
+      remove: function (i) {
+        this.rows.splice(i, 1);
+        this.sel = null;
+      },
+      move: function (i, d) {
+        var j = i + d;
+        if (j < 0 || j >= this.rows.length) return;
+        var r = this.rows.splice(i, 1)[0];
+        this.rows.splice(j, 0, r);
+        this.sel = j;
+      },
+      uploadFiles: async function (files) {
+        this.err = '';
+        var out = [];
+        for (var k = 0; k < files.length; k++) {
+          var f = files[k];
+          if (!/^(image|video)\//.test(f.type)) { this.err = 'Skipped ' + f.name + ' — only photos and videos can be added.'; continue; }
+          var fd = new FormData();
+          fd.append('file', f);
+          fd.append('csrfmiddlewaretoken', csrf);
+          this.busy++;
+          try {
+            var res = await fetch(uploadUrl, { method: 'POST', body: fd });
+            var d = await res.json();
+            if (d && d.url) out.push(d); else this.err = 'Upload failed: ' + f.name;
+          } catch (e) { this.err = 'Upload failed: ' + f.name; }
+          this.busy--;
+        }
+        this.addAssets(out);
+      },
+    };
+  }
+</script>

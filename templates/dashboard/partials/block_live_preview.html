@@ -42,6 +42,11 @@ Requires the including template to:
         try { content[base] = JSON.parse(el.value || '[]'); } catch (e) { content[base] = []; }
         return;
       }
+      if (name.slice(-7) === '__style') {
+        content.field_styles = content.field_styles || {};
+        try { var so = JSON.parse(el.value || ''); if (so && typeof so === 'object') content.field_styles[name.slice(0, -7)] = so; } catch (e) {}
+        return;
+      }
       if (el.type === 'checkbox') { content[name] = el.checked; return; }
       if (el.tagName === 'TEXTAREA' && ckEditors[name]) { content[name] = ckEditors[name].getData(); return; }
       content[name] = el.value;

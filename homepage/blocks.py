@@ -478,7 +478,7 @@ BLOCK_TYPES: dict = {
             {"name": "heading", "type": "text", "label": "Heading"},
             {"name": "sub", "type": "textarea", "label": "Sub copy"},
             {"name": "columns", "type": "select", "label": "Columns", "options": ["3", "2", "4"]},
-            {"name": "items", "type": "repeater", "label": "Photos & videos", "fields": [
+            {"name": "items", "type": "repeater", "ui": "media_grid", "label": "Photos & videos", "fields": [
                 {"name": "image", "type": "image", "label": "Photo (or cover image for a video)"},
                 {"name": "video", "type": "video", "label": "Video (optional)",
                  "help": "Leave blank for a photo. For a video: pick an uploaded MP4 with Library, or paste a YouTube / Vimeo link "

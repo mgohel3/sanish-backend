@@ -54,7 +54,7 @@ x-model / preview bindings update.
         </div>
         <label class="btn-secondary text-sm cursor-pointer">
           <span x-text="uploading ? 'Uploading…' : 'Upload new'"></span>
-          <input type="file" class="hidden" :accept="uploadAccept" @change="upload($event)"/>
+          <input type="file" class="hidden" :accept="uploadAccept" :multiple="multiple" @change="upload($event)"/>
         </label>
       </div>
 
@@ -65,8 +65,10 @@ x-model / preview bindings update.
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
           <template x-for="item in results" :key="item.id">
-            <button type="button" @click="choose(item)"
+            <button type="button" @click="pick(item)"
+                    :class="isSel(item) ? '!ring-accent' : ''"
                     class="group relative bg-white dark:bg-dark-700 rounded-xl overflow-hidden ring-2 ring-transparent hover:ring-accent focus:ring-accent focus:outline-none">
+              <span x-show="isSel(item)" x-cloak class="absolute right-1.5 top-1.5 z-10 w-5 h-5 rounded-full bg-accent text-white text-xs leading-5 text-center">✓</span>
               <template x-if="item.type === 'image'">
                 <div class="aspect-square bg-surface-100 dark:bg-dark-600">
                   <img :src="item.url" :alt="item.alt_text" loading="lazy" class="w-full h-full object-cover"/>
@@ -91,6 +93,10 @@ x-model / preview bindings update.
         </div>
         <p x-show="loading" class="text-center text-sm text-gray-400 py-4">Loading…</p>
       </div>
+      <div x-show="multiple" x-cloak class="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100 dark:border-white/10">
+        <span class="text-sm text-gray-500"><span x-text="selected.length"></span> selected — click photos / videos to select several</span>
+        <button type="button" class="btn-primary text-sm" :disabled="!selected.length" :class="!selected.length ? 'opacity-50' : ''" @click="confirmMany()">Add selected</button>
+      </div>
     </div>
   </div>
 </div>
@@ -111,6 +117,7 @@ x-model / preview bindings update.
       targetEl: null,
       onSelect: null,
       lockType: false,
+      multiple: false, selected: [], onSelectMany: null,
       get uploadAccept() {
         if (this.type === 'image') return 'image/*';
         if (this.type === 'video') return 'video/*';
@@ -121,6 +128,10 @@ x-model / preview bindings update.
         this.targetEl = detail.el ||
           (detail.selector ? document.querySelector(detail.selector) : null);
         this.onSelect = typeof detail.onSelect === 'function' ? detail.onSelect : null;
+        this.multiple = !!detail.multiple;
+        this.onSelectMany = typeof detail.onSelectMany === 'function' ? detail.onSelectMany : null;
+        this.selected = [];
+        if (this.multiple) this.type = '';
         if (detail.accept === 'image' || detail.accept === 'video' || detail.accept === 'pdf') {
           this.type = detail.accept;
           this.lockType = true;
@@ -147,6 +158,19 @@ x-model / preview bindings update.
           .catch(() => {})
           .finally(() => { this.loading = false; });
       },
+      isSel(item) { return this.selected.some(function (s) { return s.id === item.id; }); },
+      pick(item) {
+        if (!this.multiple) { this.choose(item); return; }
+        if (this.isSel(item)) this.selected = this.selected.filter(function (s) { return s.id !== item.id; });
+        else this.selected = this.selected.concat([item]);
+      },
+      confirmMany() {
+        const picked = this.selected.slice();
+        if (this.onSelectMany && picked.length) {
+          try { this.onSelectMany(picked); } catch (err) { /* no-op */ }
+        }
+        this.shown = false;
+      },
       choose(item) {
         if (this.onSelect) {
           try { this.onSelect(item); } catch (err) { /* no-op */ }
@@ -158,17 +182,30 @@ x-model / preview bindings update.
         this.shown = false;
       },
       upload(e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        const input = e.target;
+        const files1 = this.multiple ? files : files.slice(0, 1);
         this.uploading = true;
-        fetch("{% url 'media_upload_ajax' %}", { method: 'POST', body: fd })
-          .then(r => r.json())
-          .then(d => { if (d && d.url) this.choose(d); })
-          .catch(() => {})
-          .finally(() => { this.uploading = false; e.target.value = ''; });
+        const next = (i) => {
+          if (i >= files1.length) { this.uploading = false; input.value = ''; return; }
+          const fd = new FormData();
+          fd.append('file', files1[i]);
+          fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+          fetch("{% url 'media_upload_ajax' %}", { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(d => {
+              if (d && d.url) {
+                if (this.multiple) {
+                  this.results = [d].concat(this.results);
+                  this.selected = this.selected.concat([d]);
+                } else { this.choose(d); }
+              }
+            })
+            .catch(() => {})
+            .finally(() => next(i + 1));
+        };
+        next(0);
       },
     };
   }
