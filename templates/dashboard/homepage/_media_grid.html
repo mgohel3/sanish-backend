@@ -90,7 +90,7 @@ via the hidden `album_order` input (names joined with "|").
 
   <p style="font-size:12px;color:#9ca3af" x-show="rows.length === 0" x-cloak>Nothing added yet.</p>
   <p style="font-size:12px;color:#9ca3af" x-show="rows.length > 0" x-cloak>
-    <span x-text="visible.length"></span> item(s) shown · <b>drag a thumbnail</b> to reorder it (or drop it on an album tab) · click to edit caption / album · tick the circle to select several
+    <span x-text="visible.length"></span> item(s) shown · <b>drag a thumbnail</b> to reorder it (or drop it on an album tab) · hover a thumbnail for <b>drag · edit · remove</b> (edit = caption, SEO alt text, album) · tick the circle to select several
   </p>
 
   <!-- thumbnails -->
@@ -99,7 +99,8 @@ via the hidden `album_order` input (names joined with "|").
       <div draggable="true" style="position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#f3f4f6;cursor:grab;outline-offset:0"
            :style="(selId === r._id ? 'outline:3px solid #7c5cff;' : '') + (overId === r._id && dragId !== r._id ? 'box-shadow:-5px 0 0 0 #7c5cff;' : '') + (dragId === r._id ? 'opacity:.4;' : '')"
            class="group"
-           @click="selId = (selId === r._id ? null : r._id)"
+           @click="selId = r._id"
+           @mouseenter="hovId = r._id" @mouseleave="hovId = null"
            @dragstart="dragId = r._id; $event.dataTransfer.effectAllowed = 'move'; $event.dataTransfer.setData('text/plain', r._id)"
            @dragover.prevent="if (dragId) overId = r._id" @dragleave="overId = null"
            @drop.prevent.stop="dropOn(r)" @dragend="dragId = null; overId = null">
@@ -123,43 +124,80 @@ via the hidden `album_order` input (names joined with "|").
         <span x-show="r.video" x-cloak style="position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px">▶ VIDEO</span>
         <span x-show="r.category" x-cloak style="position:absolute;right:6px;bottom:6px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.92);color:#374151;font-size:10px;padding:2px 7px;border-radius:999px" x-text="r.category"></span>
 
-        <button type="button" title="Remove" @click.stop="removeRow(r._id)"
-                style="position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.95);color:#ef4444;font-size:13px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.3)">✕</button>
+        <!-- hover toolbar: drag · edit · remove -->
+        <div x-show="hovId === r._id || dragId === r._id" x-cloak
+             style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45),rgba(0,0,0,0) 45%);pointer-events:none"></div>
+        <div x-show="hovId === r._id" x-cloak
+             style="position:absolute;right:6px;top:6px;display:flex;gap:5px">
+          <span title="Drag to reorder" style="width:28px;height:28px;border-radius:50%;background:#fff;color:#374151;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:grab">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg>
+          </span>
+          <span role="button" title="Edit details" @click.stop="selId = r._id" style="width:28px;height:28px;border-radius:50%;background:#fff;color:#374151;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </span>
+          <span role="button" title="Remove" @click.stop="removeRow(r._id)" style="width:28px;height:28px;border-radius:50%;background:#fff;color:#ef4444;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer;font-size:13px">✕</span>
+        </div>
       </div>
     </template>
   </div>
 
-  <!-- details for the selected item -->
+  <!-- edit popup for one item -->
   <template x-if="cur">
-    <div style="border:1px solid #e5e7eb;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;background:rgba(0,0,0,.02)">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:12px;font-weight:600;color:#6b7280" x-text="'Item ' + (rows.indexOf(cur) + 1) + (cur.video ? ' · video' : ' · photo')"></span>
-        <button type="button" class="btn-ghost !px-2 !py-1 text-xs" @click="selId = null">Done</button>
-      </div>
-      <div class="grid sm:grid-cols-2 gap-3">
-        <div>
-          <label class="form-label !text-[10px]">Caption (optional)</label>
-          <input type="text" class="form-input text-sm" x-model="cur.caption" />
+    <div style="position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:16px"
+         @keydown.escape.window="selId = null">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.55)" @click="selId = null"></div>
+      <div style="position:relative;width:100%;max-width:760px;max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eee">
+          <b style="font-size:15px;color:#111827" x-text="'Edit ' + (cur.video ? 'video' : 'photo') + ' · ' + (rows.indexOf(cur) + 1) + ' of ' + rows.length"></b>
+          <span role="button" @click="selId = null" style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;font-size:16px">✕</span>
         </div>
-        <div>
-          <label class="form-label !text-[10px]">Album</label>
-          <select class="form-input text-sm" x-model="cur.category">
-            <option value="">No album</option>
-            <template x-for="a in albumList" :key="a"><option :value="a" x-text="a" :selected="cur.category === a"></option></template>
-          </select>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;padding:20px" class="mg-modal-grid">
+          <div>
+            <div style="aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#f3f4f6">
+              <template x-if="thumb(cur)"><img :src="thumb(cur)" alt="" style="width:100%;height:100%;object-fit:cover" /></template>
+              <template x-if="!thumb(cur) && isFileVideo(cur.video)"><video :src="cur.video + '#t=0.5'" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></template>
+            </div>
+            <div class="mp-field" style="margin-top:10px">
+              <label class="form-label !text-[10px]" x-text="cur.video ? 'Cover image (optional)' : 'Photo'"></label>
+              <input type="text" class="form-input text-sm" x-model="cur.image" style="margin-bottom:6px" />
+              <button type="button" class="btn-secondary text-xs"
+                      onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Replace from Media Library</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div>
+              <label class="form-label !text-[10px]">Caption (shown on the website)</label>
+              <input type="text" class="form-input text-sm" x-model="cur.caption" />
+            </div>
+            <div>
+              <label class="form-label !text-[10px]">Alt text (for SEO &amp; accessibility)</label>
+              <input type="text" class="form-input text-sm" x-model="cur.alt" placeholder="Describe the image, e.g. Dealers attending the Sanish Laminates meet in Ahmedabad" />
+              <p style="font-size:11px;color:#9ca3af;margin-top:4px">Not shown on the page — read by Google and screen readers. If blank, the caption is used.</p>
+            </div>
+            <div>
+              <label class="form-label !text-[10px]">Album</label>
+              <select class="form-input text-sm" x-model="cur.category">
+                <option value="">No album</option>
+                <template x-for="a in albumList" :key="a"><option :value="a" x-text="a" :selected="cur.category === a"></option></template>
+              </select>
+            </div>
+            <div x-show="cur.video" x-cloak>
+              <label class="form-label !text-[10px]">Video file or link (YouTube / Vimeo)</label>
+              <input type="text" class="form-input text-sm" x-model="cur.video" />
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="grid sm:grid-cols-2 gap-3">
-        <div x-show="cur.video" x-cloak>
-          <label class="form-label !text-[10px]">Video file or link</label>
-          <input type="text" class="form-input text-sm" x-model="cur.video" />
-        </div>
-        <div>
-          <label class="form-label !text-[10px]" x-text="cur.video ? 'Cover image (optional)' : 'Photo'"></label>
-          <div class="mp-field flex gap-2">
-            <input type="text" class="form-input text-sm flex-1" x-model="cur.image" />
-            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
-                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Change</button>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px;border-top:1px solid #eee">
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn-ghost text-xs" @click="step(-1)" :disabled="rows.indexOf(cur) === 0">← Previous</button>
+            <button type="button" class="btn-ghost text-xs" @click="step(1)" :disabled="rows.indexOf(cur) === rows.length - 1">Next →</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn-ghost text-xs" style="color:#ef4444" @click="removeRow(cur._id)">Remove</button>
+            <button type="button" class="btn-primary text-sm" @click="selId = null">Done</button>
           </div>
         </div>
       </div>
@@ -171,19 +209,19 @@ via the hidden `album_order` input (names joined with "|").
   function mediaGridEditor(initial, order, uploadUrl, csrf) {
     var uid = 0;
     var rows = (initial || []).map(function (r) {
-      return { _id: 'r' + (++uid), image: r.image || '', video: r.video || '', caption: r.caption || '', category: r.category || '' };
+      return { _id: 'r' + (++uid), image: r.image || '', video: r.video || '', caption: r.caption || '', alt: r.alt || '', category: r.category || '' };
     });
     var list = (typeof order === 'string' ? order : '').split('|').map(function (s) { return s.trim(); }).filter(Boolean);
     rows.forEach(function (r) { if (r.category && list.indexOf(r.category) < 0) list.push(r.category); });
     return {
       rows: rows, albumList: list,
       filter: 'all', selId: null, checked: [], bulkAlbum: '',
-      dragId: null, overId: null, dragAlbum: null, overTab: null,
+      dragId: null, overId: null, hovId: null, dragAlbum: null, overTab: null,
       busy: 0, over: false, showLink: false, link: '', err: '',
       creating: false, newName: '', renameTo: '',
       get serialised() {
         return JSON.stringify(this.rows.map(function (r) {
-          return { image: r.image, video: r.video, caption: r.caption, category: r.category };
+          return { image: r.image, video: r.video, caption: r.caption, alt: r.alt, category: r.category };
         }));
       },
       get visible() {
@@ -193,6 +231,10 @@ via the hidden `album_order` input (names joined with "|").
         return this.rows.filter(function (r) { return r.category === f; });
       },
       get cur() { var id = this.selId; return this.rows.find(function (r) { return r._id === id; }) || null; },
+      step: function (d) {
+        var i = this.rows.indexOf(this.cur) + d;
+        if (i >= 0 && i < this.rows.length) this.selId = this.rows[i]._id;
+      },
       countFor: function (a) {
         if (a === '__none') return this.rows.filter(function (r) { return !r.category; }).length;
         return this.rows.filter(function (r) { return r.category === a; }).length;
@@ -214,7 +256,7 @@ via the hidden `album_order` input (names joined with "|").
         return id ? 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg' : '';
       },
       newRow: function (o) {
-        return { _id: 'r' + (++uid), image: o.image || '', video: o.video || '', caption: '', category: (this.filter !== 'all' && this.filter !== '__none') ? this.filter : '' };
+        return { _id: 'r' + (++uid), image: o.image || '', video: o.video || '', caption: '', alt: '', category: (this.filter !== 'all' && this.filter !== '__none') ? this.filter : '' };
       },
       addAssets: function (items) {
         var self = this, first = null;

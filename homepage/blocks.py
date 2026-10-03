@@ -485,6 +485,7 @@ BLOCK_TYPES: dict = {
                  "help": "Leave blank for a photo. For a video: pick an uploaded MP4 with Library, or paste a YouTube / Vimeo link "
                          "(links have no size limit — best for long event films)."},
                 {"name": "caption", "type": "text", "label": "Caption (optional)"},
+                {"name": "alt", "type": "text", "label": "Alt text (SEO)"},
                 {"name": "category", "type": "text", "label": "Event / album (optional)",
                  "help": "Items with the same name are grouped under one filter tab, e.g. “Carpenter Meet 2026”."},
             ]},
