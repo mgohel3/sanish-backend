@@ -470,6 +470,149 @@ BLOCK_TYPES: dict = {
         "defaults": {"heading": "", "sub": "", "columns": "3", "images": []},
     },
 
+    # ---- Rewards-page blocks (also reusable on any page) -------------------
+    "rewards_intro": {
+        "label": "Intro with App Card",
+        "description": "Heading and two paragraphs on the left (with Google Play / App Store badges) beside a dark app card with a stats grid.",
+        "component": "RewardsIntroBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "body_1", "type": "textarea", "label": "Paragraph 1"},
+            {"name": "body_2", "type": "textarea", "label": "Paragraph 2"},
+            {"name": "show_store_badges", "type": "bool", "label": "Show app-store badges"},
+            {"name": "card_eyebrow", "type": "text", "label": "Card small label"},
+            {"name": "card_title", "type": "textarea", "label": "Card title", "help": "Press Enter for a new line."},
+            {"name": "stats", "type": "repeater", "label": "Card stats", "fields": [
+                {"name": "val", "type": "text", "label": "Value"},
+                {"name": "label", "type": "text", "label": "Label"},
+            ]},
+        ],
+        "defaults": {
+            "heading": "You Install, We Reward",
+            "body_1": "As a professional carpenter, you are the backbone of every beautiful interior. The Sanish Rewards programme is our way of saying thank you. Every laminate sheet you install earns you points that convert into real cash, gift vouchers, and exclusive perks.",
+            "body_2": "Join thousands of carpenters across India who are already earning with Sanish. Simply download the app, scan packs and watch your rewards grow.",
+            "show_store_badges": True,
+            "card_eyebrow": "Sanish Rewards",
+            "card_title": "Carpenter\nLoyalty App",
+            "stats": [
+                {"val": "10,000+", "label": "Active Carpenters"},
+                {"val": "₹50L+", "label": "Rewards Paid Out"},
+                {"val": "5★", "label": "App Rating"},
+                {"val": "Free", "label": "To Join"},
+            ],
+        },
+    },
+
+    "steps_cards": {
+        "label": "Numbered Steps (How It Works)",
+        "description": "Heading over a row of numbered cards with a coloured top bar — good for 'how it works' or process steps.",
+        "component": "StepsCardsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "steps", "type": "repeater", "label": "Steps", "fields": [
+                {"name": "num", "type": "text", "label": "Number / label", "help": "e.g. 01"},
+                {"name": "title", "type": "text", "label": "Title"},
+                {"name": "desc", "type": "textarea", "label": "Description"},
+                {"name": "accent", "type": "text", "label": "Accent colour", "help": "Hex colour such as #fabf7d — used for the top bar and number."},
+            ]},
+        ],
+        "defaults": {
+            "heading": "How It Works",
+            "steps": [
+                {"num": "01", "title": "Download & Register", "desc": "Download the Sanish Rewards app from Google Play and create your free account in minutes.", "accent": "#fabf7d"},
+                {"num": "02", "title": "Install & Earn Points", "desc": "Install Sanish Laminates at your projects. Scan the QR code on each pack to instantly credit points to your account.", "accent": "#ac8cc0"},
+                {"num": "03", "title": "Redeem Your Rewards", "desc": "Accumulate points and redeem them for cash transfers, gift vouchers, tools, and exclusive offers — all inside the app.", "accent": "#f39ba2"},
+            ],
+        },
+    },
+
+    "icon_benefits": {
+        "label": "Benefits Grid (icon cards)",
+        "description": "Heading over a grid of cards, each with a coloured icon, title and short text.",
+        "component": "IconBenefitsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "items", "type": "repeater", "label": "Cards", "fields": [
+                {"name": "icon", "type": "select", "label": "Icon", "options": [
+                    {"value": "user", "label": "Person"}, {"value": "star", "label": "Star"},
+                    {"value": "card", "label": "Card / payment"}, {"value": "chart", "label": "Chart"},
+                    {"value": "gift", "label": "Gift"}, {"value": "phone", "label": "Phone / support"},
+                    {"value": "shield", "label": "Shield"}, {"value": "heart", "label": "Heart"},
+                    {"value": "bolt", "label": "Lightning"}, {"value": "check", "label": "Tick"},
+                ]},
+                {"name": "title", "type": "text", "label": "Title"},
+                {"name": "desc", "type": "textarea", "label": "Description"},
+                {"name": "accent", "type": "text", "label": "Accent colour", "help": "Hex colour such as #85addc."},
+            ]},
+        ],
+        "defaults": {
+            "heading": "What You Get",
+            "items": [
+                {"icon": "user", "title": "Made for Carpenters", "desc": "Exclusively designed for professional carpenters and furniture makers who use Sanish products daily.", "accent": "#fabf7d"},
+                {"icon": "star", "title": "Points on Every Pack", "desc": "Earn reward points on every Sanish laminate pack you install. The more you install, the more you earn.", "accent": "#ac8cc0"},
+                {"icon": "card", "title": "Instant Cash Transfer", "desc": "Redeem your points directly to your bank account or UPI ID — no waiting, no paperwork.", "accent": "#f39ba2"},
+                {"icon": "chart", "title": "Track Live Earnings", "desc": "See your points balance, transaction history and available rewards in real-time through the app.", "accent": "#85addc"},
+                {"icon": "gift", "title": "Exclusive Gift Vouchers", "desc": "Redeem points for gift vouchers from leading brands — tools, home appliances, shopping & more.", "accent": "#fabf7d"},
+                {"icon": "phone", "title": "Dedicated Support", "desc": "Our team is available to assist with any questions about your points, redemptions or app issues.", "accent": "#ac8cc0"},
+            ],
+        },
+    },
+
+    "client_testimonials": {
+        "label": "Client Testimonials (carousel)",
+        "description": "The sliding testimonials carousel. The people and quotes are managed in Dashboard › Testimonials (add, hide, reorder there) — this block only sets the heading, so you can drop it on any page.",
+        "component": "ClientTestimonialsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "sub", "type": "textarea", "label": "Sub copy (optional)"},
+        ],
+        "defaults": {"heading": "What Carpenters Say", "sub": ""},
+    },
+
+    "faq_cards": {
+        "label": "FAQ Cards",
+        "description": "Heading over a narrow list of question-and-answer cards (all answers visible).",
+        "component": "FaqCardsBlock",
+        "fields": [
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "items", "type": "repeater", "label": "Questions", "fields": [
+                {"name": "q", "type": "text", "label": "Question"},
+                {"name": "a", "type": "textarea", "label": "Answer"},
+            ]},
+        ],
+        "defaults": {
+            "heading": "Frequently Asked",
+            "items": [
+                {"q": "Who can join the Sanish Rewards programme?", "a": "Any professional carpenter or furniture maker who regularly purchases and installs Sanish Laminates is eligible to join. Registration is free."},
+                {"q": "How do I earn points?", "a": "Scan the unique QR code found on each Sanish laminate pack using the app. Points are instantly credited to your account after verification."},
+                {"q": "When can I redeem my points?", "a": "You can redeem points once you reach the minimum threshold. Redemptions are processed within 24–48 hours to your bank or UPI."},
+                {"q": "Is there an expiry on points?", "a": "Points are valid for 12 months from the date of earning. Stay active and keep installing to retain and grow your balance."},
+            ],
+        },
+    },
+
+    "app_cta": {
+        "label": "App Download CTA (dark)",
+        "description": "Dark call-to-action: small label, big heading, paragraph, app-store badges and a row of tick points.",
+        "component": "AppCtaBlock",
+        "fields": [
+            {"name": "eyebrow", "type": "text", "label": "Small label"},
+            {"name": "heading", "type": "text", "label": "Heading"},
+            {"name": "text", "type": "textarea", "label": "Paragraph"},
+            {"name": "show_store_badges", "type": "bool", "label": "Show app-store badges"},
+            {"name": "checks", "type": "repeater", "label": "Tick points", "fields": [
+                {"name": "text", "type": "text", "label": "Text"},
+            ]},
+        ],
+        "defaults": {
+            "eyebrow": "Start Earning Today",
+            "heading": "Download the App & Join Free",
+            "text": "Over 10,000 carpenters are already earning with Sanish Rewards. Register in 2 minutes and start collecting points on your very next installation.",
+            "show_store_badges": True,
+            "checks": [{"text": "Free to join"}, {"text": "Instant points"}, {"text": "No minimum order"}],
+        },
+    },
+
     "media_gallery": {
         "label": "Events & Media Gallery",
         "description": "Photos and videos from events and meetups — filter tabs per event, 24 per page, click to open in a viewer.",
@@ -585,6 +728,7 @@ INNER_PAGE_BLOCKS = [
     "page_hero", "content_section", "feature_cards", "faq", "contact_details",
     "rich_text", "image_text", "cta_banner", "testimonials", "gallery", "media_gallery",
     "team", "pricing", "stats", "logos_strip", "video_embed",
+    "rewards_intro", "steps_cards", "icon_benefits", "client_testimonials", "faq_cards", "app_cta",
 ]
 
 # Order the 8 currently-live sections are seeded in
