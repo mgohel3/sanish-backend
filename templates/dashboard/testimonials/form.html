@@ -1,6 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% block title %}{% if testimonial %}Edit{% else %}New{% endif %} Testimonial{% endblock %}
-{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'testimonial_list' %}" class="hover:text-accent">Carpenter Testimonials</a><span class="text-gray-300">/</span><span>{% if testimonial %}Edit{% else %}New{% endif %}</span>{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'testimonial_list' %}{% if current %}?cat={{ current.pk }}{% endif %}" class="hover:text-accent">Testimonials</a><span class="text-gray-300">/</span><span>{% if testimonial %}Edit{% else %}New{% endif %}</span>{% endblock %}
 
 {% block content %}
 <form method="post" class="max-w-2xl mx-auto space-y-6">
@@ -9,19 +9,28 @@
   <div class="flex items-center justify-between gap-4 flex-wrap">
     <h1 class="text-xl font-bold text-gray-900 dark:text-white">{% if testimonial %}Edit Testimonial{% else %}New Testimonial{% endif %}</h1>
     <div class="flex gap-3">
-      <a href="{% url 'testimonial_list' %}" class="btn-ghost">Cancel</a>
+      <a href="{% url 'testimonial_list' %}{% if current %}?cat={{ current.pk }}{% endif %}" class="btn-ghost">Cancel</a>
       <button type="submit" class="btn-primary">Save Testimonial</button>
     </div>
   </div>
 
   <div class="card space-y-4">
     <div>
+      <label class="form-label">Category</label>
+      <select name="category" class="form-input">
+        {% for c in categories %}
+        <option value="{{ c.pk }}" {% if current and c.pk == current.pk %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">Which list this appears in. Pick another category to move it.</p>
+    </div>
+    <div>
       <label class="form-label">Name</label>
       <input type="text" name="name" value="{{ testimonial.name|default:'' }}" class="form-input" required placeholder="e.g. Nitesh Kumar"/>
     </div>
     <div>
       <label class="form-label">Role <span class="normal-case font-normal text-gray-400">(optional)</span></label>
-      <input type="text" name="role" value="{{ testimonial.role|default:'' }}" class="form-input" placeholder="e.g. Carpenter, Mumbai"/>
+      <input type="text" name="role" value="{{ testimonial.role|default:'' }}" class="form-input" placeholder="e.g. Carpenter, Mumbai  or  Interior Designer, Pune"/>
     </div>
     <div>
       <label class="form-label">Testimonial</label>
@@ -38,7 +47,7 @@
         </button>
         <button type="button" class="btn-ghost text-xs whitespace-nowrap" @click="v = ''">Clear</button>
       </div>
-      <p class="form-hint mt-1">Leave blank to show the carpenter's initial in a coloured circle instead.</p>
+      <p class="form-hint mt-1">Leave blank to show the person's initial in a coloured circle instead.</p>
       <template x-if="v">
         <img :src="v" alt="" class="mt-2 w-16 h-16 rounded-full object-cover border border-surface-200 dark:border-dark-600"/>
       </template>
@@ -50,7 +59,7 @@
   </div>
 
   <div class="flex justify-end gap-3">
-    <a href="{% url 'testimonial_list' %}" class="btn-ghost">Cancel</a>
+    <a href="{% url 'testimonial_list' %}{% if current %}?cat={{ current.pk }}{% endif %}" class="btn-ghost">Cancel</a>
     <button type="submit" class="btn-primary">Save Testimonial</button>
   </div>
 </form>

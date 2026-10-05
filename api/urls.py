@@ -13,6 +13,7 @@ from .views import (
     GalleryCatalogueListView, GalleryCatalogueDetailView,
     FaqListView,
     CarpenterTestimonialListView,
+    TestimonialListView,
 )
 
 urlpatterns = [
@@ -63,4 +64,5 @@ urlpatterns = [
     path("faqs/", FaqListView.as_view(), name="api_faqs"),
     # Carpenter Testimonials (public read — CMS-managed, /rewards carousel)
     path("testimonials/carpenters/", CarpenterTestimonialListView.as_view(), name="api_carpenter_testimonials"),
+    path("testimonials/", TestimonialListView.as_view(), name="api_testimonials"),
 ]

@@ -66,6 +66,7 @@ from dashboard.views.faq import (
 from dashboard.views.testimonials import (
     TestimonialListView, TestimonialCreateView, TestimonialEditView, TestimonialDeleteView,
     TestimonialReorderView, TestimonialToggleView,
+    TestimonialCategoryCreateView, TestimonialCategoryRenameView, TestimonialCategoryDeleteView,
 )
 from dashboard.views.help import HelpIndexView, HelpArticleView
 
@@ -231,6 +232,9 @@ urlpatterns = [
     # Carpenter Testimonials
     path("testimonials/",              TestimonialListView.as_view(),     name="testimonial_list"),
     path("testimonials/reorder/",      TestimonialReorderView.as_view(),  name="testimonial_reorder"),
+    path("testimonials/categories/create/",            TestimonialCategoryCreateView.as_view(), name="testimonial_category_create"),
+    path("testimonials/categories/<int:pk>/rename/",   TestimonialCategoryRenameView.as_view(), name="testimonial_category_rename"),
+    path("testimonials/categories/<int:pk>/delete/",   TestimonialCategoryDeleteView.as_view(), name="testimonial_category_delete"),
     path("testimonials/create/",       TestimonialCreateView.as_view(),   name="testimonial_create"),
     path("testimonials/<int:pk>/",     TestimonialEditView.as_view(),     name="testimonial_edit"),
     path("testimonials/<int:pk>/delete/", TestimonialDeleteView.as_view(), name="testimonial_delete"),

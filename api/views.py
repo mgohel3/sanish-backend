@@ -14,7 +14,7 @@ from menus.models import Menu, MenuItem
 from applications.models import ApplicationCategory, ApplicationProject
 from gallery.models import GalleryCatalogue
 from faq.models import Faq
-from testimonials.models import CarpenterTestimonial
+from testimonials.models import CarpenterTestimonial, TestimonialCategory
 from seo.models import GlobalSEO, SiteSettings, ThemeSettings
 from media_library.utils import absolutize_media_urls
 
@@ -484,7 +484,23 @@ class FaqListView(generics.ListAPIView):
 
 class CarpenterTestimonialListView(generics.ListAPIView):
     """Public read — ``GET /api/testimonials/carpenters/``. Active entries, ordered."""
-    queryset           = CarpenterTestimonial.objects.filter(is_active=True)
+    queryset           = CarpenterTestimonial.objects.filter(is_active=True, category__slug="carpenters")
     serializer_class   = CarpenterTestimonialSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class   = None
+
+
+class TestimonialListView(generics.ListAPIView):
+    """Public read — ``GET /api/testimonials/?category=<name or slug>``. Active entries of that
+    category, ordered; without ``category`` every active entry."""
+    serializer_class   = CarpenterTestimonialSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = None
+
+    def get_queryset(self):
+        qs = CarpenterTestimonial.objects.filter(is_active=True)
+        cat = self.request.query_params.get("category", "").strip()
+        if cat:
+            qs = qs.filter(category__in=TestimonialCategory.objects.filter(name__iexact=cat)
+                           | TestimonialCategory.objects.filter(slug__iexact=cat))
+        return qs

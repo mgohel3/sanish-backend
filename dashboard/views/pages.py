@@ -161,7 +161,7 @@ class PageSectionCreateView(AdminRequiredMixin, LoggedActionMixin, View):
         return render(request, "dashboard/pages/form.html", {
             "page": page,
             "block_type": block_type,
-            "config": cfg,
+            "config": blocks.with_dynamic_options(cfg),
             "values": blocks.defaults_for(block_type),
             "section": None,
             "active_nav": "pages",
@@ -194,7 +194,7 @@ class PageSectionEditView(AdminRequiredMixin, LoggedActionMixin, View):
         return render(request, "dashboard/pages/form.html", {
             "page": section.page,
             "block_type": section.block_type,
-            "config": section.block_config,
+            "config": blocks.with_dynamic_options(section.block_config),
             "values": section.resolved(),
             "section": section,
             "active_nav": "pages",

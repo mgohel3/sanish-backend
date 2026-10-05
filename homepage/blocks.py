@@ -563,10 +563,12 @@ BLOCK_TYPES: dict = {
         "description": "The sliding testimonials carousel. The people and quotes are managed in Dashboard › Testimonials (add, hide, reorder there) — this block only sets the heading, so you can drop it on any page.",
         "component": "ClientTestimonialsBlock",
         "fields": [
+            {"name": "category", "type": "select", "label": "Testimonial category", "dynamic_options": "testimonial_categories",
+             "help": "Which list to show. Manage the lists (and add new categories) in Dashboard › Testimonials."},
             {"name": "heading", "type": "text", "label": "Heading"},
             {"name": "sub", "type": "textarea", "label": "Sub copy (optional)"},
         ],
-        "defaults": {"heading": "What Carpenters Say", "sub": ""},
+        "defaults": {"category": "Clients", "heading": "What Our Clients Say", "sub": ""},
     },
 
     "faq_cards": {
@@ -747,6 +749,19 @@ SEED_ORDER = [
 
 def block_choices():
     return [(key, cfg["label"]) for key, cfg in BLOCK_TYPES.items()]
+
+
+def with_dynamic_options(cfg):
+    """Copy of a block config with any ``dynamic_options`` select filled from the database."""
+    if not cfg:
+        return cfg
+    import copy
+    out = copy.deepcopy(cfg)
+    for f in out.get("fields", []):
+        if f.get("dynamic_options") == "testimonial_categories":
+            from testimonials.models import TestimonialCategory
+            f["options"] = list(TestimonialCategory.objects.values_list("name", flat=True))
+    return out
 
 
 def defaults_for(block_type: str) -> dict:

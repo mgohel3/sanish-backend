@@ -163,7 +163,7 @@ class HomeSectionCreateView(AdminRequiredMixin, LoggedActionMixin, View):
         cfg = blocks.BLOCK_TYPES[block_type]
         return render(request, "dashboard/homepage/form.html", {
             "block_type": block_type,
-            "config": cfg,
+            "config": blocks.with_dynamic_options(cfg),
             "values": blocks.defaults_for(block_type),
             "section": None,
             "active_nav": "homepage",
@@ -193,7 +193,7 @@ class HomeSectionEditView(AdminRequiredMixin, LoggedActionMixin, View):
         section = get_object_or_404(HomeSection, pk=pk)
         return render(request, "dashboard/homepage/form.html", {
             "block_type": section.block_type,
-            "config": section.block_config,
+            "config": blocks.with_dynamic_options(section.block_config),
             "values": section.resolved(),
             "section": section,
             "active_nav": "homepage",

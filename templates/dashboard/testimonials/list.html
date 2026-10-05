@@ -1,6 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% block title %}Carpenter Testimonials{% endblock %}
-{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Carpenter Testimonials</span>{% endblock %}
+{% block title %}Testimonials{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Testimonials</span>{% endblock %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
 {% endblock %}
@@ -11,14 +11,51 @@
   <div class="flex items-center justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-        Carpenter Testimonials <span class="text-sm font-normal text-gray-400">({{ total_count }} total)</span>
+        Testimonials {% if current %}<span class="text-sm font-normal text-gray-400">· {{ current.name }} ({{ total_count }})</span>{% endif %}
       </h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        Powers the testimonials carousel on the public <code>/rewards</code> page, above the FAQ section.
-        Drag to reorder within a page; toggle to hide without deleting.
+        Each tab is its own list. On any page, add a <b>Client Testimonials</b> block (Pages → Add block) and choose
+        which tab it shows. The <code>/rewards</code> page uses <b>Carpenters</b>. Drag to reorder; hide without deleting.
       </p>
     </div>
-    <a href="{% url 'testimonial_create' %}" class="btn-primary">+ Add Testimonial</a>
+    {% if current %}<a href="{% url 'testimonial_create' %}?cat={{ current.pk }}" class="btn-primary">+ Add to “{{ current.name }}”</a>{% endif %}
+  </div>
+
+  <!-- category tabs -->
+  <div x-data="{ adding: false }">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      {% for c in categories %}
+      <a href="{% url 'testimonial_list' %}?cat={{ c.pk }}"
+         style="padding:7px 16px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid {% if current and c.pk == current.pk %}#111827{% else %}#d1d5db{% endif %};background:{% if current and c.pk == current.pk %}#111827{% else %}#fff{% endif %};color:{% if current and c.pk == current.pk %}#fff{% else %}#374151{% endif %}">
+        {{ c.name }} <span style="opacity:.6">{{ c.total }}</span>
+      </a>
+      {% endfor %}
+      <a href="#" @click.prevent="adding = !adding; $nextTick(() => $refs.newCat && $refs.newCat.focus())"
+         style="padding:7px 16px;border-radius:999px;font-size:13px;text-decoration:none;border:1px dashed #9ca3af;color:#6b7280">＋ New category</a>
+    </div>
+
+    <form x-show="adding" x-cloak method="post" action="{% url 'testimonial_category_create' %}" style="display:flex;gap:8px;margin-top:12px;max-width:440px">
+      {% csrf_token %}
+      <input type="text" name="name" x-ref="newCat" class="form-input flex-1" maxlength="80" placeholder="Category name, e.g. Architects" required />
+      <button type="submit" class="btn-primary text-sm">Create</button>
+    </form>
+
+    {% if current %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.03)">
+      <form method="post" action="{% url 'testimonial_category_rename' current.pk %}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        {% csrf_token %}
+        <span style="font-size:12px;color:#6b7280">Category name</span>
+        <input type="text" name="name" value="{{ current.name }}" class="form-input text-sm" style="max-width:240px" maxlength="80" required />
+        <button type="submit" class="btn-secondary text-xs">Rename</button>
+      </form>
+      <form method="post" action="{% url 'testimonial_category_delete' current.pk %}" style="margin-left:auto"
+            onsubmit="return confirm('Delete the category “{{ current.name|escapejs }}”? (Only possible when it has no testimonials.)');">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost text-xs text-red-500 hover:text-red-600"
+                {% if total_count %}title="Move or delete its testimonials first"{% endif %}>Delete category</button>
+      </form>
+    </div>
+    {% endif %}
   </div>
 
   <div class="card p-0 overflow-hidden">
@@ -59,7 +96,8 @@
       </li>
       {% empty %}
       <li class="px-5 py-10 text-center text-gray-400 text-sm">
-        No testimonials yet. <a href="{% url 'testimonial_create' %}" class="text-accent">Add the first one.</a>
+        {% if current %}No testimonials in “{{ current.name }}” yet. <a href="{% url 'testimonial_create' %}?cat={{ current.pk }}" class="text-accent">Add the first one.</a>
+        {% else %}No categories yet — use “＋ New category” above.{% endif %}
       </li>
       {% endfor %}
     </ul>
