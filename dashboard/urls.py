@@ -68,6 +68,7 @@ from dashboard.views.testimonials import (
     TestimonialReorderView, TestimonialToggleView,
     TestimonialCategoryCreateView, TestimonialCategoryRenameView, TestimonialCategoryDeleteView,
 )
+from dashboard.views.gallery_tags import GallerySpaceListView, GallerySpaceDeleteView, GalleryTagImportView
 from dashboard.views.help import HelpIndexView, HelpArticleView
 
 urlpatterns = [
@@ -214,6 +215,9 @@ urlpatterns = [
     # Design Gallery (the real /applications catalogues — S'Shades, Thre3, Cool Colour, …)
     path("gallery/",                          GalleryCatalogueListView.as_view(),    name="gallery_catalogue_list"),
     path("gallery/create/",                   GalleryCatalogueCreateView.as_view(),  name="gallery_catalogue_create"),
+    path("gallery/spaces/",                   GallerySpaceListView.as_view(),        name="gallery_space_list"),
+    path("gallery/spaces/<int:pk>/delete/",   GallerySpaceDeleteView.as_view(),      name="gallery_space_delete"),
+    path("gallery/tag-import/",               GalleryTagImportView.as_view(),        name="gallery_tag_import"),
     path("gallery/<int:pk>/settings/",        GalleryCatalogueEditView.as_view(),    name="gallery_catalogue_edit"),
     path("gallery/<int:pk>/delete/",          GalleryCatalogueDeleteView.as_view(),  name="gallery_catalogue_delete"),
     path("gallery/<int:pk>/",                 GalleryImageListView.as_view(),        name="gallery_image_list"),

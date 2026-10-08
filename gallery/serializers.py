@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from media_library.utils import absolutize_media_urls
-from .models import GalleryCatalogue, GalleryImage
+from .models import GalleryCatalogue, GalleryImage, GallerySpace
 
 
 class GalleryImageSerializer(serializers.ModelSerializer):
@@ -60,3 +60,35 @@ class GalleryCatalogueDetailSerializer(serializers.ModelSerializer):
         return GalleryImageSerializer(
             obj.images.filter(enabled=True), many=True, context=self.context
         ).data
+
+
+class GallerySpaceSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="label")
+
+    class Meta:
+        model = GallerySpace
+        fields = ("slug", "name")
+
+
+class GalleryPhotoSerializer(serializers.ModelSerializer):
+    """One photo for the new Applications collage / detail page (all catalogues in one list)."""
+    src = serializers.SerializerMethodField()
+    sku = serializers.SerializerMethodField()
+    catalogue = serializers.SerializerMethodField()
+    spaces = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GalleryImage
+        fields = ("id", "src", "sku", "filename", "catalogue", "spaces", "width", "height")
+
+    def get_src(self, obj):
+        return absolutize_media_urls(obj.image, self.context.get("request"))
+
+    def get_sku(self, obj):
+        return obj.sku or obj.product_id or ""
+
+    def get_catalogue(self, obj):
+        return {"slug": obj.catalogue.slug, "name": obj.catalogue.label}
+
+    def get_spaces(self, obj):
+        return [{"slug": s.slug, "name": s.label} for s in obj.spaces.all() if s.enabled]

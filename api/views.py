@@ -31,7 +31,8 @@ from menus.serializers import MenuSerializer
 from applications.serializers import (
     ApplicationCategorySerializer, ApplicationProjectListSerializer, ApplicationProjectDetailSerializer,
 )
-from gallery.serializers import GalleryCatalogueDetailSerializer
+from gallery.serializers import GalleryCatalogueDetailSerializer, GalleryPhotoSerializer, GallerySpaceSerializer
+from gallery.models import GalleryImage, GallerySpace
 from faq.serializers import FaqSerializer
 from testimonials.serializers import CarpenterTestimonialSerializer
 from .throttles import InquiryThrottle, FormSubmitThrottle
@@ -468,6 +469,35 @@ class GalleryCatalogueDetailView(generics.RetrieveAPIView):
     serializer_class   = GalleryCatalogueDetailSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field       = "slug"
+
+
+class GalleryPhotoListView(generics.ListAPIView):
+    """Public read — ``GET /api/gallery/photos/``. Every enabled photo from every enabled catalogue, flat, with
+    its SKU, catalogue and space tags (powers the new mixed-collage Applications page)."""
+    serializer_class   = GalleryPhotoSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = None
+
+    def get_queryset(self):
+        return (GalleryImage.objects.filter(enabled=True, catalogue__enabled=True)
+                .select_related("catalogue").prefetch_related("spaces")
+                .order_by("catalogue__position", "position", "id"))
+
+
+class GalleryPhotoDetailView(generics.RetrieveAPIView):
+    """Public read — ``GET /api/gallery/photos/<id>/``."""
+    queryset           = (GalleryImage.objects.filter(enabled=True, catalogue__enabled=True)
+                          .select_related("catalogue").prefetch_related("spaces"))
+    serializer_class   = GalleryPhotoSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class GallerySpaceListView(generics.ListAPIView):
+    """Public read — ``GET /api/gallery/spaces/``. Enabled space tags, in filter order."""
+    queryset           = GallerySpace.objects.filter(enabled=True)
+    serializer_class   = GallerySpaceSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class   = None
 
 
 # ── FAQs (CMS-managed, gathered from blog posts) ──────────────────────────────

@@ -86,7 +86,7 @@ class GalleryImageListView(ContentManagerRequiredMixin, View):
         catalogue = get_object_or_404(GalleryCatalogue, pk=pk)
         return render(request, "dashboard/gallery/image_list.html", {
             "catalogue": catalogue,
-            "images": catalogue.images.all(),
+            "images": catalogue.images.prefetch_related("spaces"),
             "active_nav": "gallery",
         })
 
@@ -125,6 +125,8 @@ class GalleryImageUploadView(ContentManagerRequiredMixin, LoggedActionMixin, Vie
             catalogue=catalogue,
             image=asset.url,
             product_id=f.name.rsplit(".", 1)[0][:40],
+            filename=f.name[:300],
+            width=asset.width, height=asset.height,
             position=(last.position + 1) if last else 0,
         )
         self.log_action(f"Uploaded photo to “{catalogue.label}”", image)

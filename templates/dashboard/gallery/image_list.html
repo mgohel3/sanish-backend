@@ -42,6 +42,7 @@
         </div>
         <div class="p-2">
           <input type="text" name="product_id_{{ img.pk }}" value="{{ img.product_id }}" class="form-input text-xs py-1" placeholder="Code"/>
+          <div class="mt-1 text-[10px] text-gray-400 truncate" title="SKU · tags">{% if img.sku %}SKU {{ img.sku }}{% endif %}{% if img.sku and img.spaces.all %} · {% endif %}{% for sp in img.spaces.all %}{{ sp.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
         </div>
       </div>
       {% empty %}

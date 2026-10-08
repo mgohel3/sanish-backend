@@ -12,7 +12,11 @@
         The catalogues shown on /applications. Open one to upload, reorder or remove its photos.
       </p>
     </div>
-    <a href="{% url 'gallery_catalogue_create' %}" class="btn-primary">+ New Catalogue</a>
+    <div class="flex gap-3 flex-wrap">
+      <a href="{% url 'gallery_space_list' %}" class="btn-ghost">Spaces &amp; Tags</a>
+      <a href="{% url 'gallery_tag_import' %}" class="btn-secondary">Bulk tag upload (CSV)</a>
+      <a href="{% url 'gallery_catalogue_create' %}" class="btn-primary">+ New Catalogue</a>
+    </div>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

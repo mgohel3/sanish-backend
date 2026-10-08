@@ -11,6 +11,7 @@ from .views import (
     FormDefinitionView, FormSubmitView, MenuView,
     ApplicationCategoryListView, ApplicationProjectListView, ApplicationProjectDetailView,
     GalleryCatalogueListView, GalleryCatalogueDetailView,
+    GalleryPhotoListView, GalleryPhotoDetailView, GallerySpaceListView,
     FaqListView,
     CarpenterTestimonialListView,
     TestimonialListView,
@@ -60,6 +61,9 @@ urlpatterns = [
     # Design Gallery (the real /applications catalogues — S'Shades, Thre3, etc.)
     path("gallery/catalogues/",             GalleryCatalogueListView.as_view(),   name="api_gallery_catalogues"),
     path("gallery/catalogues/<slug:slug>/", GalleryCatalogueDetailView.as_view(), name="api_gallery_catalogue_detail"),
+    path("gallery/photos/",                 GalleryPhotoListView.as_view(),       name="api_gallery_photos"),
+    path("gallery/photos/<int:pk>/",        GalleryPhotoDetailView.as_view(),     name="api_gallery_photo_detail"),
+    path("gallery/spaces/",                 GallerySpaceListView.as_view(),       name="api_gallery_spaces"),
     # FAQs (public read — CMS-managed, gathered from blog posts)
     path("faqs/", FaqListView.as_view(), name="api_faqs"),
     # Carpenter Testimonials (public read — CMS-managed, /rewards carousel)

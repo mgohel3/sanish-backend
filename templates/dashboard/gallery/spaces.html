@@ -1,0 +1,59 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Spaces & Tags{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'gallery_catalogue_list' %}" class="hover:text-accent">Applications</a><span class="text-gray-300">/</span><span>Spaces &amp; Tags</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Spaces &amp; Tags</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        These are the filter buttons on the new Applications page (Kitchen, Bedroom, …). A photo can have several.
+        Tags are only created here — the bulk CSV never creates new ones.
+      </p>
+    </div>
+    <a href="{% url 'gallery_tag_import' %}" class="btn-primary">Bulk tag upload (CSV)</a>
+  </div>
+
+  <form method="post" class="card p-0 overflow-hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save" />
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-100">
+          <th class="px-5 py-3 w-20">Order</th>
+          <th class="px-2 py-3">Name</th>
+          <th class="px-2 py-3 w-24">Photos</th>
+          <th class="px-2 py-3 w-20">Show</th>
+          <th class="px-5 py-3 w-24"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in spaces %}
+        <tr class="border-b border-gray-50">
+          <td class="px-5 py-2"><input type="number" name="position_{{ s.pk }}" value="{{ s.position }}" class="form-input text-sm" style="width:70px" /></td>
+          <td class="px-2 py-2"><input type="text" name="label_{{ s.pk }}" value="{{ s.label }}" class="form-input text-sm" maxlength="80" /></td>
+          <td class="px-2 py-2 text-gray-500">{{ s.photo_count }}</td>
+          <td class="px-2 py-2"><input type="checkbox" name="enabled_{{ s.pk }}" {% if s.enabled %}checked{% endif %} class="rounded border-gray-300" /></td>
+          <td class="px-5 py-2 text-right">
+            <button type="submit" formaction="{% url 'gallery_space_delete' s.pk %}" formnovalidate class="btn-ghost text-xs text-red-500"
+                    onclick="return confirm('Delete the space “{{ s.label|escapejs }}”?');">Delete</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="flex justify-end px-5 py-4"><button type="submit" class="btn-primary">Save changes</button></div>
+  </form>
+
+  <form method="post" class="card flex gap-3 items-end flex-wrap">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create" />
+    <div class="flex-1 min-w-[220px]">
+      <label class="form-label">Add a new space</label>
+      <input type="text" name="label" class="form-input" maxlength="80" placeholder="e.g. Reception" required />
+    </div>
+    <button type="submit" class="btn-secondary">+ Add space</button>
+  </form>
+</div>
+{% endblock %}

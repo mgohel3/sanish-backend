@@ -1,0 +1,122 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load homepage_extras %}
+{% block title %}Bulk tag upload{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><a href="{% url 'gallery_catalogue_list' %}" class="hover:text-accent">Applications</a><span class="text-gray-300">/</span><span>Bulk tag upload</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Bulk tag upload (CSV)</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      Tag photos with spaces and SKUs in one go. The <b>image filename</b> is the key: it finds a photo that is already in the CMS and
+      updates it — re-uploading the same file never creates duplicates. Review the preview, then commit.
+    </p>
+  </div>
+
+  {% if results %}
+  <!-- ─────────── preview ─────────── -->
+  <div class="card space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Preview — {{ filename }}</h2>
+      <a href="{% url 'gallery_tag_import' %}" class="btn-ghost text-sm">← Start over</a>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="rounded-2xl p-4" style="background:rgba(16,185,129,.09)"><div class="text-2xl font-bold text-emerald-600">{{ summary.matched }}</div><div class="text-xs text-gray-500">photos matched &amp; ready</div></div>
+      <div class="rounded-2xl p-4" style="background:rgba(239,68,68,.08)"><div class="text-2xl font-bold text-red-500">{{ summary.not_found|length }}</div><div class="text-xs text-gray-500">filenames not found</div></div>
+      <div class="rounded-2xl p-4" style="background:rgba(245,158,11,.10)"><div class="text-2xl font-bold text-amber-600">{{ summary.unknown_tags|length }}</div><div class="text-xs text-gray-500">tags that don't exist yet</div></div>
+      <div class="rounded-2xl p-4" style="background:rgba(0,0,0,.04)"><div class="text-2xl font-bold text-gray-700">{{ summary.total }}</div><div class="text-xs text-gray-500">rows in the file</div></div>
+    </div>
+
+    {% if summary.unknown_tags %}
+    <div class="rounded-2xl p-4 text-sm" style="background:rgba(245,158,11,.10)">
+      <b>Tags not found — flagged, not created:</b>
+      {% for t, n in summary.unknown_tags %}<span class="inline-block ml-2 px-2 py-0.5 rounded-full bg-white text-amber-700 text-xs">{{ t }} × {{ n }}</span>{% endfor %}
+      <div class="text-xs text-gray-500 mt-2">Those tags are skipped for now. Add them under <a class="text-accent" href="{% url 'gallery_space_list' %}">Spaces &amp; Tags</a> and upload the CSV again, or fix the spelling in the file.</div>
+    </div>
+    {% endif %}
+
+    {% if summary.not_found %}
+    <div class="rounded-2xl p-4 text-sm" style="background:rgba(239,68,68,.07)">
+      <b>Filenames not found in the CMS ({{ summary.not_found|length }}):</b>
+      <div class="mt-1 text-xs text-gray-600" style="max-height:120px;overflow:auto">{{ summary.not_found|join:", " }}</div>
+      <div class="text-xs text-gray-500 mt-2">Upload those photos first (Applications → a catalogue → Upload Photos), then upload this CSV again.</div>
+    </div>
+    {% endif %}
+    {% if summary.ambiguous %}
+    <div class="rounded-2xl p-4 text-sm" style="background:rgba(245,158,11,.10)"><b>Same filename on more than one photo ({{ summary.ambiguous|length }}):</b> {{ summary.ambiguous|join:", " }} — add the catalogue column to pick one.</div>
+    {% endif %}
+
+    <div class="overflow-auto rounded-2xl border border-gray-100" style="max-height:460px">
+      <table class="w-full text-xs">
+        <thead class="sticky top-0 bg-white"><tr class="text-left text-gray-400 uppercase tracking-wide border-b border-gray-100">
+          <th class="px-3 py-2">Line</th><th class="px-3 py-2">Photo</th><th class="px-3 py-2">Filename</th><th class="px-3 py-2">SKU</th><th class="px-3 py-2">Tags that will be set</th><th class="px-3 py-2">Result</th>
+        </tr></thead>
+        <tbody>
+        {% for r in results %}
+          <tr class="border-b border-gray-50 align-top">
+            <td class="px-3 py-2 text-gray-400">{{ r.line }}</td>
+            <td class="px-3 py-2">{% if r.image_src %}<img src="{{ r.image_src|cms_preview_src }}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px" />{% endif %}</td>
+            <td class="px-3 py-2 font-mono">{{ r.filename }}</td>
+            <td class="px-3 py-2">{{ r.sku|default:"—" }}</td>
+            <td class="px-3 py-2">{% for l in r.space_labels %}<span class="inline-block mr-1 mb-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">{{ l }}</span>{% empty %}<span class="text-gray-400">—</span>{% endfor %}
+              {% for t in r.unknown_tags %}<span class="inline-block mr-1 mb-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700" title="Tag doesn't exist">{{ t }}?</span>{% endfor %}</td>
+            <td class="px-3 py-2">
+              {% if r.status == "ok" %}<span class="text-emerald-600 font-semibold">Ready</span>
+              {% elif r.status == "not_found" %}<span class="text-red-500 font-semibold">Not found</span>
+              {% elif r.status == "ambiguous" %}<span class="text-amber-600 font-semibold">Ambiguous</span>
+              {% elif r.status == "duplicate" %}<span class="text-gray-400 font-semibold">Skipped (repeated)</span>
+              {% else %}<span class="text-red-500 font-semibold">Error</span>{% endif %}
+              {% for n in r.notes %}<div class="text-gray-500">{{ n }}</div>{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <form method="post" class="flex justify-end gap-3 items-center">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="commit" />
+      <input type="hidden" name="results" value="{{ results_json }}" />
+      <a href="{% url 'gallery_tag_import' %}" class="btn-ghost">Cancel</a>
+      <button type="submit" class="btn-primary" {% if not ready_count %}disabled style="opacity:.5"{% endif %}>
+        Commit — update {{ ready_count }} photo{{ ready_count|pluralize }}
+      </button>
+    </form>
+  </div>
+
+  {% else %}
+  <!-- ─────────── upload ─────────── -->
+  <form method="post" enctype="multipart/form-data" class="card space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="preview" />
+    <div>
+      <label class="form-label">CSV file</label>
+      <input type="file" name="csv_file" accept=".csv,text/csv" required class="form-input" />
+      <p class="form-hint">Nothing is saved yet — you'll see a preview first.</p>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <button type="submit" class="btn-primary">Upload &amp; preview →</button>
+      <button type="submit" name="action" value="download_template" formnovalidate class="btn-secondary">Download template CSV</button>
+      <a href="{% url 'gallery_space_list' %}" class="btn-ghost">Manage spaces &amp; tags</a>
+    </div>
+  </form>
+
+  <div class="card space-y-3 text-sm">
+    <h2 class="font-bold text-gray-900 dark:text-white">Columns</h2>
+    <table class="w-full text-sm">
+      <tbody>
+        <tr class="border-b border-gray-50"><td class="py-2 pr-4 font-mono w-48">image filename</td><td class="text-gray-500"><b>Required.</b> The photo's file name, e.g. <span class="font-mono">thre3_3003_01.jpg</span>. Upper/lower case and the extension don't matter. This is the key — the photo must already be uploaded to the CMS ({{ photo_count }} photos there now).</td></tr>
+        <tr class="border-b border-gray-50"><td class="py-2 pr-4 font-mono">SKU</td><td class="text-gray-500">Shown on the photo's detail page. Blank = leave as is.</td></tr>
+        <tr class="border-b border-gray-50"><td class="py-2 pr-4 font-mono">catalogue</td><td class="text-gray-500">Helps pick the right photo if two share a filename. A photo is never moved between catalogues by the CSV.</td></tr>
+        <tr><td class="py-2 pr-4 font-mono">tags</td><td class="text-gray-500">One or more spaces separated by a pipe, e.g. <span class="font-mono">Bedroom|Wardrobes</span>. The tags replace the photo's current ones. A blank cell leaves them unchanged. A tag that doesn't exist is flagged and skipped — never created.</td></tr>
+      </tbody>
+    </table>
+    <div class="text-gray-500">Available tags:
+      {% for s in spaces %}<span class="inline-block mr-1 mb-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">{{ s.label }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
