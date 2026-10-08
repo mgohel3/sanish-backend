@@ -63,10 +63,10 @@
           </div>
 
           <!-- tags + SKU editor for this photo -->
-          <div x-show="open" x-cloak style="position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:16px">
+          <div x-show="open" x-cloak style="position:fixed;inset:0;z-index:70">
             <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)" @click="open = false"></div>
-            <div style="position:relative;width:100%;max-width:420px;background:#fff;border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:left" @keydown.escape.window="open = false">
-              <div style="font-weight:700;color:#111827;margin-bottom:12px">Tags &amp; SKU <span style="font-weight:400;color:#9ca3af">· {{ img.product_id|default:img.pk }}</span></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:420px;max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:left" @keydown.escape.window="open = false">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-weight:700;color:#111827">Tags &amp; SKU <span style="font-weight:400;color:#9ca3af">· {{ img.product_id|default:img.pk }}</span></div><span role="button" tabindex="0" aria-label="Close" title="Close" @click="open = false" @keydown.enter="open = false" style="width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;font-size:16px;background:rgba(0,0,0,.05)">✕</span></div>
               <label class="form-label !text-[10px]">SKU (shown on the photo's page)</label>
               <input type="text" name="sku_{{ img.pk }}" value="{{ img.sku }}" class="form-input text-sm" placeholder="e.g. 3003" maxlength="60"/>
               <div class="form-label !text-[10px]" style="margin-top:14px">Spaces — tick all that apply</div>
