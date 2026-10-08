@@ -7,12 +7,14 @@
 {% endblock %}
 
 {% block content %}
+<style>[x-cloak]{display:none!important;}</style>
+<script>window.SPACE_NAMES = {{ spaces_json|safe }};</script>
 <div class="space-y-6">
   <div class="flex items-center justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ catalogue.label }} — Photos</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        Drag to reorder. Upload new photos, edit each one's product code, or remove one.
+        Drag to reorder. Upload new photos, edit each one's product code, SKU and space tags (＋ Tags / SKU), tick photos to tag many at once, or remove one.
       </p>
     </div>
     <div class="flex gap-3">
@@ -29,20 +31,56 @@
   <form method="post" id="codes-form">
     {% csrf_token %}
     <div class="flex justify-end mb-3">
-      <button type="submit" class="btn-secondary text-xs">Save Product Codes</button>
+      <button type="submit" class="btn-secondary text-xs">Save codes, SKUs &amp; tags</button>
+    </div>
+    <div id="bulk-bar" class="hidden" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border-radius:14px;background:#111827;color:#fff;font-size:13px">
+      <b id="bulk-count">0 selected</b>
+      <select id="bulk-space" style="height:30px;border-radius:999px;padding:0 12px;font-size:12px;color:#111827;width:auto">
+        <option value="">Choose a tag…</option>
+        {% for sp in spaces %}<option value="{{ sp.pk }}">{{ sp.label }}</option>{% endfor %}
+      </select>
+      <button type="button" id="bulk-add" class="btn-secondary text-xs">Add tag to selected</button>
+      <button type="button" id="bulk-remove" class="btn-secondary text-xs" style="color:#ef4444">Remove tag from selected</button>
+      <a href="#" id="bulk-clear" style="margin-left:auto;color:#fff;font-size:12px">Clear selection</a>
     </div>
     <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
       {% for img in images %}
       <div class="gallery-photo bg-white dark:bg-[#23202E] rounded-2xl shadow-card overflow-hidden" data-id="{{ img.pk }}">
         <div class="drag-handle cursor-grab relative bg-gray-100 dark:bg-dark-700" style="aspect-ratio: 1/1;">
           <img src="{{ img.image|cms_preview_src }}" alt="" class="w-full h-full object-cover pointer-events-none"/>
+          <input type="checkbox" class="bulk-check" data-id="{{ img.pk }}" title="Select for bulk tagging" style="position:absolute;left:8px;top:8px;width:18px;height:18px;cursor:pointer;accent-color:#7c5cff;z-index:2"/>
           <button type="button" class="photo-delete absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500" data-id="{{ img.pk }}" title="Delete">
             &times;
           </button>
         </div>
-        <div class="p-2">
+        <div class="p-2" x-data="{ open: false, sel: [{% for sp in img.spaces.all %}'{{ sp.pk }}'{% if not forloop.last %}, {% endif %}{% endfor %}], names: window.SPACE_NAMES }">
           <input type="text" name="product_id_{{ img.pk }}" value="{{ img.product_id }}" class="form-input text-xs py-1" placeholder="Code"/>
-          <div class="mt-1 text-[10px] text-gray-400 truncate" title="SKU · tags">{% if img.sku %}SKU {{ img.sku }}{% endif %}{% if img.sku and img.spaces.all %} · {% endif %}{% for sp in img.spaces.all %}{{ sp.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+          <input type="hidden" name="tags_present_{{ img.pk }}" value="1"/>
+          <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;align-items:center">
+            <template x-for="id in sel" :key="id"><span style="font-size:10px;padding:1px 7px;border-radius:999px;background:rgba(124,92,255,.12);color:#5b3fd1" x-text="names[id]"></span></template>
+            <a href="#" @click.prevent="open = true" style="font-size:10px;padding:1px 8px;border-radius:999px;border:1px dashed #9ca3af;color:#6b7280;text-decoration:none"
+               x-text="sel.length ? 'Edit tags' : '＋ Tags / SKU'"></a>
+          </div>
+
+          <!-- tags + SKU editor for this photo -->
+          <div x-show="open" x-cloak style="position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:16px">
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,.5)" @click="open = false"></div>
+            <div style="position:relative;width:100%;max-width:420px;background:#fff;border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:left" @keydown.escape.window="open = false">
+              <div style="font-weight:700;color:#111827;margin-bottom:12px">Tags &amp; SKU <span style="font-weight:400;color:#9ca3af">· {{ img.product_id|default:img.pk }}</span></div>
+              <label class="form-label !text-[10px]">SKU (shown on the photo's page)</label>
+              <input type="text" name="sku_{{ img.pk }}" value="{{ img.sku }}" class="form-input text-sm" placeholder="e.g. 3003" maxlength="60"/>
+              <div class="form-label !text-[10px]" style="margin-top:14px">Spaces — tick all that apply</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:4px">
+                {% for sp in spaces %}
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer">
+                  <input type="checkbox" name="spaces_{{ img.pk }}" value="{{ sp.pk }}" x-model="sel" style="width:16px;height:16px;accent-color:#7c5cff"/> {{ sp.label }}
+                </label>
+                {% endfor %}
+              </div>
+              <p style="font-size:11px;color:#9ca3af;margin-top:12px">Applied when you click <b>Save</b> at the top of the grid.</p>
+              <div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="btn-primary text-sm" @click="open = false">Done</button></div>
+            </div>
+          </div>
         </div>
       </div>
       {% empty %}
@@ -87,6 +125,7 @@
           progress.textContent = 'Done — uploaded ' + done + ' of ' + files.length + '.';
           setTimeout(function () { progress.classList.add('hidden'); }, 3000);
           uploadInput.value = '';
+          if (done) setTimeout(function () { location.reload(); }, 1200);
           return;
         }
         progress.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
@@ -123,6 +162,34 @@
         }
       });
     });
+
+    // ── bulk tagging ──
+    var bar = document.getElementById('bulk-bar');
+    function checked() { return Array.from(grid.querySelectorAll('.bulk-check:checked')).map(function (c) { return c.dataset.id; }); }
+    function refreshBar() {
+      var ids = checked();
+      bar.style.display = ids.length ? 'flex' : 'none';
+      document.getElementById('bulk-count').textContent = ids.length + ' selected';
+    }
+    grid.addEventListener('change', function (e) { if (e.target.classList.contains('bulk-check')) refreshBar(); });
+    document.getElementById('bulk-clear').addEventListener('click', function (e) {
+      e.preventDefault();
+      grid.querySelectorAll('.bulk-check:checked').forEach(function (c) { c.checked = false; });
+      refreshBar();
+    });
+    function bulk(mode) {
+      var space = document.getElementById('bulk-space').value;
+      var ids = checked();
+      if (!space) { alert('Choose a tag first.'); return; }
+      var fd = new FormData();
+      fd.append('action', 'bulk_tag'); fd.append('mode', mode); fd.append('space', space); fd.append('ids', ids.join(','));
+      fd.append('csrfmiddlewaretoken', csrfToken);
+      fetch(window.location.href, { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.error || 'Could not update.'); } });
+    }
+    document.getElementById('bulk-add').addEventListener('click', function () { bulk('add'); });
+    document.getElementById('bulk-remove').addEventListener('click', function () { bulk('remove'); });
 
     if (typeof Sortable !== 'undefined') {
       Sortable.create(grid, {

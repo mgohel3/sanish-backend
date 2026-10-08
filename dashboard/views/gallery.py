@@ -16,7 +16,7 @@ from django.views import View
 from accounts.permissions import ContentManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from media_library.models import MediaAsset
-from gallery.models import GalleryCatalogue, GalleryImage
+from gallery.models import GalleryCatalogue, GalleryImage, GallerySpace
 
 
 class GalleryCatalogueListView(ContentManagerRequiredMixin, View):
@@ -77,7 +77,7 @@ class GalleryCatalogueDeleteView(ContentManagerRequiredMixin, LoggedActionMixin,
 
 # ── Photos within a catalogue ─────────────────────────────────────────────────
 
-class GalleryImageListView(ContentManagerRequiredMixin, View):
+class GalleryImageListView(ContentManagerRequiredMixin, LoggedActionMixin, View):
     """The main "manage photos" screen — grid view, multi-upload, inline
     product-code editing, drag reorder, delete. Built for catalogues with
     up to 100+ photos, so images are individual rows (not one big JSON blob)."""
@@ -87,19 +87,41 @@ class GalleryImageListView(ContentManagerRequiredMixin, View):
         return render(request, "dashboard/gallery/image_list.html", {
             "catalogue": catalogue,
             "images": catalogue.images.prefetch_related("spaces"),
+            "spaces": GallerySpace.objects.filter(enabled=True),
+            "spaces_json": json.dumps({str(sp.pk): sp.label for sp in GallerySpace.objects.all()}),
             "active_nav": "gallery",
         })
 
     def post(self, request, pk):
-        """Bulk-save product codes edited inline in the grid."""
+        """Save the grid's inline edits (product code, SKU, space tags), or run a bulk tag action."""
         catalogue = get_object_or_404(GalleryCatalogue, pk=pk)
+
+        if request.POST.get("action") == "bulk_tag":
+            ids = [int(x) for x in request.POST.get("ids", "").split(",") if x.strip().isdigit()]
+            space = GallerySpace.objects.filter(pk=request.POST.get("space") or 0).first()
+            mode = request.POST.get("mode", "add")
+            if not ids or not space or mode not in ("add", "remove"):
+                return JsonResponse({"ok": False, "error": "Pick photos, a tag and add/remove."}, status=400)
+            n = 0
+            for image in catalogue.images.filter(pk__in=ids):
+                (image.spaces.add if mode == "add" else image.spaces.remove)(space)
+                n += 1
+            self.log_action(f"{'Added' if mode == 'add' else 'Removed'} tag “{space.label}” on {n} photos in “{catalogue.label}”", catalogue)
+            return JsonResponse({"ok": True, "updated": n})
+
+        valid_spaces = {str(sp.pk): sp for sp in GallerySpace.objects.all()}
         for image in catalogue.images.all():
             key = f"product_id_{image.pk}"
             if key in request.POST:
                 image.product_id = request.POST[key].strip()
                 image.save(update_fields=["product_id"])
-        self.log_action(f"Updated photo codes for “{catalogue.label}”", catalogue)
-        messages.success(request, "Product codes saved.")
+            if f"tags_present_{image.pk}" in request.POST:
+                image.sku = request.POST.get(f"sku_{image.pk}", "").strip()[:60]
+                image.save(update_fields=["sku"])
+                chosen = [valid_spaces[v] for v in request.POST.getlist(f"spaces_{image.pk}") if v in valid_spaces]
+                image.spaces.set(chosen)
+        self.log_action(f"Updated photo codes, SKUs and tags for “{catalogue.label}”", catalogue)
+        messages.success(request, "Saved — product codes, SKUs and tags.")
         return redirect("gallery_image_list", pk=pk)
 
 

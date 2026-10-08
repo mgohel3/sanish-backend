@@ -88,7 +88,11 @@ class GalleryPhotoSerializer(serializers.ModelSerializer):
         return obj.sku or obj.product_id or ""
 
     def get_catalogue(self, obj):
-        return {"slug": obj.catalogue.slug, "name": obj.catalogue.label}
+        return {
+            "slug": obj.catalogue.slug,
+            "name": obj.catalogue.label,
+            "thumbnail": _thumbnail_for(obj.catalogue, self.context.get("request")),
+        }
 
     def get_spaces(self, obj):
         return [{"slug": s.slug, "name": s.label} for s in obj.spaces.all() if s.enabled]
