@@ -37,7 +37,7 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
       <div class="flex flex-wrap items-end gap-3 px-5 py-3 border-b border-gray-100 dark:border-white/10">
         <div class="flex-1 min-w-[160px]">
           <label class="form-label">Search</label>
-          <input type="text" x-model.debounce.300ms="q" @input="reload()" class="form-input" placeholder="Title or filename…"/>
+          <input type="text" x-model="q" @input.debounce.300ms="reload()" @keydown.enter.prevent="reload()" class="form-input" placeholder="Title or filename…" autocomplete="off"/>
         </div>
         <div class="min-w-[130px]">
           <label class="form-label">Type</label>
