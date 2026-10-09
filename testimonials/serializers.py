@@ -5,7 +5,8 @@ from .models import CarpenterTestimonial
 
 class CarpenterTestimonialSerializer(serializers.ModelSerializer):
     photo = serializers.CharField(source="photo_url", default="")
+    proof = serializers.CharField(source="proof_image_url", default="")
 
     class Meta:
         model = CarpenterTestimonial
-        fields = ["id", "name", "role", "quote", "photo"]
+        fields = ["id", "name", "role", "quote", "photo", "proof"]

@@ -52,6 +52,11 @@ class CarpenterTestimonial(models.Model):
         help_text="Optional (path or URL, same as other image fields). Falls back to the "
                    "carpenter's initials in a coloured circle when not set.",
     )
+    proof_image_url = models.CharField(
+        max_length=500, blank=True,
+        help_text="Optional payment-proof screenshot (path or URL, picked from the Media Library). "
+                   "Shown at the top of the card in place of the quote icon.",
+    )
     position = models.PositiveSmallIntegerField(default=0, help_text="Lower = appears first.")
     is_active = models.BooleanField(
         default=True, help_text="Inactive entries are hidden from the live site without deleting them.",

@@ -167,6 +167,7 @@ class TestimonialCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View
             role=d.get("role", "").strip(),
             quote=quote,
             photo_url=d.get("photo_url", "").strip(),
+            proof_image_url=d.get("proof_image_url", "").strip(),
             is_active=("is_active" in d),
             position=(last.position + 1) if last else 0,
         )
@@ -194,6 +195,7 @@ class TestimonialEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         t.role = d.get("role", "").strip()
         t.quote = d.get("quote", "").strip()
         t.photo_url = d.get("photo_url", "").strip()
+        t.proof_image_url = d.get("proof_image_url", "").strip()
         t.is_active = "is_active" in d
         t.save()
         self.log_action("Updated testimonial", t)
