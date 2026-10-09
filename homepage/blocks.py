@@ -354,9 +354,10 @@ BLOCK_TYPES: dict = {
             {"name": "description", "type": "textarea", "label": "Sub copy"},
             {"name": "image", "type": "image", "label": "Background image"},
             {"name": "image_fill", "type": "bool", "label": "Full-bleed image background"},
+            {"name": "image_below_header", "type": "bool", "label": "Centre image in the visible banner (below the header)"},
         ],
         "defaults": {
-            "eyebrow": "", "title": "", "description": "", "image": "", "image_fill": True,
+            "eyebrow": "", "title": "", "description": "", "image": "", "image_fill": True, "image_below_header": False,
         },
     },
 
