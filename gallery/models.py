@@ -67,6 +67,10 @@ class GalleryImage(models.Model):
     height = models.PositiveIntegerField(null=True, blank=True)
     position = models.PositiveIntegerField(default=0)
     enabled = models.BooleanField(default=True)
+    show_in_collage = models.BooleanField(
+        default=True,
+        help_text="Include this photo on the mixed-collage Applications page (/applications-new). Turn off to keep it only on its own catalogue page.",
+    )
 
     created = models.DateTimeField(auto_now_add=True)
 

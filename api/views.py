@@ -479,14 +479,14 @@ class GalleryPhotoListView(generics.ListAPIView):
     pagination_class   = None
 
     def get_queryset(self):
-        return (GalleryImage.objects.filter(enabled=True, catalogue__enabled=True)
+        return (GalleryImage.objects.filter(enabled=True, show_in_collage=True, catalogue__enabled=True)
                 .select_related("catalogue").prefetch_related("spaces")
                 .order_by("catalogue__position", "position", "id"))
 
 
 class GalleryPhotoDetailView(generics.RetrieveAPIView):
     """Public read — ``GET /api/gallery/photos/<id>/``."""
-    queryset           = (GalleryImage.objects.filter(enabled=True, catalogue__enabled=True)
+    queryset           = (GalleryImage.objects.filter(enabled=True, show_in_collage=True, catalogue__enabled=True)
                           .select_related("catalogue").prefetch_related("spaces"))
     serializer_class   = GalleryPhotoSerializer
     permission_classes = [permissions.AllowAny]
