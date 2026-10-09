@@ -30,7 +30,11 @@
 
   <form method="post" id="codes-form">
     {% csrf_token %}
-    <div class="flex justify-end mb-3">
+    <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+      <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+        <input type="checkbox" id="bulk-all" class="rounded" style="width:18px;height:18px;accent-color:#7c5cff"/>
+        <span>Select all photos ({{ images|length }})</span>
+      </label>
       <button type="submit" class="btn-secondary text-xs">Save codes, SKUs &amp; tags</button>
     </div>
     <div id="bulk-bar" class="hidden" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border-radius:14px;background:#111827;color:#fff;font-size:13px">
@@ -41,6 +45,7 @@
       </select>
       <button type="button" id="bulk-add" class="btn-secondary text-xs">Add tag to selected</button>
       <button type="button" id="bulk-remove" class="btn-secondary text-xs" style="color:#ef4444">Remove tag from selected</button>
+      <button type="button" id="bulk-delete" class="btn-secondary text-xs" style="color:#fff;background:#dc2626;border-color:#dc2626">Delete selected</button>
       <a href="#" id="bulk-clear" style="margin-left:auto;color:#fff;font-size:12px">Clear selection</a>
     </div>
     <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -188,6 +193,20 @@
         .then(function (r) { return r.json(); })
         .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.error || 'Could not update.'); } });
     }
+    document.getElementById('bulk-all').addEventListener('change', function (e) {
+      grid.querySelectorAll('.bulk-check').forEach(function (c) { c.checked = e.target.checked; });
+      refreshBar();
+    });
+    document.getElementById('bulk-delete').addEventListener('click', function () {
+      var ids = checked();
+      if (!ids.length) return;
+      if (!confirm('Permanently delete ' + ids.length + ' photo' + (ids.length === 1 ? '' : 's') + ' from this catalogue? This cannot be undone.')) return;
+      var fd = new FormData();
+      fd.append('action', 'bulk_delete'); fd.append('ids', ids.join(',')); fd.append('csrfmiddlewaretoken', csrfToken);
+      fetch(window.location.href, { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.error || 'Could not delete.'); } });
+    });
     document.getElementById('bulk-add').addEventListener('click', function () { bulk('add'); });
     document.getElementById('bulk-remove').addEventListener('click', function () { bulk('remove'); });
 

@@ -109,6 +109,16 @@ class GalleryImageListView(ContentManagerRequiredMixin, LoggedActionMixin, View)
             self.log_action(f"{'Added' if mode == 'add' else 'Removed'} tag “{space.label}” on {n} photos in “{catalogue.label}”", catalogue)
             return JsonResponse({"ok": True, "updated": n})
 
+        if request.POST.get("action") == "bulk_delete":
+            ids = [int(x) for x in request.POST.get("ids", "").split(",") if x.strip().isdigit()]
+            if not ids:
+                return JsonResponse({"ok": False, "error": "Select at least one photo."}, status=400)
+            qs = catalogue.images.filter(pk__in=ids)
+            n = qs.count()
+            qs.delete()
+            self.log_action(f"Bulk-deleted {n} photos from “{catalogue.label}”", catalogue)
+            return JsonResponse({"ok": True, "deleted": n})
+
         valid_spaces = {str(sp.pk): sp for sp in GallerySpace.objects.all()}
         for image in catalogue.images.all():
             key = f"product_id_{image.pk}"
