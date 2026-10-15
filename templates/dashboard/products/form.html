@@ -243,7 +243,7 @@
             </select>
             <p class="form-hint">Texture group used by the Finish filter. Fills in from the finish code when left blank.</p>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
-              <input type="checkbox" name="show_finish" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <input type="checkbox" name="show_finish" :disabled="isThermo" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
             {% include "dashboard/products/_attribute_manager_panel.html" %}
@@ -261,7 +261,7 @@
             </select>
             <p class="form-hint">Texture group used by the Finish filter. Fills in from the finish code when left blank.</p>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
-              <input type="checkbox" name="show_finish" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <input type="checkbox" name="show_finish" :disabled="!isThermo" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
             {% include "dashboard/products/_attribute_manager_panel.html" %}
@@ -284,7 +284,7 @@
             </select>
             <p class="form-hint">Also shown as a tag on the product page.</p>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
-              <input type="checkbox" name="show_design_type" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <input type="checkbox" name="show_design_type" :disabled="isThermo" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
             {% include "dashboard/products/_attribute_manager_panel.html" %}
@@ -302,7 +302,7 @@
             </select>
             <p class="form-hint">Also shown as a tag on the product page.</p>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
-              <input type="checkbox" name="show_design_type" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <input type="checkbox" name="show_design_type" :disabled="!isThermo" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
             {% include "dashboard/products/_attribute_manager_panel.html" %}
