@@ -15,6 +15,9 @@
   var ATTR_URLS = {
     finish:      { add: "{% url 'attribute_option_add' 'finish' %}",      del: "{% url 'attribute_option_delete' 'finish' %}",      reorder: "{% url 'attribute_option_reorder' 'finish' %}" },
     design_type: { add: "{% url 'attribute_option_add' 'design_type' %}", del: "{% url 'attribute_option_delete' 'design_type' %}", reorder: "{% url 'attribute_option_reorder' 'design_type' %}" },
+    texture: { add: "{% url 'attribute_option_add' 'texture' %}", del: "{% url 'attribute_option_delete' 'texture' %}", reorder: "{% url 'attribute_option_reorder' 'texture' %}" },
+    thermo_texture: { add: "{% url 'attribute_option_add' 'thermo_texture' %}", del: "{% url 'attribute_option_delete' 'thermo_texture' %}", reorder: "{% url 'attribute_option_reorder' 'thermo_texture' %}" },
+    thermo_design_type: { add: "{% url 'attribute_option_add' 'thermo_design_type' %}", del: "{% url 'attribute_option_delete' 'thermo_design_type' %}", reorder: "{% url 'attribute_option_reorder' 'thermo_design_type' %}" },
     color:       { add: "{% url 'attribute_option_add' 'color' %}",       del: "{% url 'attribute_option_delete' 'color' %}",       reorder: "{% url 'attribute_option_reorder' 'color' %}" },
     badge:       { add: "{% url 'attribute_option_add' 'badge' %}",       del: "{% url 'attribute_option_delete' 'badge' %}",       reorder: "{% url 'attribute_option_reorder' 'badge' %}" },
   };
@@ -98,6 +101,7 @@
 {% block content %}
 <form method="post" enctype="multipart/form-data"
       x-data="{
+        isThermo: {{ is_thermo|default:False|yesno:'true,false' }},
         features: {{ product.features|jsonify:"[]" }},
         specs: {{ product.tech_specs|jsonify:"{}" }},
         specKeys: Object.keys({{ product.tech_specs|jsonify:"{}" }}),
@@ -205,7 +209,8 @@
           </div>
           <div>
             <label class="form-label">Category *</label>
-            <select name="category" required class="form-input form-select">
+            <select name="category" required class="form-input form-select"
+                    @change="isThermo = $event.target.selectedOptions[0].text.toLowerCase().includes('thermo')">
               {% for cat in categories %}<option value="{{ cat.pk }}" {% if product.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
             </select>
           </div>
@@ -225,29 +230,71 @@
         <p class="form-hint">Shown on storefront cards and used by the listing-page filters.</p>
         <p class="form-hint">Each field below has a "Show on product page" toggle — on by default. A blank field is always hidden regardless of the toggle.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div x-data="attrManager('finish', {{ finish_options|jsonify:'[]' }}, '{{ product.finish|default:''|escapejs }}')">
+          <div x-data="attrManager('texture', {{ texture_options|jsonify:'[]' }}, '{{ product.texture|default:''|escapejs }}')" x-show="!isThermo">
             <div class="flex items-center justify-between">
-              <label class="form-label mb-0">Finish</label>
+              <label class="form-label mb-0">Finish / Texture</label>
               <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
             </div>
-            <select name="finish" x-model="selected" class="form-input form-select">
+            <select name="texture" x-model="selected" :disabled="isThermo" class="form-input form-select">
               <option value="">—</option>
               <template x-for="opt in options" :key="opt.id">
                 <option :value="opt.value" x-text="opt.value"></option>
               </template>
             </select>
+            <p class="form-hint">Texture group used by the Finish filter. Fills in from the finish code when left blank.</p>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
               <input type="checkbox" name="show_finish" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
             {% include "dashboard/products/_attribute_manager_panel.html" %}
           </div>
-          <div x-data="attrManager('design_type', {{ design_type_options|jsonify:'[]' }}, '{{ product.design_type|default:''|escapejs }}')">
+          <div x-data="attrManager('thermo_texture', {{ thermo_texture_options|jsonify:'[]' }}, '{{ product.texture|default:''|escapejs }}')" x-show="isThermo">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Finish / Texture (Thermo)</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="texture" x-model="selected" :disabled="!isThermo" class="form-input form-select">
+              <option value="">—</option>
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
+            </select>
+            <p class="form-hint">Texture group used by the Finish filter. Fills in from the finish code when left blank.</p>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_finish" {% if not product or product.show_finish %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
+          </div>
+          <div>
+            <label class="form-label">Finish code</label>
+            <input type="text" name="finish" value="{{ product.finish|default:'' }}" class="form-input" placeholder="e.g. UG, SF, GS"/>
+            <p class="form-hint">Short code used for the texture swatches and the SKU (e.g. UG). It is kept as typed — the Finish / Texture list is separate.</p>
+          </div>
+          <div x-data="attrManager('design_type', {{ design_type_options|jsonify:'[]' }}, '{{ product.design_type|default:''|escapejs }}')" x-show="!isThermo">
             <div class="flex items-center justify-between">
               <label class="form-label mb-0">Design Type</label>
               <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
             </div>
-            <select name="design_type" x-model="selected" class="form-input form-select">
+            <select name="design_type" x-model="selected" :disabled="isThermo" class="form-input form-select">
+              <option value="">—</option>
+              <template x-for="opt in options" :key="opt.id">
+                <option :value="opt.value" x-text="opt.value"></option>
+              </template>
+            </select>
+            <p class="form-hint">Also shown as a tag on the product page.</p>
+            <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+              <input type="checkbox" name="show_design_type" {% if not product or product.show_design_type %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <span class="text-xs text-gray-400">Show on product page</span>
+            </label>
+            {% include "dashboard/products/_attribute_manager_panel.html" %}
+          </div>
+          <div x-data="attrManager('thermo_design_type', {{ thermo_design_type_options|jsonify:'[]' }}, '{{ product.design_type|default:''|escapejs }}')" x-show="isThermo">
+            <div class="flex items-center justify-between">
+              <label class="form-label mb-0">Design Type (Thermo)</label>
+              <button type="button" @click="open = !open" class="text-xs font-medium text-accent hover:underline">Manage options</button>
+            </div>
+            <select name="design_type" x-model="selected" :disabled="!isThermo" class="form-input form-select">
               <option value="">—</option>
               <template x-for="opt in options" :key="opt.id">
                 <option :value="opt.value" x-text="opt.value"></option>

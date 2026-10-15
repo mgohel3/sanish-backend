@@ -492,6 +492,20 @@ class GalleryPhotoDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
 
+class AttributeOptionsView(APIView):
+    """Public read — ``GET /api/attribute-options/``. The CMS-managed filter lists (Finish/Texture and Design, separately for
+    laminates and Thermo), in display order, so the storefront sidebar never needs a hard-coded copy."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from catalog.models import ProductAttributeOption as O
+        kinds = (O.TEXTURE, O.THERMO_TEXTURE, O.DESIGN_TYPE, O.THERMO_DESIGN)
+        out = {k: [] for k in kinds}
+        for o in O.objects.filter(attribute__in=kinds).order_by("position", "id"):
+            out[o.attribute].append(o.value)
+        return Response(out)
+
+
 class GallerySpaceListView(generics.ListAPIView):
     """Public read — ``GET /api/gallery/spaces/``. Enabled space tags, in filter order."""
     queryset           = GallerySpace.objects.filter(enabled=True)

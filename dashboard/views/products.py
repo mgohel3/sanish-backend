@@ -25,6 +25,16 @@ from media_library.models import MediaAsset, MediaFolder
 MANAGED_ATTRIBUTES = {c[0] for c in ProductAttributeOption.ATTRIBUTE_CHOICES}
 
 
+def _is_thermo(category_id):
+    return "thermo" in (Category.objects.filter(pk=category_id).values_list("name", flat=True).first() or "").lower()
+
+
+def _texture_for(data, category_id, sku):
+    """The chosen texture, or — when left blank — the one the finish code implies (catalog/texture_map.py)."""
+    from catalog.texture_map import derive_texture
+    return data.get("texture", "").strip() or derive_texture(data.get("finish", ""), sku, _is_thermo(category_id))
+
+
 def _attribute_options(attribute):
     """[{id, value}, ...] in display order, for a managed dropdown field."""
     return list(
@@ -183,7 +193,8 @@ class ProductCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):
             features=json.loads(data.get("features_json", "[]")),
             tech_specs=json.loads(data.get("specs_json", "{}")),
             image_urls=image_urls,
-            finish=data.get("finish", ""),
+            finish=data.get("finish", "").strip(),
+            texture=_texture_for(data, data["category"], data["sku"]),
             thickness=data.get("thickness", ""),
             dimensions=data.get("dimensions", ""),
             surface=data.get("surface", ""),
@@ -217,6 +228,7 @@ class ProductEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         product = get_object_or_404(Product, pk=pk)
         return render(request, "dashboard/products/form.html", {
             "product":     product,
+            "is_thermo":   _is_thermo(product.category_id),
             "categories":  Category.objects.filter(status="published"),
             "collections": Collection.objects.filter(status="published"),
             "all_products": Product.objects.exclude(pk=pk),
@@ -244,7 +256,8 @@ class ProductEditView(ContentManagerRequiredMixin, LoggedActionMixin, View):
         product.tech_specs     = json.loads(data.get("specs_json", "{}"))
         image_urls = json.loads(data.get("image_urls_json", "[]"))
         product.image_urls     = image_urls
-        product.finish         = data.get("finish", "")
+        product.finish         = data.get("finish", "").strip()
+        product.texture        = _texture_for(data, data["category"], data["sku"])
         product.thickness      = data.get("thickness", "")
         product.dimensions     = data.get("dimensions", "")
         product.surface        = data.get("surface", "")

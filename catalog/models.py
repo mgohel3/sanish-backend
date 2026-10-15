@@ -28,11 +28,17 @@ class ProductAttributeOption(models.Model):
     COLOR       = "color"
     BADGE       = "badge"
     FINISH      = "finish"
+    TEXTURE        = "texture"
+    THERMO_TEXTURE = "thermo_texture"
+    THERMO_DESIGN  = "thermo_design_type"
     ATTRIBUTE_CHOICES = [
         (DESIGN_TYPE, "Design Type"),
         (COLOR,       "Colour"),
         (BADGE,       "Badge"),
         (FINISH,      "Finish"),
+        (TEXTURE,        "Finish / Texture (laminates)"),
+        (THERMO_TEXTURE, "Finish / Texture (Thermo)"),
+        (THERMO_DESIGN,  "Design Type (Thermo)"),
     ]
 
     attribute = models.CharField(max_length=20, choices=ATTRIBUTE_CHOICES)
@@ -208,7 +214,10 @@ class Product(models.Model):
 
     # Surface attributes — used by the storefront cards, filters and detail page
     finish           = models.CharField(max_length=60, blank=True,
-                                        help_text='e.g. "High Gloss", "Ultra Matte", "Suede"')
+                                        help_text='Finish code, e.g. "UG", "SF", "GS" — drives the texture swatches')
+    texture          = models.CharField(max_length=40, blank=True, db_index=True,
+                                        help_text='Texture group used by the listing-page Finish filter, e.g. "Gloss", "Matte", "Flute" '
+                                                  '(see catalog/texture_map.py). The finish CODE stays in `finish`.')
     thickness        = models.CharField(max_length=40, blank=True, help_text='e.g. "1.0mm"')
     dimensions       = models.CharField(max_length=80, blank=True,
                                         help_text='e.g. "8ft × 4ft (2440 × 1220mm)"')

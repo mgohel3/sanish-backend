@@ -11,7 +11,7 @@ from .views import (
     FormDefinitionView, FormSubmitView, MenuView,
     ApplicationCategoryListView, ApplicationProjectListView, ApplicationProjectDetailView,
     GalleryCatalogueListView, GalleryCatalogueDetailView,
-    GalleryPhotoListView, GalleryPhotoDetailView, GallerySpaceListView,
+    GalleryPhotoListView, GalleryPhotoDetailView, GallerySpaceListView, AttributeOptionsView,
     FaqListView,
     CarpenterTestimonialListView,
     TestimonialListView,
@@ -63,6 +63,7 @@ urlpatterns = [
     path("gallery/catalogues/<slug:slug>/", GalleryCatalogueDetailView.as_view(), name="api_gallery_catalogue_detail"),
     path("gallery/photos/",                 GalleryPhotoListView.as_view(),       name="api_gallery_photos"),
     path("gallery/photos/<int:pk>/",        GalleryPhotoDetailView.as_view(),     name="api_gallery_photo_detail"),
+    path("attribute-options/", AttributeOptionsView.as_view(), name="api_attribute_options"),
     path("gallery/spaces/",                 GallerySpaceListView.as_view(),       name="api_gallery_spaces"),
     # FAQs (public read — CMS-managed, gathered from blog posts)
     path("faqs/", FaqListView.as_view(), name="api_faqs"),
