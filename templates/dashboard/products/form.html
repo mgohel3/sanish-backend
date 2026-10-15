@@ -337,7 +337,7 @@
             <label class="form-label">Thickness</label>
             <input type="text" name="thickness" value="{{ product.thickness|default:'' }}" class="form-input" placeholder="e.g. 1.0mm"/>
             <label class="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
-              <input type="checkbox" name="show_thickness" {% if not product or product.show_thickness %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
+              <input type="checkbox" name="show_thickness" {% if product and product.show_thickness %}checked{% endif %} class="rounded w-3.5 h-3.5"/>
               <span class="text-xs text-gray-400">Show on product page</span>
             </label>
           </div>

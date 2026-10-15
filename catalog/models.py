@@ -239,7 +239,7 @@ class Product(models.Model):
     show_product_type     = models.BooleanField(default=True, help_text="Show the “Product Type” tag & row")
     show_finish            = models.BooleanField(default=True, help_text="Show the “Finish / Texture” row")
     show_surface_category = models.BooleanField(default=True, help_text="Show the “Surface Category” tag & row")
-    show_thickness         = models.BooleanField(default=True, help_text="Show the “Thickness” row")
+    show_thickness         = models.BooleanField(default=False, help_text="Show the “Thickness” row")
     show_dimensions         = models.BooleanField(default=True, help_text="Show the “Standard Size” row")
     show_application         = models.BooleanField(default=True, help_text="Show the “Applications” row")
     show_design_type         = models.BooleanField(default=True, help_text="Show the “Design” tag")
