@@ -151,9 +151,9 @@ BLOCK_TYPES: dict = {
             "collections": [
                 {"name": "S'Shades", "sub": "Premium Finishes", "category": "Laminates", "image": "/assets/img/material/15-08-2026/Our Collections_Shades Collection.jpg"},
                 {"name": "Thre3", "sub": "Exclusive Designs", "category": "Laminates", "image": "/assets/img/material/15-08-2026/Our Collections_Thre3 Collection.jpg"},
-                {"name": "Perspective V4", "sub": "Durable Series", "category": "Thermo Laminates", "image": "/assets/img/material/15-08-2026/Our Collections_0.8mm Collection.jpg"},
-                {"name": "Thermo", "sub": "Weather Resistant", "category": "Thermo Laminates", "image": "/assets/img/material/15-08-2026/thermocollection.jpg"},
-                {"name": "Cool Colour", "sub": "Modern Shades", "category": "Louvers", "image": "/assets/img/material/15-08-2026/Our Collections_Cool Colour Collection.jpg"},
+                {"name": "Cool Colour", "sub": "Modern Shades", "category": "Laminates", "image": "/assets/img/material/15-08-2026/Our Collections_Cool Colour Collection.jpg"},
+                {"name": "Perspective V4", "sub": "Durable Series", "category": "Laminates", "image": "/assets/img/material/15-08-2026/Our Collections_0.8mm Collection.jpg"},
+                {"name": "Thermo Laminates", "sub": "Weather Resistant", "category": "Thermo Laminates", "image": "/assets/img/material/15-08-2026/thermocollection.jpg"},
             ],
         },
     },
