@@ -25,6 +25,11 @@ _lock = threading.Lock()
 _timer = None
 
 
+def fire_now():
+    """Refresh the storefront immediately (used by `manage.py revalidate_storefront` after scripts/imports)."""
+    _fire()
+
+
 def _fire():
     secret = os.environ.get("REVALIDATE_SECRET", "")
     if not secret:
@@ -33,6 +38,7 @@ def _fire():
     req = urllib.request.Request(URL, method="POST", data=b"{}", headers={"x-revalidate-secret": secret, "Content-Type": "application/json"})
     try:
         urllib.request.urlopen(req, timeout=10).read()
+        log.info("storefront revalidated")
     except Exception as exc:  # the CMS save already succeeded; the storefront just falls back to its normal timer
         log.warning("storefront revalidate failed: %s", exc)
 
@@ -64,3 +70,18 @@ def connect():
         post_delete.connect(_on_change, sender=model, dispatch_uid=f"revalidate-delete-{label}")
         for field in model._meta.many_to_many:
             m2m_changed.connect(_on_change, sender=field.remote_field.through, dispatch_uid=f"revalidate-m2m-{label}-{field.name}")
+
+
+class RevalidateOnCmsWrite:
+    """Catch-all: a successful save/delete/upload/reorder/bulk action anywhere in the CMS also refreshes the storefront, including the
+    ones that write with QuerySet.update() and so fire no model signal. Logins and logouts are ignored."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if (request.method in ("POST", "PUT", "PATCH", "DELETE") and request.path.startswith("/cms/")
+                and not request.path.startswith("/cms/auth/") and response.status_code < 400):
+            _arm()
+        return response
