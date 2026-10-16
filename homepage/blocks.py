@@ -201,11 +201,11 @@ BLOCK_TYPES: dict = {
         "defaults": {
             "heading": "Built to Last. <em>Designed to Impress.</em>",
             "cards": [
-                {"title": "ISI Certified", "desc": "All our laminates conform to IS 2046 standards — guaranteed quality you can trust.", "icon": ""},
-                {"title": "Scratch Resistant", "desc": "Our laminate surface is engineered to resist everyday scratches, scuffs, and abrasions.", "icon": ""},
-                {"title": "Moisture Proof", "desc": "Formulated to withstand humid environments — perfect for kitchens and bathrooms.", "icon": ""},
-                {"title": "Fire Retardant", "desc": "Formulated with fire-retardant properties for added safety in commercial applications.", "icon": ""},
-                {"title": "Easy to Clean", "desc": "Stain-resistant topcoat — a simple wipe is all it takes to restore a pristine finish.", "icon": ""},
+                {"title": "ISI Certified", "desc": "All our laminates conform to IS 2046 standards — guaranteed quality you can trust.", "icon": "/assets/img/icon/why-us/isi-certified.svg"},
+                {"title": "Scratch Resistant", "desc": "Our laminate surface is engineered to resist everyday scratches, scuffs, and abrasions.", "icon": "/assets/img/icon/why-us/scratch-resistant.svg"},
+                {"title": "Moisture Proof", "desc": "Formulated to withstand humid environments — perfect for kitchens and bathrooms.", "icon": "/assets/img/icon/why-us/moisture-proof.svg"},
+                {"title": "Fire Retardant", "desc": "Formulated with fire-retardant properties for added safety in commercial applications.", "icon": "/assets/img/icon/why-us/fire-retardant.svg"},
+                {"title": "Easy to Clean", "desc": "Stain-resistant topcoat — a simple wipe is all it takes to restore a pristine finish.", "icon": "/assets/img/icon/why-us/easy-to-clean.svg"},
             ],
         },
     },
