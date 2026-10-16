@@ -92,7 +92,6 @@ PAGES = [
             "address": "SAPPHIRE WOODS (INDIA) LLP\nRegd. Office: 203 Aggarwal Chamber, Sainik Vihar\nPitam Pura, Delhi - 110034",
             "phones": [
                 {"label": "(+91) 7027 777 032", "value": "+917027777032"},
-                {"label": "(+91) 9876 543 210", "value": "+919876543210"},
             ],
             "emails": [
                 {"value": "info@sanishlaminate.com"},
