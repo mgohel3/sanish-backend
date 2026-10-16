@@ -32,6 +32,8 @@ services:
       - "8000"
 
   frontend:
+    environment:
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
     build:
       context: ../../sanish-next
       dockerfile: Dockerfile
