@@ -64,9 +64,15 @@
 
       {% elif field.type == "select" %}
         <select name="{{ field.name }}" class="form-input">
+          {% with cur=values|dictkey:field.name %}
           {% for opt in field.options %}
-          <option value="{{ opt }}" {% if values|dictkey:field.name == opt %}selected{% endif %}>{{ opt }}</option>
+          {% if opt.value %}
+          <option value="{{ opt.value }}" {% if cur == opt.value or not cur and field.default == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+          {% else %}
+          <option value="{{ opt }}" {% if cur == opt %}selected{% endif %}>{{ opt }}</option>
+          {% endif %}
           {% endfor %}
+          {% endwith %}
         </select>
 
       {% elif field.type == "repeater" %}

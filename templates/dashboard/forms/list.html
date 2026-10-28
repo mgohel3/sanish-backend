@@ -31,7 +31,7 @@
           </div>
         </div>
         {% if f.target_pipeline == "inquiry" %}
-        <a href="{% url 'inquiry_list' %}?type={{ f.inquiry_type|default:'contact' }}" class="btn-ghost text-xs">View in Leads</a>
+        <a href="{% url 'inquiry_list' %}?type={{ f.slug }}" class="btn-ghost text-xs">View in Leads ({{ f.inquiries.count }})</a>
         {% else %}
         <a href="{% url 'form_submission_list' f.slug %}" class="btn-ghost text-xs">
           Submissions ({{ f.submissions.count }})
@@ -39,6 +39,21 @@
         {% endif %}
         <a href="{% url 'form_settings_edit' f.slug %}" class="btn-ghost text-xs">Settings</a>
         <a href="{% url 'form_field_list' f.slug %}" class="btn-secondary text-xs">Manage fields</a>
+        {% if f.is_system %}
+        <span class="text-xs text-gray-300 cursor-not-allowed select-none" title="System forms are used by the website itself and cannot be deleted">Delete</span>
+        {% else %}
+        <form method="post" action="{% url 'form_delete' f.slug %}"
+              onsubmit="return confirm('Delete the form “{{ f.name|escapejs }}”?
+
+This also permanently deletes everything that belongs to it:
+• {{ f.fields.count }} field{{ f.fields.count|pluralize }}
+• {% if f.target_pipeline == "inquiry" %}{{ f.inquiries.count }} lead{{ f.inquiries.count|pluralize }}{% else %}{{ f.submissions.count }} submission{{ f.submissions.count|pluralize }}{% endif %} received through it
+
+This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost text-xs text-red-500 hover:text-red-700">Delete</button>
+        </form>
+        {% endif %}
       </li>
       {% empty %}
       <li class="px-5 py-10 text-center text-gray-400 text-sm">

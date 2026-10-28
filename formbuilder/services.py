@@ -20,7 +20,7 @@ WEBHOOK_TIMEOUT_SECONDS = 6
 # submitted data is folded into the Inquiry's ``message`` as "Label: value"
 # lines — the same trick the hard-coded ContactForm/Popup already used for
 # their pincode/enquire_type fields.
-_DIRECT_INQUIRY_FIELDS = ("name", "email", "phone", "city")
+_DIRECT_INQUIRY_FIELDS = ("name", "email", "phone", "city", "pincode", "enquire_type", "product_enquired", "request_type", "catalogue_url")
 
 
 def _render_template(template: str, context: dict) -> str:
@@ -39,7 +39,6 @@ def send_auto_reply(form, data: dict):
         return
 
     from django.conf import settings
-    from django.core.mail import send_mail
     from seo.models import SiteSettings
 
     site_settings = SiteSettings.get()
@@ -47,17 +46,43 @@ def send_auto_reply(form, data: dict):
 
     subject = _render_template(form.auto_reply_subject, context) or f"Thanks for contacting {site_settings.site_name}"
     body = _render_template(form.auto_reply_body, context)
+    product = str(data.get("product_enquired") or "").strip()
+    download = data.get("request_type") == "Catalogue download" and bool(product)
+    cta = None
+    if product:
+        if download:
+            subject = f"Your {product} catalogue from {site_settings.site_name}"
+            lead = f"Your {product} catalogue download has started. If it did not open, you can download it again from our website."
+            url = str(data.get("catalogue_url") or "").strip()
+            # the exact file the visitor was given (CMS uploads live under /media/, bundled ones under /assets/pdf/)
+            if re.match(r"^https://(www\.)?sanishlaminate\.com/", url):
+                ok = True
+            elif url.startswith(("/media/", "/assets/pdf/")):
+                url, ok = "https://sanishlaminate.com" + url, True
+            else:
+                ok = False
+            if ok and not re.search(r"[\s\"'<>]", url):
+                cta = (f"Download {product} catalogue", url)
+        else:
+            lead = f"We have noted your interest in {product} and our team will share the details you need."
+        head, _, rest = body.partition("\n\n")
+        body = head + "\n\n" + lead + ("\n\n" + rest if rest else "")
     from_email = site_settings.smtp_from_email or settings.DEFAULT_FROM_EMAIL
 
     try:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=from_email,
-            recipient_list=[to_email],
-            fail_silently=False,
+        from django.core.mail import EmailMultiAlternatives
+        from formbuilder.email_html import render_auto_reply_html
+
+        msg = EmailMultiAlternatives(
+            subject=subject, body=body, from_email=from_email, to=[to_email],
             connection=site_settings.get_email_connection(),
         )
+        details = [
+            (label, str(data.get(key) or "").strip())
+            for label, key in (("Enquiry about", "product_enquired"), ("Enquiry type", "enquire_type"), ("Message", "message"))
+        ]
+        msg.attach_alternative(render_auto_reply_html(body, site_settings, [d for d in details if d[1]], cta), "text/html")
+        msg.send(fail_silently=False)
     except Exception:
         logger.exception("Failed to send auto-reply email for form %s", form.slug)
 
@@ -124,6 +149,9 @@ def route_submission_to_inquiry(form, data: dict, source_page: str):
         email=direct["email"],
         phone=direct["phone"],
         city=direct["city"],
+        pincode=str(direct["pincode"])[:12],
+        enquiry_type=str(direct["enquire_type"])[:30],
+        product=(str(direct["product_enquired"]) + (" — catalogue download" if direct["request_type"] == "Catalogue download" and direct["product_enquired"] else ""))[:200],
         message="\n".join(message_lines),
         source_page=source_page or "",
     )

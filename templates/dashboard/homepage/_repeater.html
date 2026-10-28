@@ -29,8 +29,9 @@
       </div>
 
       {% for sf in field.fields %}
-      <div{% if sf.hide_if %} x-show="!rows[i]['{{ sf.hide_if }}']" x-cloak{% endif %}>
+      <div{% if sf.hide_if %} x-show="{% if sf.hide_value %}(rows[i]['{{ sf.hide_if }}'] || 'split') !== '{{ sf.hide_value }}'{% else %}!rows[i]['{{ sf.hide_if }}']{% endif %}" x-cloak{% elif sf.show_if %} x-show="(rows[i]['{{ sf.show_if }}'] || 'split') === '{{ sf.show_value }}'" x-cloak{% endif %}>
         <label class="form-label !text-[10px]">{{ sf.label }}</label>
+        {% if sf.styled %}{% include "dashboard/partials/_row_style_toolbar.html" %}{% endif %}
         {% if sf.type == "textarea" %}
           <textarea rows="2" class="form-input text-sm resize-y" x-model="rows[i]['{{ sf.name }}']"></textarea>
         {% elif sf.type == "select" %}
@@ -53,6 +54,9 @@
           <input type="text" class="form-input text-sm" x-model="rows[i]['{{ sf.name }}']" />
         {% endif %}
         {% if sf.help %}<p class="text-[10px] text-gray-400 mt-1">{{ sf.help }}</p>{% endif %}
+        {% if sf.help_by_layout %}{% for k, txt in sf.help_by_layout.items %}
+        <p class="text-[10px] text-gray-400 mt-1" x-show="(rows[i]['layout'] || 'split') === '{{ k }}'" x-cloak>{{ txt }}</p>
+        {% endfor %}{% endif %}
         {% if sf.help_when_true or sf.help_when_false %}
         <p class="text-[10px] text-gray-400 mt-1" x-show="!!rows[i]['{{ sf.show_key|default:sf.name }}']" x-cloak>{{ sf.help_when_true }}</p>
         <p class="text-[10px] text-gray-400 mt-1" x-show="!rows[i]['{{ sf.show_key|default:sf.name }}']" x-cloak>{{ sf.help_when_false }}</p>

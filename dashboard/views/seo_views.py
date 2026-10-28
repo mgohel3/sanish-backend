@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import re
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.views import View
@@ -9,7 +10,7 @@ from django.http import HttpResponse
 
 from accounts.permissions import SEOManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
-from seo.models import GlobalSEO, Redirect, SiteSettings, ThemeSettings
+from seo.models import GlobalSEO, PageSEO, Redirect, SiteSettings, ThemeSettings
 from seo.schema_generators import generate_schema_json
 
 
@@ -45,6 +46,35 @@ class GlobalSEOView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         self.log_action("Updated Global SEO settings")
         messages.success(request, "SEO settings saved.")
         return redirect("seo_global")
+
+
+class PageSEOView(SEOManagerRequiredMixin, LoggedActionMixin, View):
+    """One card per fixed page: title, description, share image, noindex. Saved together with one button."""
+
+    def get(self, request):
+        from pages.models import SitePage
+        have = set(PageSEO.objects.values_list("path", flat=True))
+        for sp in SitePage.objects.all():
+            path = getattr(sp, "path", "") or ""
+            if path and path not in have:
+                PageSEO.objects.create(path=path, label=sp.title, position=100)
+                have.add(path)
+        return render(request, "dashboard/seo/pages.html", {"pages": PageSEO.objects.all(), "active_nav": "seo_pages"})
+
+    def post(self, request):
+        d = request.POST
+        for p in PageSEO.objects.all():
+            k = str(p.pk)
+            if f"title_{k}" not in d:
+                continue
+            p.meta_title       = d.get(f"title_{k}", "").strip()
+            p.meta_description = d.get(f"desc_{k}", "").strip()
+            p.og_image         = d.get(f"og_{k}", "").strip()
+            p.noindex          = d.get(f"noindex_{k}") == "on"
+            p.save()
+        self.log_action("Updated Page SEO")
+        messages.success(request, "Page SEO saved. It goes live on the website within a few seconds.")
+        return redirect("seo_pages")
 
 
 class RedirectListView(SEOManagerRequiredMixin, LoggedActionMixin, View):
@@ -123,9 +153,34 @@ class SchemaGeneratorView(SEOManagerRequiredMixin, View):
         })
 
 
+class SiteModeView(SEOManagerRequiredMixin, LoggedActionMixin, View):
+    """Coming soon / maintenance page switch. Only the site_mode_* fields are ever written here."""
+
+    def get(self, request):
+        return render(request, "dashboard/seo/site_mode.html", {"s": SiteSettings.get(), "active_nav": "site_mode"})
+
+    def post(self, request):
+        s = SiteSettings.get()
+        d = request.POST
+        mode = d.get("site_mode", "off")
+        s.site_mode = mode if mode in ("off", "coming_soon", "maintenance") else "off"
+        la = d.get("site_mode_launch_at", "").strip()
+        s.site_mode_launch_at = la if re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", la) else ""
+        s.site_mode_title = d.get("site_mode_title", "").strip()[:200]
+        s.site_mode_message = d.get("site_mode_message", "").strip()[:600]
+        s.site_mode_show_timer = "site_mode_show_timer" in d
+        s.site_mode_auto_open = "site_mode_auto_open" in d
+        key = re.sub(r"[^A-Za-z0-9_-]", "", d.get("site_mode_bypass_key", "").strip())[:40]
+        s.site_mode_bypass_key = key or "sanish-preview"
+        s.save()
+        self.log_action("Updated site mode", s)
+        messages.success(request, "Site mode saved - it is live on the website now.")
+        return redirect("site_mode")
+
+
 class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
     _FIELDS = [
-        "site_name", "tagline", "logo_dark_url", "logo_light_url", "favicon_url",
+        "site_name", "tagline", "designs_count", "logo_dark_url", "logo_light_url", "favicon_url",
         "phone_primary", "phone_secondary", "email_primary", "email_secondary",
         "address_line1", "address_line2", "city", "state", "pincode", "working_hours",
         "map_embed_url", "map_lat", "map_lng",
@@ -133,10 +188,14 @@ class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         "linkedin_url", "twitter_url", "whatsapp_number",
         "topbar_badge", "header_cta_label", "header_cta_url",
         "footer_description", "footer_copyright", "footer_newsletter_text",
+        "footer_social_title", "footer_social_title_font", "footer_social_title_color", "footer_order",
+        "sound_url", "sound_position",
+        "mobile_menu_style", "mobile_menu_theme", "mobile_menu_bg_color", "mobile_menu_bg_image", "mobile_menu_logo_url",
+        "mobile_menu_effect", "mobile_menu_overlay", "mobile_menu_layout", "mobile_menu_motion",
         "smtp_host", "smtp_port", "smtp_username", "smtp_password",
         "smtp_from_email", "smtp_notify_emails",
     ]
-    _CHECKBOX_FIELDS = ["smtp_use_tls"]
+    _CHECKBOX_FIELDS = ["smtp_use_tls", "footer_show_newsletter", "footer_show_apps", "footer_show_social", "footer_social_show_title", "sound_enabled", "sound_show_button", "mobile_menu_show_catalogue", "mobile_menu_show_contact", "mobile_menu_show_social"]
 
     _TABS = [
         ("brand",   "Brand & Header"),
@@ -144,6 +203,8 @@ class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         ("social",  "Social Media"),
         ("map",     "Map"),
         ("footer",  "Footer"),
+        ("mobile",  "Mobile Menu"),
+        ("sound",   "Sound"),
         ("email",   "Email / SMTP"),
     ]
 
@@ -160,8 +221,8 @@ class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         d = request.POST
         tabs = self._TABS  # keep in scope for re-render on error
         for field in self._FIELDS:
-            val = d.get(field, "")
-            setattr(s, field, val if val is not None else "")
+            if field in d:  # a field that was not submitted keeps its value (a partial POST must never blank settings)
+                setattr(s, field, d.get(field) or "")
         for field in self._CHECKBOX_FIELDS:
             setattr(s, field, field in d)
         # nullable decimals
@@ -171,6 +232,42 @@ class SiteSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         # smtp_port must be an int
         raw_port = d.get("smtp_port", "").strip()
         s.smtp_port = int(raw_port) if raw_port.isdigit() else 587
+        raw_size = d.get("footer_social_icon_size", "").strip()
+        s.footer_social_icon_size = min(72, max(24, int(raw_size))) if raw_size.isdigit() else 38
+        if s.footer_social_title_font not in ("", "serif", "sans"):
+            s.footer_social_title_font = ""
+        color = s.footer_social_title_color.strip()
+        s.footer_social_title_color = color if re.fullmatch(r"#[0-9a-fA-F]{3,8}", color) else ""
+        s.footer_order = ",".join(s.footer_order_list)  # keep only known keys, in the dragged order
+        # Sound: accept only a site path or http(s) URL, and keep the numbers in range
+        url = s.sound_url.strip()
+        s.sound_url = url if re.match(r"^(/|https?://)", url) else ""
+        if s.sound_position not in ("left", "right"):
+            s.sound_position = "left"
+        # Mobile menu: only known styles/themes, a hex colour, and site-path / http(s) image URLs
+        if s.mobile_menu_style not in ("drawer_right", "drawer_left", "fullscreen"):
+            s.mobile_menu_style = "drawer_right"
+        if s.mobile_menu_theme not in ("light", "dark", "brand"):
+            s.mobile_menu_theme = "light"
+        if s.mobile_menu_effect not in ("plain", "glass", "liquid", "image"):
+            s.mobile_menu_effect = "liquid"
+        if s.mobile_menu_layout not in ("list", "tiles"):
+            s.mobile_menu_layout = "list"
+        if s.mobile_menu_motion not in ("off", "slow", "normal", "fast"):
+            s.mobile_menu_motion = "normal"
+        ov = s.mobile_menu_overlay.strip()
+        s.mobile_menu_overlay = str(min(90, max(0, int(ov)))) if ov.isdigit() else "60"
+        mc = s.mobile_menu_bg_color.strip()
+        s.mobile_menu_bg_color = mc if re.fullmatch(r"#[0-9a-fA-F]{3,8}", mc) else ""
+        for f in ("mobile_menu_bg_image", "mobile_menu_logo_url"):
+            u = getattr(s, f).strip()
+            setattr(s, f, u if re.match(r"^(/|https?://)", u) else "")
+        raw_h = d.get("sound_button_size", "").strip()
+        if raw_h.isdigit():
+            s.sound_button_size = min(72, max(28, int(raw_h)))
+        raw_v = d.get("sound_volume", "").strip()
+        if raw_v.isdigit():
+            s.sound_volume = min(100, int(raw_v))
         s.save()
         self.log_action("Updated Site Settings")
 
@@ -226,8 +323,8 @@ class ThemeSettingsView(SEOManagerRequiredMixin, LoggedActionMixin, View):
         s = ThemeSettings.get()
         d = request.POST
         for field in self._FIELDS:
-            val = d.get(field, "")
-            setattr(s, field, val if val is not None else "")
+            if field in d:  # a field that was not submitted keeps its value (a partial POST must never blank settings)
+                setattr(s, field, d.get(field) or "")
         s.save()
         self.log_action("Updated Theme Settings")
         messages.success(request, "Theme settings saved.")

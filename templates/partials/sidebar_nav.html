@@ -11,10 +11,10 @@
 </a>
 
 <!-- Products group -->
-<div x-data="{ openProducts: ['products','categories','collections'].includes('{{ active }}') }"
+<div x-data="{ openProducts: ['products','colours','categories','collections'].includes('{{ active }}') }"
      class="mt-1">
   <button @click="openProducts = !openProducts"
-          class="nav-item w-full {% if active in 'products,categories,collections' %}active{% endif %}">
+          class="nav-item w-full {% if active in 'products,colours,categories,collections' %}active{% endif %}">
     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
       <path stroke-linecap="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
     </svg>
@@ -25,6 +25,7 @@
   </button>
   <div x-show="openProducts && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
     <a href="{% url 'product_list' %}"    class="nav-item {% if active == 'products' %}active{% endif %} text-sm">All Products</a>
+    <a href="{% url 'colour_options' %}"  class="nav-item {% if active == 'colours' %}active{% endif %} text-sm">Colour Filter</a>
     <a href="{% url 'category_list' %}"   class="nav-item {% if active == 'categories' %}active{% endif %} text-sm">Categories</a>
     <a href="{% url 'collection_list' %}" class="nav-item {% if active == 'collections' %}active{% endif %} text-sm">Collections</a>
   </div>
@@ -77,7 +78,7 @@
 
 <!-- SEO -->
 <div x-data="{ openSeo: ['seo','site_settings','theme_settings','seo_health'].includes('{{ active }}') }" class="mt-1">
-  <button @click="openSeo = !openSeo" class="nav-item w-full {% if active == 'seo' or active == 'site_settings' or active == 'theme_settings' or active == 'seo_health' %}active{% endif %}">
+  <button @click="openSeo = !openSeo" class="nav-item w-full {% if active == 'seo' or active == 'seo_pages' or active == 'site_settings' or active == 'theme_settings' or active == 'seo_health' %}active{% endif %}">
     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
       <path stroke-linecap="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
     </svg>
@@ -88,6 +89,7 @@
     <a href="{% url 'site_settings' %}" class="nav-item {% if active == 'site_settings' %}active{% endif %} text-sm">Site Settings</a>
     <a href="{% url 'theme_settings' %}" class="nav-item {% if active == 'theme_settings' %}active{% endif %} text-sm">Theme Settings</a>
     <a href="{% url 'seo_global' %}"    class="nav-item {% if active == 'seo' %}active{% endif %} text-sm">Global SEO</a>
+    <a href="{% url 'seo_pages' %}"     class="nav-item {% if active == 'seo_pages' %}active{% endif %} text-sm">Page SEO</a>
     <a href="{% url 'seo_health' %}"    class="nav-item {% if active == 'seo_health' %}active{% endif %} text-sm">
       SEO Health <span class="ml-auto inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
     </a>
@@ -150,6 +152,7 @@
   </button>
   <div x-show="openLeads && sidebarOpen" x-transition class="ml-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-white/5 pl-3">
     <a href="{% url 'inquiry_list' %}" class="nav-item text-sm">Inquiries</a>
+    <a href="{% url 'inquiry_list' %}?type=newsletter" class="nav-item text-sm">Newsletter Subscribers</a>
   </div>
 </div>
 
@@ -180,6 +183,14 @@
 </a>
 
 {% endwith %}
+
+<!-- Site Mode -->
+<a href="{% url 'site_mode' %}" class="nav-item {% if active == 'site_mode' %}active{% endif %} mt-1">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/>
+  </svg>
+  <span x-show="sidebarOpen" class="truncate">Site Mode</span>
+</a>
 
 <style>
   .nav-item {

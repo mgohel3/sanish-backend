@@ -1,6 +1,10 @@
 from django.db import models
 
 
+# source_page the website footer subscribe box sends (see sanish-next NewsletterForm)
+NEWSLETTER_SOURCE = "/newsletter-footer"
+
+
 class Inquiry(models.Model):
     TYPE_CONTACT  = "contact"
     TYPE_DEALER   = "dealer"
@@ -33,6 +37,9 @@ class Inquiry(models.Model):
     phone       = models.CharField(max_length=20, blank=True)
     message     = models.TextField(blank=True)
     city        = models.CharField(max_length=100, blank=True)
+    pincode     = models.CharField(max_length=12, blank=True)
+    enquiry_type = models.CharField(max_length=30, blank=True, help_text="Commercial / Consumer, from the enquiry popup")
+    product     = models.CharField(max_length=200, blank=True, help_text="Collection or product the visitor enquired about")
     source_page = models.CharField(max_length=500, blank=True)
     status      = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_NEW)
     notes       = models.TextField(blank=True, help_text="Internal follow-up notes")
@@ -51,6 +58,8 @@ class Inquiry(models.Model):
         """Display label for grouping in the Leads dashboard: the CMS form's
         name when known, else the code-managed Collection Inquiry Form —
         the only form still submitting inquiries outside the form builder."""
+        if self.source_page == NEWSLETTER_SOURCE:
+            return "Newsletter Subscribers"
         return self.form.name if self.form_id else "Collection Inquiry Form"
 
 

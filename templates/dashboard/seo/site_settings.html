@@ -31,6 +31,9 @@
           <input type="text" name="site_name" value="{{ s.site_name }}" class="form-input" placeholder="Sanish Laminates"/></div>
         <div><label class="form-label">Tagline</label>
           <input type="text" name="tagline" value="{{ s.tagline }}" class="form-input" placeholder="Premium Decorative Surface Solutions"/></div>
+        <div><label class="form-label">Number of designs</label>
+          <input type="text" name="designs_count" value="{{ s.designs_count }}" class="form-input" placeholder="800+"/>
+          <p class="form-hint">Shown on the home page banner ("800+ Designs") and in the Products menu. Change it here when the range grows.</p></div>
       </div>
 
       <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
@@ -162,6 +165,177 @@
           <input type="text" name="footer_copyright" value="{{ s.footer_copyright }}" class="form-input"/></div>
         <div><label class="form-label">Newsletter Invite Text</label>
           <input type="text" name="footer_newsletter_text" value="{{ s.footer_newsletter_text }}" class="form-input"/></div>
+      </div>
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Footer "Stay Connected" column</h2>
+        <p class="form-hint">Drag the rows by the ⠿ handle to change their order in the footer. Untick a row to hide it.</p>
+        <input type="hidden" name="footer_order" id="footer_order" value="{{ s.footer_order }}"/>
+        <ul id="footer-items" class="space-y-3">
+          {% for key in s.footer_order_list %}
+          <li data-key="{{ key }}" class="flex items-start gap-3 rounded-2xl border border-gray-200 dark:border-white/10 p-4 bg-surface-50 dark:bg-dark-700/40">
+            <span class="drag-handle cursor-grab text-gray-300 hover:text-gray-500 select-none mt-0.5 text-lg leading-none" title="Drag to reorder">⠿</span>
+            <div class="flex-1 space-y-3">
+              {% if key == "newsletter" %}
+              <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+                <input type="checkbox" name="footer_show_newsletter" {% if s.footer_show_newsletter %}checked{% endif %} class="rounded mt-1"/>
+                <span>Email subscribe box<br><span class="form-hint">Emails typed here arrive in Leads (shown as "Newsletter subscription") and trigger the usual notification email.</span></span>
+              </label>
+              {% elif key == "apps" %}
+              <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+                <input type="checkbox" name="footer_show_apps" {% if s.footer_show_apps %}checked{% endif %} class="rounded mt-1"/>
+                <span>"Download App" buttons (Google Play / App Store)</span>
+              </label>
+              {% else %}
+              <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+                <input type="checkbox" name="footer_show_social" {% if s.footer_show_social %}checked{% endif %} class="rounded mt-1"/>
+                <span>Social media icons<br><span class="form-hint">Links come from the Social Media tab.</span></span>
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-7" x-data="{ c: '{{ s.footer_social_title_color|escapejs }}' }">
+                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 sm:col-span-2">
+                  <input type="checkbox" name="footer_social_show_title" {% if s.footer_social_show_title %}checked{% endif %} class="rounded"/>
+                  Show a heading above the icons
+                </label>
+                <div><label class="form-label !text-[10px]">Heading text</label>
+                  <input type="text" name="footer_social_title" value="{{ s.footer_social_title }}" maxlength="60" class="form-input text-sm" placeholder="Follow Us"/></div>
+                <div><label class="form-label !text-[10px]">Heading font</label>
+                  <select name="footer_social_title_font" class="form-input text-sm">
+                    <option value="" {% if not s.footer_social_title_font %}selected{% endif %}>Default (theme)</option>
+                    <option value="serif" {% if s.footer_social_title_font == "serif" %}selected{% endif %}>Serif</option>
+                    <option value="sans" {% if s.footer_social_title_font == "sans" %}selected{% endif %}>Sans-serif</option>
+                  </select></div>
+                <div class="sm:col-span-2"><label class="form-label !text-[10px]">Heading colour</label>
+                  <div class="flex items-center gap-2">
+                    <input type="color" :value="c || '#1e1e2e'" @input="c = $event.target.value" class="h-10 w-12 rounded-lg border border-gray-200 cursor-pointer p-0.5 bg-transparent"/>
+                    <input type="text" name="footer_social_title_color" x-model="c" class="form-input text-sm font-mono flex-1" placeholder="#1e1e2e or blank for default"/>
+                    <button type="button" class="btn-ghost text-xs whitespace-nowrap" @click="c = ''">Clear</button>
+                  </div></div>
+                <div class="max-w-[200px]"><label class="form-label !text-[10px]">Icon size <span class="form-hint">(pixels, 24-72)</span></label>
+                  <input type="number" min="24" max="72" name="footer_social_icon_size" value="{{ s.footer_social_icon_size }}" class="form-input font-mono text-sm"/></div>
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          var list = document.getElementById('footer-items'), out = document.getElementById('footer_order');
+          if (!list || typeof Sortable === 'undefined') return;
+          function sync() { out.value = Array.prototype.map.call(list.children, function (li) { return li.dataset.key; }).join(','); }
+          Sortable.create(list, { handle: '.drag-handle', animation: 150, onEnd: sync });
+        });
+      </script>
+    </div>
+
+    <!-- ── Mobile menu ───────────────────────────────────────────────────── -->
+    <div x-show="tab === 'mobile'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Mobile Menu (phone navigation)</h2>
+        <p class="form-hint">How the menu looks when a visitor taps the menu button on a phone. The links themselves are managed under <a href="{% url 'menu_item_list' 'mobile' %}" class="text-accent underline">Menus &rarr; Mobile Menu</a>.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="form-label">Menu style</label>
+            <select name="mobile_menu_style" class="form-input">
+              <option value="drawer_right" {% if s.mobile_menu_style == "drawer_right" %}selected{% endif %}>Side drawer — slides in from the right</option>
+              <option value="drawer_left" {% if s.mobile_menu_style == "drawer_left" %}selected{% endif %}>Side drawer — slides in from the left</option>
+              <option value="fullscreen" {% if s.mobile_menu_style == "fullscreen" %}selected{% endif %}>Full screen — covers the whole page</option>
+            </select></div>
+          <div><label class="form-label">Theme</label>
+            <select name="mobile_menu_theme" class="form-input">
+              <option value="light" {% if s.mobile_menu_theme == "light" %}selected{% endif %}>Light — white with dark text</option>
+              <option value="dark" {% if s.mobile_menu_theme == "dark" %}selected{% endif %}>Dark — deep navy with white text</option>
+              <option value="brand" {% if s.mobile_menu_theme == "brand" %}selected{% endif %}>Brand — purple-blue gradient with white text</option>
+            </select></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="form-label">Background effect</label>
+            <select name="mobile_menu_effect" class="form-input">
+              <option value="liquid" {% if s.mobile_menu_effect == "liquid" %}selected{% endif %}>Liquid gradient — soft brand colours drifting (animated)</option>
+              <option value="glass" {% if s.mobile_menu_effect == "glass" %}selected{% endif %}>Glass — frosted panel over the page</option>
+              <option value="image" {% if s.mobile_menu_effect == "image" %}selected{% endif %}>Image with overlay — uses the background image below</option>
+              <option value="plain" {% if s.mobile_menu_effect == "plain" %}selected{% endif %}>Plain — flat colour from the theme / colour below</option>
+            </select></div>
+          <div><label class="form-label">Menu layout</label>
+            <select name="mobile_menu_layout" class="form-input">
+              <option value="list" {% if s.mobile_menu_layout == "list" %}selected{% endif %}>List — one item per row (supports expandable sub-items)</option>
+              <option value="tiles" {% if s.mobile_menu_layout == "tiles" %}selected{% endif %}>Tiles — two columns of cards</option>
+            </select></div>
+          <div><label class="form-label">Liquid gradient speed</label>
+            <select name="mobile_menu_motion" class="form-input">
+              <option value="slow" {% if s.mobile_menu_motion == "slow" %}selected{% endif %}>Slow</option>
+              <option value="normal" {% if s.mobile_menu_motion == "normal" %}selected{% endif %}>Normal</option>
+              <option value="fast" {% if s.mobile_menu_motion == "fast" %}selected{% endif %}>Fast</option>
+              <option value="off" {% if s.mobile_menu_motion == "off" %}selected{% endif %}>Off — still picture</option>
+            </select></div>
+          <div x-data="{ v: '{{ s.mobile_menu_overlay|escapejs }}' }"><label class="form-label">Image overlay darkness: <span x-text="v + '%'"></span></label>
+            <input type="range" name="mobile_menu_overlay" min="0" max="90" step="5" x-model="v" class="w-full"/>
+            <p class="form-hint">Only used by "Image with overlay". Higher = darker, easier to read.</p></div>
+        </div>
+        <div x-data="{ c: '{{ s.mobile_menu_bg_color|escapejs }}' }"><label class="form-label">Background colour <span class="form-hint">(optional — overrides the theme background; text colour adjusts automatically)</span></label>
+          <div class="flex items-center gap-2">
+            <input type="color" :value="c || '#ffffff'" @input="c = $event.target.value" class="h-10 w-12 rounded-lg border border-gray-200 cursor-pointer p-0.5 bg-transparent"/>
+            <input type="text" name="mobile_menu_bg_color" x-model="c" class="form-input text-sm font-mono flex-1" placeholder="#ffffff or blank to use the theme"/>
+            <button type="button" class="btn-ghost text-xs whitespace-nowrap" @click="c = ''">Clear</button>
+          </div></div>
+        <div><label class="form-label">Background image <span class="form-hint">(used by the "Image with overlay" effect)</span></label>
+          <div class="mp-field flex gap-2">
+            <input type="text" name="mobile_menu_bg_image" value="{{ s.mobile_menu_bg_image }}" class="form-input flex-1 font-mono text-sm" placeholder="/media/... or https://..."/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap" onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Media Library</button>
+          </div></div>
+        <div><label class="form-label">Menu logo <span class="form-hint">(optional — blank uses the site logo, turned white automatically on dark looks)</span></label>
+          <div class="mp-field flex gap-2">
+            <input type="text" name="mobile_menu_logo_url" value="{{ s.mobile_menu_logo_url }}" class="form-input flex-1 font-mono text-sm" placeholder="/assets/img/logo/footer-black-logo.svg"/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap" onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: 'image' })">Media Library</button>
+          </div>
+          {% if s.mobile_menu_logo_url %}<img src="{{ s.mobile_menu_logo_url }}" alt="" class="mt-2 h-10 w-auto rounded bg-gray-100 p-1"/>{% endif %}</div>
+        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" name="mobile_menu_show_social" {% if s.mobile_menu_show_social %}checked{% endif %} class="rounded mt-1"/>
+          <span>Show the social icons (Instagram, Facebook, LinkedIn, YouTube) at the bottom of the menu</span>
+        </label>
+        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" name="mobile_menu_show_catalogue" {% if s.mobile_menu_show_catalogue %}checked{% endif %} class="rounded mt-1"/>
+          <span>Show the header button ("{{ s.header_cta_label|default:'Download Catalogue' }}") at the bottom of the menu</span>
+        </label>
+        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" name="mobile_menu_show_contact" {% if s.mobile_menu_show_contact %}checked{% endif %} class="rounded mt-1"/>
+          <span>Show the "Call Us" and "Email Us" buttons</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── Sound ─────────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'sound'" class="space-y-4">
+      <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Website Sound</h2>
+        <p class="form-hint">A background track for the whole website with a floating "Sound On / Sound Off" button. Browsers only allow sound after the visitor's first click or tap, so it starts then. A visitor who switches it off stays off on later visits.</p>
+        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" name="sound_enabled" {% if s.sound_enabled %}checked{% endif %} class="rounded mt-1"/>
+          <span>Play a background sound on the website<br><span class="form-hint">Untick to remove the sound and the button from the whole site. Nothing plays until you add a sound file below.</span></span>
+        </label>
+        <div><label class="form-label">Sound file <span class="form-hint">(MP3 recommended; a short seamless loop works best)</span></label>
+          <div class="mp-field flex gap-2">
+            <input type="text" name="sound_url" value="{{ s.sound_url }}" class="form-input flex-1 font-mono text-sm" placeholder="/media/... or https://..."/>
+            <button type="button" class="btn-secondary text-xs whitespace-nowrap"
+                    onclick="openMediaPicker({ el: this.closest('.mp-field').querySelector('input'), accept: '' })">Media Library</button>
+          </div>
+          {% if s.sound_url %}<audio controls preload="none" src="{{ s.sound_url }}" class="mt-2 w-full max-w-sm"></audio>{% endif %}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div><label class="form-label">Volume <span class="form-hint">(0-100)</span></label>
+            <input type="number" min="0" max="100" name="sound_volume" value="{{ s.sound_volume }}" class="form-input font-mono"/></div>
+          <div><label class="form-label">Button size <span class="form-hint">(px, 28-72)</span></label>
+            <input type="number" min="28" max="72" name="sound_button_size" value="{{ s.sound_button_size }}" class="form-input font-mono"/></div>
+          <div><label class="form-label">Button position</label>
+            <select name="sound_position" class="form-input">
+              <option value="left" {% if s.sound_position != "right" %}selected{% endif %}>Bottom left</option>
+              <option value="right" {% if s.sound_position == "right" %}selected{% endif %}>Bottom right (above the WhatsApp button)</option>
+            </select></div>
+        </div>
+        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" name="sound_show_button" {% if s.sound_show_button %}checked{% endif %} class="rounded mt-1"/>
+          <span>Show the Sound On / Off button<br><span class="form-hint">If you hide it, the sound still plays but visitors cannot switch it off.</span></span>
+        </label>
       </div>
     </div>
 

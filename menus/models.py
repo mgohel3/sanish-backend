@@ -42,6 +42,9 @@ class MenuItem(models.Model):
         max_length=300, blank=True,
         help_text="Relative (/about-us) or absolute URL. Leave blank for a label-only dropdown trigger.",
     )
+    subtitle = models.CharField(max_length=100, blank=True, default="", help_text="Optional small grey line under the label (used by the mobile menu).")
+    badge = models.CharField(max_length=20, blank=True, default="", help_text="Optional small label next to the item in the mobile menu, e.g. New.")
+    icon = models.CharField(max_length=20, blank=True, default="", help_text="Optional icon for the mobile menu (see the list in the item form).")
     open_new_tab = models.BooleanField(default=False)
     position = models.PositiveSmallIntegerField(default=0, help_text="Lower = appears first among its siblings.")
     active = models.BooleanField(default=True, help_text="Inactive items are hidden from the live site without deleting them.")

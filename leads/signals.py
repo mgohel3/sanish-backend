@@ -30,6 +30,9 @@ def notify_admins_of_new_inquiry(sender, instance, created, **kwargs):
         f"Email:   {instance.email}\n"
         f"Phone:   {instance.phone or '-'}\n"
         f"City:    {instance.city or '-'}\n"
+        f"Pincode: {instance.pincode or '-'}\n"
+        f"Enquiry: {instance.enquiry_type or '-'}\n"
+        f"Product: {instance.product or '-'}\n"
         f"Page:    {instance.source_page or '-'}\n\n"
         f"Message:\n{instance.message or '-'}\n"
     )

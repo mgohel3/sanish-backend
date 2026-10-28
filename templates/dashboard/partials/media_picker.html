@@ -27,7 +27,7 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
     <div class="relative bg-white dark:bg-[#23202E] rounded-2xl shadow-xl w-full max-w-4xl max-h-[88vh] flex flex-col">
       <!-- header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
-        <h3 class="font-bold text-gray-900 dark:text-white">Media Library</h3>
+        <h3 class="font-bold text-gray-900 dark:text-white">Media Library<span x-show="accept" x-cloak class="ml-2 text-xs font-medium text-accent" x-text="accept ? '- this field needs ' + (accept === 'image' ? 'an IMAGE' : accept === 'video' ? 'a VIDEO' : 'a PDF') : ''"></span></h3>
         <button type="button" @click="shown = false" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
@@ -41,7 +41,7 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
         </div>
         <div class="min-w-[130px]">
           <label class="form-label">Type</label>
-          <select x-model="type" @change="reload()" class="form-input form-select" :disabled="lockType">
+          <select x-model="type" @change="reload()" class="form-input form-select">
             <option value="">All</option>
             <option value="image">Images</option>
             <option value="video">Videos</option>
@@ -62,6 +62,7 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
         </label>
       </div>
 
+      <div x-show="warn" x-cloak class="px-5 py-2 text-sm bg-amber-50 text-amber-800 border-b border-amber-100" x-text="warn"></div>
       <!-- grid -->
       <div class="flex-1 overflow-y-auto p-5">
         <div x-show="!loading && results.length === 0" class="py-16 text-center text-gray-400 text-sm">
@@ -120,13 +121,15 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
       uploading: false,
       targetEl: null,
       onSelect: null,
-      lockType: false,
+      accept: '',   // the type this field needs (image / video / pdf); '' = anything
+      warn: '',
       multiple: false, selected: [], onSelectMany: null,
       get uploadAccept() {
-        if (this.type === 'image') return 'image/*';
-        if (this.type === 'video') return 'video/*';
-        if (this.type === 'pdf') return '.pdf';
-        return 'image/*,video/*,.pdf';
+        const t = this.accept || this.type;
+        if (t === 'image') return 'image/*';
+        if (t === 'video') return 'video/*';
+        if (t === 'pdf') return '.pdf';
+        return 'image/*,video/*,audio/*,.pdf';
       },
       open(detail) {
         this.targetEl = detail.el ||
@@ -136,16 +139,17 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
         this.onSelectMany = typeof detail.onSelectMany === 'function' ? detail.onSelectMany : null;
         this.selected = [];
         if (this.multiple) this.type = '';
+        this.warn = '';
         if (detail.accept === 'image' || detail.accept === 'video' || detail.accept === 'pdf') {
           this.type = detail.accept;
-          this.lockType = true;
+          this.accept = detail.accept;
         } else {
-          this.lockType = false;
+          this.accept = '';
         }
         this.shown = true;
         this.reload();
       },
-      reload() { this.page = 1; this.fetch(); },
+      reload() { this.page = 1; this.warn = ''; this.fetch(); },
       loadMore() { this.page += 1; this.fetch(true); },
       fetch(append) {
         this.loading = true;
@@ -164,6 +168,11 @@ input[type=color]::-moz-color-swatch{border:none;border-radius:9999px}</style>
       },
       isSel(item) { return this.selected.some(function (s) { return s.id === item.id; }); },
       pick(item) {
+        if (this.accept && item.type !== this.accept) {
+          this.warn = 'This field needs ' + (this.accept === 'image' ? 'an image' : this.accept === 'video' ? 'a video' : 'a PDF') + ' - that file is ' + (item.type === 'other' ? 'another file type' : 'a ' + item.type) + '.';
+          return;
+        }
+        this.warn = '';
         if (!this.multiple) { this.choose(item); return; }
         if (this.isSel(item)) this.selected = this.selected.filter(function (s) { return s.id !== item.id; });
         else this.selected = this.selected.concat([item]);

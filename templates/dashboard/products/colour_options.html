@@ -1,0 +1,43 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Colour Filter{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Products</span><span class="text-gray-300">/</span><span>Colour Filter</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Colour Filter</h1>
+    <p class="form-hint mt-1">The colours shown as dots in the website's Colour filter. Add, rename, recolour, reorder or remove them here. Choose a product's own colour on its edit screen (Colour dropdown).</p>
+    {% if no_colour %}<p class="text-xs text-amber-600 mt-2">{{ no_colour }} product{{ no_colour|pluralize }} currently have no colour and won't appear under any colour.</p>{% endif %}
+    {% if stray %}<p class="text-xs text-amber-600 mt-1">Some products use a colour that is not in this list ({% for c, n in stray.items %}{{ c }} &times; {{ n }}{% if not forloop.last %}, {% endif %}{% endfor %}). Add it below to make it filterable.</p>{% endif %}
+  </div>
+
+  <form method="post" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-5 flex flex-wrap items-end gap-3">
+    {% csrf_token %}<input type="hidden" name="action" value="add"/>
+    <div class="flex-1 min-w-[160px]"><label class="form-label">New colour</label><input type="text" name="name" maxlength="60" required class="form-input" placeholder="e.g. Teal"/></div>
+    <div><label class="form-label">Dot colour</label><input type="color" name="swatch" value="#cccccc" class="h-10 w-16 rounded-lg border border-gray-200 p-1"/></div>
+    <button type="submit" class="btn-primary">Add colour</button>
+  </form>
+
+  <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card divide-y divide-gray-100 dark:divide-white/5">
+    {% for r in rows %}
+    <div class="p-4 flex flex-wrap items-center gap-3">
+      <form method="post" class="flex flex-wrap items-center gap-3 flex-1 min-w-[260px]">
+        {% csrf_token %}<input type="hidden" name="pk" value="{{ r.o.pk }}"/><input type="hidden" name="action" value="update"/>
+        <input type="color" name="swatch" value="{{ r.o.swatch|default:'#cccccc' }}" class="h-9 w-12 rounded-lg border border-gray-200 p-1" title="Dot colour"/>
+        <input type="text" name="name" value="{{ r.o.value }}" maxlength="60" required class="form-input flex-1 min-w-[120px]"/>
+        <span class="text-xs text-gray-400 w-24 text-right">{{ r.count }} product{{ r.count|pluralize }}</span>
+        <button type="submit" class="btn-secondary text-xs">Save</button>
+      </form>
+      <form method="post" class="flex gap-1">{% csrf_token %}<input type="hidden" name="pk" value="{{ r.o.pk }}"/>
+        <button name="action" value="move_up" class="btn-ghost text-xs" title="Move up" {% if forloop.first %}disabled{% endif %}>&uarr;</button>
+        <button name="action" value="move_down" class="btn-ghost text-xs" title="Move down" {% if forloop.last %}disabled{% endif %}>&darr;</button>
+      </form>
+      <form method="post" onsubmit="return confirm('Remove the colour \u201c{{ r.o.value|escapejs }}\u201d?\n\n{{ r.count }} product{{ r.count|pluralize }} currently use{{ r.count|pluralize:"s," }} it and will be left without a colour (they stop appearing under any colour in the filter).\n\nYou can add it back later, but the products would need their colour set again.');">
+        {% csrf_token %}<input type="hidden" name="pk" value="{{ r.o.pk }}"/><input type="hidden" name="action" value="delete"/>
+        <button type="submit" class="btn-ghost text-xs text-red-500 hover:text-red-700">Remove</button>
+      </form>
+    </div>
+    {% empty %}<p class="p-6 text-sm text-gray-400">No colours yet. Add the first one above.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

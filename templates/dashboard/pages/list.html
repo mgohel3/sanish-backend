@@ -35,6 +35,7 @@
 
         {% if p.path %}
         <a href="{{ p.path }}" target="_blank" rel="noopener" class="btn-ghost text-xs">Preview ↗</a>
+        <a href="{% url 'seo_pages' %}#seo-{{ p.path|slugify|default:'home' }}" class="btn-ghost text-xs">Page SEO</a>
         {% endif %}
 
         <form method="post" action="{% url 'site_page_toggle' p.slug %}">

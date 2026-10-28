@@ -1,0 +1,77 @@
+{# Quick "jump to" search for the CMS top bar: type a page or a task ("logo", "popup email", "colour") and pick where to go. Ctrl/Cmd + K focuses it. #}
+<style>
+  .cms-search { display: none; position: relative; margin: 0 auto; width: 24rem; max-width: 40vw; }
+  @media (min-width: 900px) { .cms-search { display: block; } }
+  .cms-search input { width: 100%; box-sizing: border-box; padding: 9px 16px 9px 40px; border-radius: 999px; border: 1px solid #e5e7eb; background: #f3f4f6; font-size: 14px; outline: none; }
+  .cms-search input:focus { background: #fff; border-color: #8EA9C4; }
+  .cms-search .cms-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9ca3af; pointer-events: none; }
+  .cms-search .cms-search-list { position: absolute; left: 0; right: 0; top: calc(100% + 8px); background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,.14); overflow: hidden; z-index: 60; }
+  .cms-search .cms-search-list a { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; font-size: 14px; color: #1f2937; text-decoration: none; }
+  .cms-search .cms-search-list a.on { background: #f6f1f8; }
+  .cms-search .cms-search-list small { color: #9ca3af; font-size: 12px; }
+  .dark .cms-search input { background: #2E2A3A; border-color: transparent; color: #fff; }
+  .dark .cms-search .cms-search-list { background: #23202E; border-color: rgba(255,255,255,.1); }
+  .dark .cms-search .cms-search-list a { color: #f3f4f6; }
+  .dark .cms-search .cms-search-list a.on { background: #2E2A3A; }
+</style>
+<div class="cms-search"
+     x-data="{
+       q: '', open: false, sel: 0,
+       items: [
+         {t:'All Products', g:'Products', u:'{% url 'product_list' %}', k:'product sku laminate add edit price'},
+         {t:'Colour Filter', g:'Products', u:'{% url 'colour_options' %}', k:'colour color dots filter swatch'},
+         {t:'Categories', g:'Products', u:'{% url 'category_list' %}', k:'category laminates louvers thermo'},
+         {t:'Collections', g:'Products', u:'{% url 'collection_list' %}', k:'collection catalogue pdf download shades thre3 cool colour perspective'},
+         {t:'Applications (photo gallery)', g:'Applications', u:'{% url 'gallery_catalogue_list' %}', k:'gallery photos spaces tags phone layout instagram grid'},
+         {t:'All Pages', g:'Pages', u:'{% url 'site_page_list' %}', k:'about us contact events media gallery privacy terms page'},
+         {t:'Home Page sections', g:'Pages', u:'{% url 'home_section_list' %}', k:'home hero slider banner video collections media gallery editorial rewards'},
+         {t:'City Pages', g:'City Pages', u:'{% url 'city_page_list' %}', k:'city location ahmedabad delhi'},
+         {t:'City page templates', g:'City Pages', u:'{% url 'page_template_list' %}', k:'template'},
+         {t:'City pages bulk import', g:'City Pages', u:'{% url 'city_page_bulk_import' %}', k:'bulk import csv upload'},
+         {t:'Site Settings', g:'SEO &amp; Settings', u:'{% url 'site_settings' %}', k:'logo favicon phone email address footer social instagram facebook map mobile menu smtp email sender tagline whatsapp sound'},
+         {t:'Theme Settings', g:'SEO &amp; Settings', u:'{% url 'theme_settings' %}', k:'theme colour color font typography brand'},
+         {t:'Global SEO', g:'SEO &amp; Settings', u:'{% url 'seo_global' %}', k:'google analytics ga4 tag manager gtm recaptcha captcha pixel clarity search console robots sitemap'},
+         {t:'Page SEO', g:'SEO &amp; Settings', u:'{% url 'seo_pages' %}', k:'meta title description keywords canonical'},
+         {t:'SEO Health', g:'SEO &amp; Settings', u:'{% url 'seo_health' %}', k:'audit check issues'},
+         {t:'Redirects', g:'SEO &amp; Settings', u:'{% url 'seo_redirects' %}', k:'redirect 301 old url'},
+         {t:'Schema Generator', g:'SEO &amp; Settings', u:'{% url 'seo_schema' %}', k:'schema json-ld structured data'},
+         {t:'Forms', g:'Forms', u:'{% url 'form_list' %}', k:'form popup contact enquiry auto reply email thank you fields sample request'},
+         {t:'Menus', g:'Menus', u:'{% url 'menu_list' %}', k:'menu navigation header footer dropdown mobile links products show hide'},
+         {t:'Blog', g:'Blog', u:'{% url 'blog_list' %}', k:'blog article post editorial'},
+         {t:'FAQs', g:'FAQs', u:'{% url 'faq_list' %}', k:'faq question answer'},
+         {t:'Testimonials', g:'Testimonials', u:'{% url 'testimonial_list' %}', k:'testimonial review client'},
+         {t:'Inquiries', g:'Leads', u:'{% url 'inquiry_list' %}', k:'leads enquiry inquiry popup contact submissions customers'},
+         {t:'Newsletter Subscribers', g:'Leads', u:'{% url 'inquiry_list' %}?type=newsletter', k:'newsletter subscribe email list'},
+         {t:'Media Library', g:'Media Library', u:'{% url 'media_library' %}', k:'media image video pdf upload file'},
+         {t:'Users &amp; Roles', g:'Users', u:'{% url 'user_list' %}', k:'user password admin role login team'},
+         {t:'Site Mode (coming soon / maintenance)', g:'Site', u:'{% url 'site_mode' %}', k:'coming soon maintenance launch countdown offline'},
+         {t:'Help', g:'Help', u:'{% url 'help_index' %}', k:'help guide how to support'},
+       ],
+       get results() {
+         const w = this.q.toLowerCase().split(/\s+/).filter(Boolean);
+         if (!w.length) return [];
+         return this.items.filter(i => { const h = (i.t + ' ' + i.g + ' ' + i.k).toLowerCase(); return w.every(x => h.includes(x)); }).slice(0, 8);
+       },
+       go(i) { if (i) window.location = i.u; }
+     }"
+     @keydown.window.ctrl.k.prevent="$refs.q.focus(); open = true"
+     @keydown.window.meta.k.prevent="$refs.q.focus(); open = true"
+     @click.outside="open = false">
+  <svg class="cms-search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M20 20l-3.5-3.5"/></svg>
+  <input x-ref="q" x-model="q" type="text" autocomplete="off" placeholder="Search settings, pages, menus…  (Ctrl K)"
+         @focus="open = true" @input="open = true; sel = 0"
+         @keydown.down.prevent="sel = Math.min(sel + 1, results.length - 1)"
+         @keydown.up.prevent="sel = Math.max(sel - 1, 0)"
+         @keydown.enter.prevent="go(results[sel])"
+         @keydown.escape="open = false; $refs.q.blur()">
+  <div x-show="open && q.trim()" x-cloak class="cms-search-list">
+    <template x-for="(r, idx) in results" :key="r.u + r.t">
+      <a :href="r.u" @mouseenter="sel = idx"
+         :class="sel === idx ? 'on' : ''">
+        <span x-html="r.t"></span>
+        <small x-html="r.g"></small>
+      </a>
+    </template>
+    <div x-show="results.length === 0" style="padding:14px 16px;font-size:14px;color:#9ca3af;">Nothing found — try another word, like “logo”, “popup” or “colour”.</div>
+  </div>
+</div>

@@ -1,0 +1,58 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Site Mode{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>Site Mode</span>{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-3xl mx-auto space-y-6" x-data="{ mode: '{{ s.site_mode }}', key: '{{ s.site_mode_bypass_key|escapejs }}' }">
+  {% csrf_token %}
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Site Mode</h1>
+      <p class="form-hint">Show a Coming Soon or Maintenance page to visitors. Saving applies to the live website straight away.</p>
+    </div>
+    <button type="submit" class="btn-primary">Save</button>
+  </div>
+
+  <div class="card space-y-3">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">What should visitors see?</h2>
+    <label class="flex items-start gap-3 p-3 rounded-2xl border cursor-pointer" :class="mode === 'off' ? 'border-accent bg-accent/5' : 'border-gray-200'">
+      <input type="radio" name="site_mode" value="off" x-model="mode" class="mt-1"/>
+      <span><b>Off - the normal website</b><br/><span class="text-sm text-gray-500">Nothing is covered. This is the everyday setting.</span></span>
+    </label>
+    <label class="flex items-start gap-3 p-3 rounded-2xl border cursor-pointer" :class="mode === 'coming_soon' ? 'border-accent bg-accent/5' : 'border-gray-200'">
+      <input type="radio" name="site_mode" value="coming_soon" x-model="mode" class="mt-1"/>
+      <span><b>Coming soon page</b><br/><span class="text-sm text-gray-500">Glass-style page with a countdown to your launch time.</span></span>
+    </label>
+    <label class="flex items-start gap-3 p-3 rounded-2xl border cursor-pointer" :class="mode === 'maintenance' ? 'border-accent bg-accent/5' : 'border-gray-200'">
+      <input type="radio" name="site_mode" value="maintenance" x-model="mode" class="mt-1"/>
+      <span><b>Maintenance page</b><br/><span class="text-sm text-gray-500">"We'll be right back" page while you update the site. You switch it off yourself.</span></span>
+    </label>
+  </div>
+
+  <div class="card space-y-4">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Page content</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div><label class="form-label">Launch / back-online time <span class="form-hint">(India time)</span></label>
+        <input type="datetime-local" name="site_mode_launch_at" value="{{ s.site_mode_launch_at }}" class="form-input"/>
+        <p class="form-hint">The countdown runs to this moment.</p></div>
+      <div class="space-y-3 pt-6">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="site_mode_show_timer" {% if s.site_mode_show_timer %}checked{% endif %} class="rounded"/> Show the countdown timer</label>
+        <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="site_mode_auto_open" {% if s.site_mode_auto_open %}checked{% endif %} class="rounded mt-1"/> <span>Coming soon: open the website by itself when the timer reaches zero</span></label>
+      </div>
+    </div>
+    <div><label class="form-label">Headline <span class="form-hint">(blank = default)</span></label>
+      <input type="text" name="site_mode_title" value="{{ s.site_mode_title }}" maxlength="200" class="form-input" placeholder="Something beautiful is on its way"/></div>
+    <div><label class="form-label">Message <span class="form-hint">(blank = default)</span></label>
+      <textarea name="site_mode_message" rows="3" maxlength="600" class="form-input">{{ s.site_mode_message }}</textarea></div>
+  </div>
+
+  <div class="card space-y-3">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Preview access</h2>
+    <p class="form-hint">While a page is showing, you and your team can still see the real website with a private link. Open it once on each device; it is remembered after that.</p>
+    <div><label class="form-label">Access key</label>
+      <input type="text" name="site_mode_bypass_key" x-model="key" maxlength="40" class="form-input font-mono"/></div>
+    <p class="text-sm break-all"><span class="text-gray-500">Private link:</span> <span class="font-mono" x-text="location.origin + '/?preview=' + key"></span></p>
+  </div>
+  <div class="flex justify-end"><button type="submit" class="btn-primary">Save</button></div>
+</form>
+{% endblock %}

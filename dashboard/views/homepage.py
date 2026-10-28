@@ -95,6 +95,12 @@ def _parse_content(block_type, post):
                 rows = json.loads(raw) if raw else []
             except json.JSONDecodeError:
                 rows = []
+            rows = [r for r in rows if isinstance(r, dict)]
+            for r in rows:  # per-row text styles from the row toolbar: keep only validated values
+                for k in [k for k in r if k.endswith("__style")]:
+                    r[k] = _clean_field_style(json.dumps(r[k]))
+                    if not r[k]:
+                        del r[k]
             content[name] = [r for r in rows if any(str(v).strip() for v in r.values())]
         elif ftype == "bool":
             content[name] = name in post

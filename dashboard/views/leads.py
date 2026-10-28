@@ -9,11 +9,13 @@ from accounts.permissions import SalesManagerRequiredMixin
 from dashboard.mixins import LoggedActionMixin
 from formbuilder.models import FormDefinition
 from leads.models import Inquiry, Dealer
+from leads.models import NEWSLETTER_SOURCE
 
 # Inquiries submitted outside the form builder (currently just the
 # code-managed Collection Inquiry Form) carry no `form` FK — this is the
 # tab/group key used to select them.
 UNTRACKED_FORM_KEY = "collection"
+NEWSLETTER_KEY = "newsletter"
 
 
 class InquiryListView(SalesManagerRequiredMixin, View):
@@ -27,10 +29,13 @@ class InquiryListView(SalesManagerRequiredMixin, View):
         )
         tabs = [{"key": f.slug, "label": f.name} for f in forms]
         tabs.append({"key": UNTRACKED_FORM_KEY, "label": "Collection Inquiry Form"})
+        tabs.append({"key": NEWSLETTER_KEY, "label": "Newsletter Subscribers"})
 
         qs = Inquiry.objects.select_related("form").all()
-        if tab == UNTRACKED_FORM_KEY:
-            qs = qs.filter(form__isnull=True)
+        if tab == NEWSLETTER_KEY:
+            qs = qs.filter(source_page=NEWSLETTER_SOURCE)
+        elif tab == UNTRACKED_FORM_KEY:
+            qs = qs.filter(form__isnull=True).exclude(source_page=NEWSLETTER_SOURCE)
         elif tab != "all":
             qs = qs.filter(form__slug=tab)
         if status:

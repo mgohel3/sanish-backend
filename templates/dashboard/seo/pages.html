@@ -1,0 +1,49 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Page SEO{% endblock %}
+{% block breadcrumbs %}<span class="text-gray-300">/</span><span>SEO</span><span class="text-gray-300">/</span><span>Page SEO</span>{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-6">
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Page SEO</h1>
+    <p class="form-hint mt-1">Title, description and share image for each page of the website. Leave a field empty to use the default written in the website. Products and blog posts have their own SEO fields on their edit screens.</p>
+  </div>
+
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    {% for p in pages %}
+    <div id="seo-{{ p.path|slugify|default:'home' }}" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-6 space-y-4 scroll-mt-24 target:ring-2 target:ring-violet-300">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ p.label }}</h2>
+        <a href="{{ p.path }}" target="_blank" class="text-xs text-gray-400 hover:text-gray-600">{{ p.path }} &nearr;</a>
+      </div>
+      <div x-data="{ t: {{ p.meta_title|length }}, d: {{ p.meta_description|length }} }" class="space-y-4">
+        <div>
+          <label class="form-label">Meta title <span class="text-gray-400 font-normal" x-text="t + ' / 60'"></span></label>
+          <input type="text" name="title_{{ p.pk }}" value="{{ p.meta_title }}" maxlength="200" class="form-input" @input="t = $event.target.value.length"/>
+        </div>
+        <div>
+          <label class="form-label">Meta description <span class="text-gray-400 font-normal" x-text="d + ' / 160'"></span></label>
+          <textarea name="desc_{{ p.pk }}" rows="2" maxlength="400" class="form-input resize-none" @input="d = $event.target.value.length">{{ p.meta_description }}</textarea>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-end">
+        <div>
+          <label class="form-label">Share image URL (optional)</label>
+          <input type="text" name="og_{{ p.pk }}" value="{{ p.og_image }}" class="form-input" placeholder="Paste an image link from the Media Library (1200x630)"/>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 pb-2">
+          <input type="checkbox" name="noindex_{{ p.pk }}" {% if p.noindex %}checked{% endif %}/> Hide from Google (noindex)
+        </label>
+      </div>
+    </div>
+    {% empty %}
+    <p class="form-hint">No pages yet.</p>
+    {% endfor %}
+
+    <div class="sticky bottom-4 flex justify-end">
+      <button type="submit" class="btn-primary shadow-lg">Save all pages</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

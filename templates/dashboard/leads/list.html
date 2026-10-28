@@ -56,38 +56,15 @@
       <div class="px-5 py-3 border-b border-surface-100 dark:border-dark-700 flex items-center justify-between">
         <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ group.grouper }} <span class="text-gray-400 font-normal">({{ group.list|length }})</span></h2>
       </div>
+      {% if group.list.0.source_page == "/newsletter-footer" %}
       <table class="data-table">
-        <thead>
-          <tr>
-            <th class="w-8"><input type="checkbox" class="select-all-group" onclick="toggleGroup(this)"></th>
-            <th>Contact</th><th>Type</th><th>Message</th><th>City</th><th>Status</th><th>Received</th><th class="text-right">Update</th>
-          </tr>
-        </thead>
+        <thead><tr><th class="w-8"><input type="checkbox" class="select-all-group" onclick="toggleGroup(this)"></th><th>Email</th><th>Type</th><th>Status</th><th>Received</th><th class="text-right">Update</th></tr></thead>
         <tbody>
           {% for inq in group.list %}
           <tr>
             <td><input type="checkbox" name="ids" value="{{ inq.pk }}" class="row-check" onclick="updateBulkBar()"></td>
-            <td>
-              <div>
-                <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
-                <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
-              </div>
-            </td>
-            <td><span class="badge badge-blue">{{ inq.get_type_display }}</span></td>
-            <td class="max-w-[260px]">
-              {% if inq.message %}
-              <details class="group">
-                <summary class="text-xs text-accent hover:underline cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                  <span class="group-open:hidden">View message</span>
-                  <span class="hidden group-open:inline">Hide message</span>
-                </summary>
-                <div class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line break-words">{{ inq.message }}</div>
-              </details>
-              {% else %}
-              <span class="text-xs text-gray-400">(no message)</span>
-              {% endif %}
-            </td>
-            <td class="text-sm text-gray-500">{{ inq.city|default:"—" }}</td>
+            <td class="font-medium text-gray-800 dark:text-white">{{ inq.email }}</td>
+            <td><span class="badge badge-blue">Newsletter</span></td>
             <td>
               {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
               {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
@@ -107,6 +84,60 @@
           {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="w-8"><input type="checkbox" class="select-all-group" onclick="toggleGroup(this)"></th>
+            <th>Contact</th><th>Type</th><th>Product</th><th>Pincode</th><th>Message</th><th>Status</th><th>Received</th><th class="text-right">Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inq in group.list %}
+          <tr>
+            <td><input type="checkbox" name="ids" value="{{ inq.pk }}" class="row-check" onclick="updateBulkBar()"></td>
+            <td>
+              <div>
+                <p class="font-medium text-gray-800 dark:text-white">{{ inq.name }}</p>
+                <p class="text-xs text-gray-400">{{ inq.email }}{% if inq.phone %} · {{ inq.phone }}{% endif %}</p>
+              </div>
+            </td>
+            <td><span class="badge badge-blue">{% if inq.enquiry_type %}{{ inq.enquiry_type }}{% else %}{{ inq.get_type_display }}{% endif %}</span></td>
+            <td class="text-sm text-gray-600 dark:text-gray-300">{{ inq.product|default:"—" }}</td>
+            <td class="text-sm text-gray-500">{% if inq.pincode %}{{ inq.pincode }}{% else %}{{ inq.city|default:"—" }}{% endif %}</td>
+            <td class="max-w-[260px]">
+              {% if inq.message %}
+              <details class="group">
+                <summary class="text-xs text-accent hover:underline cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <span class="group-open:hidden">View message</span>
+                  <span class="hidden group-open:inline">Hide message</span>
+                </summary>
+                <div class="mt-2 p-3 bg-surface-50 dark:bg-dark-700 rounded-xl text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line break-words">{{ inq.message }}</div>
+              </details>
+              {% else %}
+              <span class="text-xs text-gray-400">(no message)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if inq.status == 'new' %}<span class="badge badge-yellow">New</span>
+              {% elif inq.status == 'contacted' %}<span class="badge badge-blue">Contacted</span>
+              {% elif inq.status == 'qualified' %}<span class="badge badge-green">Qualified</span>
+              {% else %}<span class="badge badge-gray">Closed</span>{% endif %}
+            </td>
+            <td class="text-xs text-gray-400">{{ inq.created|date:"d M Y" }}</td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-2">
+                <select class="form-input form-select text-xs w-28 py-1">
+                  {% for val,label in STATUS_CHOICES %}<option value="{{ val }}" {% if inq.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                <button type="button" class="btn-primary text-xs py-1 px-3" onclick="quickUpdate({{ inq.pk }}, this)">Save</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
     </div>
     {% empty %}
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card py-12 text-center text-gray-400">No inquiries.</div>

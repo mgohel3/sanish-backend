@@ -7,10 +7,11 @@ from django.contrib.sitemaps.views import sitemap
 
 from seo.sitemaps import (
     ProductSitemap, CategorySitemap, CollectionSitemap,
-    CityPageSitemap, BlogSitemap,
+    CityPageSitemap, BlogSitemap, StaticPagesSitemap,
 )
 
 sitemaps = {
+    "static":      StaticPagesSitemap,
     "products":    ProductSitemap,
     "categories":  CategorySitemap,
     "collections": CollectionSitemap,

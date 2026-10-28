@@ -19,12 +19,25 @@ from media_library.models import MediaAsset
 from gallery.models import GalleryCatalogue, GalleryImage, GallerySpace
 
 
-class GalleryCatalogueListView(ContentManagerRequiredMixin, View):
+class GalleryCatalogueListView(ContentManagerRequiredMixin, LoggedActionMixin, View):
     def get(self, request):
+        from seo.models import SiteSettings
         return render(request, "dashboard/gallery/catalogue_list.html", {
             "catalogues": GalleryCatalogue.objects.all(),
+            "phone_layout": SiteSettings.get().applications_mobile_layout,
             "active_nav": "gallery",
         })
+
+    def post(self, request):
+        """Phone layout of the /applications photo wall (only this one field is written)."""
+        from seo.models import SiteSettings
+        s = SiteSettings.get()
+        v = request.POST.get("applications_mobile_layout", "")
+        s.applications_mobile_layout = v if v in ("grid2", "grid1", "grid1zoom", "insta") else "grid2"
+        s.save(update_fields=["applications_mobile_layout"])
+        self.log_action("Updated Applications phone layout", s)
+        messages.success(request, "Phone layout saved - it is live on /applications now.")
+        return redirect("gallery_catalogue_list")
 
 
 class GalleryCatalogueCreateView(ContentManagerRequiredMixin, LoggedActionMixin, View):

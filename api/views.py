@@ -15,7 +15,7 @@ from applications.models import ApplicationCategory, ApplicationProject
 from gallery.models import GalleryCatalogue
 from faq.models import Faq
 from testimonials.models import CarpenterTestimonial, TestimonialCategory
-from seo.models import GlobalSEO, SiteSettings, ThemeSettings
+from seo.models import GlobalSEO, PageSEO, SiteSettings, ThemeSettings
 from media_library.utils import absolutize_media_urls
 
 from .serializers import (
@@ -206,6 +206,21 @@ class RobotsView(APIView):
         return HttpResponse(content, content_type="text/plain")
 
 
+# ── Per-page SEO (public read) ──────────────────────────────────
+
+class PageSEOListView(APIView):
+    """Overrides typed in CMS > SEO > Page SEO. Only pages with at least one value are returned."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        out = []
+        for p in PageSEO.objects.all():
+            if p.meta_title or p.meta_description or p.og_image or p.noindex:
+                out.append({"path": p.path, "title": p.meta_title, "description": p.meta_description,
+                            "og_image": p.og_image, "noindex": p.noindex})
+        return Response(out)
+
+
 # ── Site Settings (public read) ───────────────────────────────────────────────
 
 class SiteSettingsView(APIView):
@@ -218,6 +233,7 @@ class SiteSettingsView(APIView):
         data = {
             "site_name":    s.site_name,
             "tagline":      s.tagline,
+            "designs_count": s.designs_count or "800+",
             "logo_dark_url":  s.logo_dark_url,
             "logo_light_url": s.logo_light_url,
             "favicon_url":  s.favicon_url,
@@ -253,6 +269,47 @@ class SiteSettingsView(APIView):
                 "description":       s.footer_description,
                 "copyright":         s.footer_copyright,
                 "newsletter_text":   s.footer_newsletter_text,
+                "show_newsletter":   s.footer_show_newsletter,
+                "show_apps":         s.footer_show_apps,
+                "show_social":       s.footer_show_social,
+                "social_icon_size":   s.footer_social_icon_size,
+                "order":             s.footer_order_list,
+                "social_show_title": s.footer_social_show_title,
+                "social_title":      s.footer_social_title,
+                "social_title_font": s.footer_social_title_font,
+                "social_title_color": s.footer_social_title_color,
+            },
+            "applications": {"mobile_layout": s.applications_mobile_layout},
+            "site_mode": {
+                "mode":        s.site_mode,
+                "launch_at":   s.site_mode_launch_at,
+                "title":       s.site_mode_title,
+                "message":     s.site_mode_message,
+                "show_timer":  s.site_mode_show_timer,
+                "auto_open":   s.site_mode_auto_open,
+                "bypass_hash": __import__("hashlib").sha256(s.site_mode_bypass_key.encode()).hexdigest(),
+            },
+            "mobile_menu": {
+                "style":          s.mobile_menu_style,
+                "theme":          s.mobile_menu_theme,
+                "bg_color":       s.mobile_menu_bg_color,
+                "bg_image":       s.mobile_menu_bg_image,
+                "logo_url":       s.mobile_menu_logo_url,
+                "show_catalogue": s.mobile_menu_show_catalogue,
+                "show_contact":   s.mobile_menu_show_contact,
+                "show_social":    s.mobile_menu_show_social,
+                "effect":         s.mobile_menu_effect,
+                "overlay":        int(s.mobile_menu_overlay) if str(s.mobile_menu_overlay).isdigit() else 60,
+                "layout":         s.mobile_menu_layout,
+                "motion":         s.mobile_menu_motion,
+            },
+            "sound": {
+                "enabled":     bool(s.sound_enabled and s.sound_url),
+                "url":         s.sound_url,
+                "show_button": s.sound_show_button,
+                "size":        s.sound_button_size,
+                "volume":      s.sound_volume,
+                "position":    s.sound_position,
             },
             "analytics": {
                 "ga4_id":           seo.ga4_code,
@@ -303,7 +360,7 @@ class SiteSettingsView(APIView):
 
 # ── Nav Links (public read) ───────────────────────────────────────────────────
 
-NAV_LINK_MENU_SLUGS = ["main", "topbar", "mega_quick", "footer_company"]
+NAV_LINK_MENU_SLUGS = ["main", "topbar", "mega_quick", "footer_company", "footer_collections", "footer_legal", "mobile"]
 
 
 class NavLinksView(APIView):
@@ -322,6 +379,13 @@ class NavLinksView(APIView):
             by_group.setdefault(item.menu.slug, []).append({
                 "label":        item.label,
                 "url":          item.url,
+                "subtitle":     item.subtitle,
+                "badge":        item.badge,
+                "icon":         item.icon,
+                "children":     [
+                    {"label": c.label, "url": c.url, "subtitle": c.subtitle, "open_new_tab": c.open_new_tab}
+                    for c in item.children.filter(active=True).order_by("position", "id")
+                ],
                 "open_new_tab": item.open_new_tab,
                 "position":     item.position,
             })
@@ -499,10 +563,14 @@ class AttributeOptionsView(APIView):
 
     def get(self, request):
         from catalog.models import ProductAttributeOption as O
-        kinds = (O.TEXTURE, O.THERMO_TEXTURE, O.DESIGN_TYPE, O.THERMO_DESIGN)
+        kinds = (O.TEXTURE, O.THERMO_TEXTURE, O.DESIGN_TYPE, O.THERMO_DESIGN, O.COLOR)
         out = {k: [] for k in kinds}
+        swatches = {}
         for o in O.objects.filter(attribute__in=kinds).order_by("position", "id"):
             out[o.attribute].append(o.value)
+            if o.attribute == O.COLOR and o.swatch:
+                swatches[o.value] = o.swatch
+        out["color_swatches"] = swatches
         return Response(out)
 
 

@@ -190,6 +190,8 @@
         {% block breadcrumbs %}{% endblock %}
       </nav>
 
+      {% include "partials/cms_search.html" %}
+
       <div class="ml-auto flex items-center gap-2">
         <!-- Dark mode toggle -->
         <button @click="dark = !dark"
@@ -270,5 +272,27 @@
 
 {% block extra_js %}{% endblock %}
 {% include "dashboard/partials/password_toggle.html" %}
+
+<!-- Tells editors when a drag-to-reorder was saved (every reorder screen posts to a ".../reorder/" URL) -->
+<div id="save-toast" role="status" style="position:fixed;right:24px;bottom:24px;z-index:9999;display:none;padding:12px 18px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.15);background:#111827;color:#fff"></div>
+<script>
+(function () {
+  var toast = document.getElementById('save-toast'), timer = null;
+  function show(msg, bad, keep) {
+    toast.textContent = msg; toast.style.background = bad ? '#b91c1c' : '#111827'; toast.style.display = 'block';
+    clearTimeout(timer); if (!keep) timer = setTimeout(function () { toast.style.display = 'none'; }, 4000);
+  }
+  var orig = window.fetch;
+  window.fetch = function (url, opts) {
+    var isReorder = typeof url === 'string' && /reorder/.test(url) && opts && String(opts.method).toUpperCase() === 'POST';
+    if (!isReorder) return orig.apply(this, arguments);
+    show('Saving order…', false, true);
+    return orig.apply(this, arguments).then(function (r) {
+      if (r.ok) show('✓ Order saved — the website updates within a few seconds'); else show('Could not save the new order. Please try again.', true);
+      return r;
+    }, function (e) { show('Could not save the new order. Please check your connection and try again.', true); throw e; });
+  };
+})();
+</script>
 </body>
 </html>

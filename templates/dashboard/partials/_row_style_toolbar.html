@@ -1,0 +1,62 @@
+{% comment %}
+Same style toolbar as _field_style_toolbar.html, but for a sub-field inside a repeater row (e.g. each hero slide's
+headline). The settings live in the row itself as rows[i]["<field>__style"], saved with the row's JSON and
+cleaned server-side by dashboard.views.homepage._parse_content; applied on the site per slide by
+src/components/FieldStyles.tsx fieldStyleCss(). Opt in per sub-field with "styled": True in blocks.py.
+{% endcomment %}
+<div style="margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border-radius:14px;border:1px solid #e5e7eb;background:rgba(0,0,0,.025)"
+     x-data="{
+       key: '{{ sf.name }}__style',
+       sizes: [10,11,12,13,14,16,18,20,22,24,28,32,36,40,48,56,64,72,80],
+       fonts: ['Playfair Display','Cormorant Garamond','Lora','Merriweather','Poppins','Montserrat','Roboto','Open Sans','Oswald','Dancing Script'],
+       get st() { return rows[i][this.key]; },
+       get dirty() { return Object.values(this.st || {}).some(Boolean); }
+     }"
+     x-init="if (!rows[i][key] || typeof rows[i][key] !== 'object') rows[i][key] = {}">
+  <template x-if="st">
+  <div style="display:contents">
+<span role="button" tabindex="0" title="Bold" @click="st.bold = !st.bold"
+          style="width:30px;height:30px;border-radius:50%;font-weight:800;font-size:13px;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
+          :style="st.bold ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">B</span>
+  <span role="button" tabindex="0" title="Italic" @click="st.italic = !st.italic"
+          style="width:30px;height:30px;border-radius:50%;font-style:italic;font-family:serif;font-size:14px;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
+          :style="st.italic ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">I</span>
+
+  <span role="button" tabindex="0" title="Underline" @click="st.underline = !st.underline"
+          style="width:30px;height:30px;border-radius:50%;text-decoration:underline;font-size:13px;font-weight:600;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
+          :style="st.underline ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">U</span>
+
+  <label title="Text colour" style="display:flex;align-items:center;gap:4px;cursor:pointer">
+    <input type="color" :value="st.color || '#1e1e2e'" @input="st.color = $event.target.value" />
+    <button type="button" x-show="st.color" x-cloak title="Back to theme colour" @click.prevent="st.color = ''"
+            style="font-size:11px;color:#9ca3af">✕</button>
+  </label>
+
+  <select x-model="st.font" title="Font" style="height:30px;width:auto;max-width:150px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
+    <option value="">Font: default</option>
+    <optgroup label="Theme fonts">
+      <option value="serif">Vogue — headings (theme)</option>
+      <option value="sans">Heebo — body (theme)</option>
+    </optgroup>
+    <optgroup label="More fonts">
+      <template x-for="f in fonts" :key="f"><option :value="f" x-text="f"></option></template>
+    </optgroup>
+  </select>
+
+  <select x-model="st.size" title="Font size (px)" style="height:30px;width:auto;max-width:120px;border-radius:999px;border:1px solid #d1d5db;background:#fff;color:#374151;padding:0 10px;font-size:12px">
+    <option value="">Size: default</option>
+    <template x-for="s in sizes" :key="s"><option :value="String(s)" x-text="s + ' px'"></option></template>
+  </select>
+
+  <template x-for="a in [['left','M3 6h18M3 12h12M3 18h16'],['center','M3 6h18M7 12h10M5 18h14'],['right','M3 6h18M9 12h12M5 18h16']]" :key="a[0]">
+    <span role="button" tabindex="0" :title="'Align ' + a[0]" @click="st.align = (st.align === a[0] ? '' : a[0])"
+            style="width:30px;height:30px;border-radius:50%;border:1px solid #d1d5db;padding:0;min-width:30px;box-sizing:border-box;cursor:pointer;user-select:none;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;"
+            :style="st.align === a[0] ? { 'background': '#7c5cff', 'color': '#fff', 'border-color': '#7c5cff' } : { 'background': '#fff', 'color': '#374151' }">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="a[1]"/></svg>
+    </span>
+  </template>
+
+  <button type="button" x-show="dirty" x-cloak @click="rows[i][key] = {}" style="margin-left:auto;font-size:12px;color:#9ca3af;padding:0 6px">Reset</button>
+  </div>
+  </template>
+</div>

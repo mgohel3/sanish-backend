@@ -123,9 +123,14 @@ class FormDeleteView(AdminRequiredMixin, LoggedActionMixin, View):
             messages.error(request, "System forms cannot be deleted.")
             return redirect("form_list")
         name = form.name
-        self.log_action("Deleted form", form)
+        # Leads are only detached from a deleted form (SET_NULL), so remove them explicitly: the CMS warns that a form's
+        # data goes with it. Fields and generic submissions are removed by the database cascade.
+        n_leads = form.inquiries.count()
+        n_subs = form.submissions.count()
+        form.inquiries.all().delete()
+        self.log_action(f"Deleted form (with {n_leads} leads, {n_subs} submissions)", form)
         form.delete()
-        messages.success(request, f"Form “{name}” deleted.")
+        messages.success(request, f"Form “{name}” deleted, along with its fields and {n_leads + n_subs} received entr{'y' if n_leads + n_subs == 1 else 'ies'}.")
         return redirect("form_list")
 
 

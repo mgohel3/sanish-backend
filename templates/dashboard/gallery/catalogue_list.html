@@ -19,6 +19,21 @@
     </div>
   </div>
 
+  <form method="post" class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card p-5 flex items-end gap-4 flex-wrap">
+    {% csrf_token %}
+    <div class="flex-1 min-w-[260px]">
+      <label class="form-label">Phone layout of the /applications photo wall</label>
+      <select name="applications_mobile_layout" class="form-input">
+        <option value="grid2" {% if phone_layout == "grid2" %}selected{% endif %}>2 Grid - two columns (default)</option>
+        <option value="grid1" {% if phone_layout == "grid1" %}selected{% endif %}>1 Grid - one big card per row, rises in as you scroll</option>
+        <option value="grid1zoom" {% if phone_layout == "grid1zoom" %}selected{% endif %}>1 Grid + Zoom - one big card, photo gently zooms</option>
+        <option value="insta" {% if phone_layout == "insta" %}selected{% endif %}>Instagram grid - three square tiles per row</option>
+      </select>
+      <p class="form-hint">Phones only. Tablets and desktops always keep the multi-column wall.</p>
+    </div>
+    <button type="submit" class="btn-primary">Save layout</button>
+  </form>
+
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
     {% for cat in catalogues %}
     <div class="bg-white dark:bg-[#23202E] rounded-3xl shadow-card overflow-hidden">

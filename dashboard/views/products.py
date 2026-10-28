@@ -975,3 +975,74 @@ class AttributeOptionReorderView(ContentManagerRequiredMixin, LoggedActionMixin,
             ProductAttributeOption.objects.filter(pk=pk, attribute=attribute).update(position=pos)
         return JsonResponse({"ok": True})
         return redirect("product_list")
+
+
+class ColourOptionsView(ContentManagerRequiredMixin, LoggedActionMixin, View):
+    """Products > Colour filter: add, rename, recolour, reorder and remove the colours shown in the website's Colour filter.
+    A product's own colour is chosen on its edit screen (dropdown fed by this list)."""
+
+    HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+    def get(self, request):
+        from django.db.models import Count
+        opts = list(ProductAttributeOption.objects.filter(attribute="color").order_by("position", "id"))
+        counts = {r["color"]: r["n"] for r in Product.objects.exclude(color="").values("color").annotate(n=Count("id"))}
+        rows = [{"o": o, "count": counts.get(o.value, 0)} for o in opts]
+        stray = {c: n for c, n in counts.items() if c not in {o.value for o in opts}}
+        return render(request, "dashboard/products/colour_options.html", {
+            "rows": rows,
+            "no_colour": Product.objects.filter(color="").count(),
+            "stray": stray,
+            "active_nav": "colours",
+        })
+
+    def post(self, request):
+        action = request.POST.get("action", "")
+        name = (request.POST.get("name") or "").strip()
+        swatch = (request.POST.get("swatch") or "").strip()
+        swatch = swatch if self.HEX.match(swatch) else ""
+        qs = ProductAttributeOption.objects.filter(attribute="color")
+
+        if action == "add":
+            if not name:
+                messages.error(request, "Type a colour name.")
+            elif qs.filter(value__iexact=name).exists():
+                messages.error(request, f"\u201c{name}\u201d is already in the list.")
+            else:
+                pos = (qs.order_by("-position").values_list("position", flat=True).first() or 0) + 1
+                ProductAttributeOption.objects.create(attribute="color", value=name, position=pos, swatch=swatch)
+                self.log_action(f"Added colour \u201c{name}\u201d", None)
+                messages.success(request, f"Colour \u201c{name}\u201d added. Now pick it on the products that have it.")
+        elif action in ("update", "delete", "move_up", "move_down"):
+            opt = get_object_or_404(ProductAttributeOption, pk=request.POST.get("pk"), attribute="color")
+            if action == "update":
+                if not name:
+                    messages.error(request, "A colour needs a name.")
+                elif name.lower() != opt.value.lower() and qs.filter(value__iexact=name).exists():
+                    messages.error(request, f"\u201c{name}\u201d is already in the list.")
+                else:
+                    old = opt.value
+                    if name != old:
+                        n = Product.objects.filter(color=old).update(color=name)  # products keep their colour under the new name
+                    else:
+                        n = 0
+                    opt.value, opt.swatch = name, swatch
+                    opt.save()
+                    self.log_action(f"Updated colour \u201c{old}\u201d -> \u201c{name}\u201d ({n} products)", None)
+                    messages.success(request, f"Saved \u201c{name}\u201d." + (f" {n} product(s) moved to the new name." if n else ""))
+            elif action == "delete":
+                n = Product.objects.filter(color=opt.value).update(color="")
+                value = opt.value
+                opt.delete()
+                self.log_action(f"Removed colour \u201c{value}\u201d ({n} products left without a colour)", None)
+                messages.success(request, f"Colour \u201c{value}\u201d removed." + (f" {n} product(s) now have no colour." if n else ""))
+            else:
+                ordered = list(qs.order_by("position", "id"))
+                i = next((k for k, o in enumerate(ordered) if o.pk == opt.pk), None)
+                j = i - 1 if action == "move_up" else i + 1
+                if i is not None and 0 <= j < len(ordered):
+                    ordered[i], ordered[j] = ordered[j], ordered[i]
+                    for pos, o in enumerate(ordered):
+                        if o.position != pos:
+                            ProductAttributeOption.objects.filter(pk=o.pk).update(position=pos)
+        return redirect("colour_options")

@@ -31,6 +31,26 @@
       <input type="text" name="url" value="{{ item.url|default:'' }}" class="form-input" placeholder="/about-us" />
       <p class="form-hint">Leave blank if this item is only a dropdown trigger for its submenu.</p>
     </div>
+    <div>
+      <label class="form-label">Subtitle <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+      <input type="text" name="subtitle" value="{{ item.subtitle|default:'' }}" maxlength="100" class="form-input" placeholder="Decorative surfaces" />
+      <p class="form-hint">A small grey line under the label. Shown by the mobile menu only.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Badge <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+        <input type="text" name="badge" value="{{ item.badge|default:'' }}" maxlength="20" class="form-input" placeholder="New" />
+        <p class="form-hint">A small highlighted label next to the item in the mobile menu.</p>
+      </div>
+      <div>
+        <label class="form-label">Icon <span class="normal-case font-normal text-gray-400">(optional)</span></label>
+        <select name="icon" class="form-input">
+          <option value="">No icon</option>
+          <option value="home" {% if item.icon == "home" %}selected{% endif %}>Home</option><option value="layers" {% if item.icon == "layers" %}selected{% endif %}>Layers</option><option value="grid" {% if item.icon == "grid" %}selected{% endif %}>Grid</option><option value="sun" {% if item.icon == "sun" %}selected{% endif %}>Sun</option><option value="book" {% if item.icon == "book" %}selected{% endif %}>Book</option><option value="image" {% if item.icon == "image" %}selected{% endif %}>Image</option><option value="info" {% if item.icon == "info" %}selected{% endif %}>Info</option><option value="gift" {% if item.icon == "gift" %}selected{% endif %}>Gift</option><option value="phone" {% if item.icon == "phone" %}selected{% endif %}>Phone</option><option value="star" {% if item.icon == "star" %}selected{% endif %}>Star</option><option value="tag" {% if item.icon == "tag" %}selected{% endif %}>Tag</option><option value="pin" {% if item.icon == "pin" %}selected{% endif %}>Pin</option>
+        </select>
+        <p class="form-hint">Shown by the mobile menu (best with the Tiles layout).</p>
+      </div>
+    </div>
     <label class="flex items-center gap-2 text-sm">
       <input type="checkbox" name="open_new_tab" {% if item.open_new_tab %}checked{% endif %} class="rounded border-gray-300" />
       <span>Open in a new tab</span>

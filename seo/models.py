@@ -7,6 +7,8 @@ class SiteSettings(models.Model):
     # ── Brand ─────────────────────────────────────────────────────────────────
     site_name        = models.CharField(max_length=100, default="Sanish Laminates")
     tagline          = models.CharField(max_length=200, blank=True, default="Premium Decorative Surface Solutions")
+    designs_count    = models.CharField(max_length=20, blank=True, default="800+",
+                                         help_text='Number of designs shown on the website, e.g. "800+" (home hero, header menu).')
     logo_dark_url    = models.CharField(max_length=500, blank=True, default="/assets/img/logo/black-logo.svg",
                                          help_text="Path or URL for dark/black logo (used on light backgrounds)")
     logo_light_url   = models.CharField(max_length=500, blank=True, default="/assets/img/logo/footer-black-logo.svg",
@@ -50,6 +52,50 @@ class SiteSettings(models.Model):
     footer_description = models.TextField(blank=True,
         default="Crafting elegant laminate and decorative surface solutions for architects, interior designers, commercial projects, and modern living spaces across India.")
     footer_copyright   = models.CharField(max_length=200, blank=True, default="© 2026 SANISH Laminate. All Rights Reserved.")
+    footer_show_newsletter = models.BooleanField(default=True, help_text="Show the \"Stay Connected\" email subscribe box in the footer.")
+    footer_show_apps       = models.BooleanField(default=True, help_text="Show the Google Play / App Store buttons in the footer.")
+    footer_show_social     = models.BooleanField(default=True, help_text="Show the social media icons under \"Stay Connected\" in the footer.")
+    footer_social_icon_size = models.PositiveSmallIntegerField(default=38, help_text="Footer social icon button size in pixels (24-72).")
+    footer_order = models.CharField(max_length=60, default="newsletter,apps,social", help_text="Order of the items under \"Stay Connected\" (comma-separated keys, set by drag and drop).")
+    footer_social_show_title = models.BooleanField(default=True, help_text="Show the heading above the social icons.")
+    footer_social_title = models.CharField(max_length=60, default="Follow Us", blank=True, help_text="Heading above the social icons.")
+    footer_social_title_font = models.CharField(max_length=10, blank=True, default="", help_text="\"\" = theme default, \"serif\" or \"sans\".")
+    footer_social_title_color = models.CharField(max_length=20, blank=True, default="", help_text="Hex colour for that heading; blank = theme default.")
+    sound_enabled = models.BooleanField(default=False, help_text="Play a background sound on the website (starts after the visitor's first click or tap).")
+    sound_url = models.CharField(max_length=500, blank=True, default="", help_text="Audio file path or URL (MP3 recommended), e.g. from the Media Library.")
+    sound_show_button = models.BooleanField(default=True, help_text="Show the floating Sound On/Off button.")
+    sound_button_size = models.PositiveSmallIntegerField(default=40, help_text="Height of the Sound button in pixels (28-72).")
+    sound_volume = models.PositiveSmallIntegerField(default=35, help_text="Volume 0-100.")
+    sound_position = models.CharField(max_length=5, default="left", help_text="Which bottom corner the Sound button sits in: left or right.")
+    mobile_menu_style = models.CharField(max_length=14, default="drawer_right", help_text="drawer_right, drawer_left or fullscreen.")
+    mobile_menu_theme = models.CharField(max_length=6, default="light", help_text="light, dark or brand.")
+    mobile_menu_bg_color = models.CharField(max_length=20, blank=True, default="", help_text="Optional hex background colour; overrides the theme background.")
+    mobile_menu_bg_image = models.CharField(max_length=500, blank=True, default="", help_text="Optional background image path or URL.")
+    mobile_menu_logo_url = models.CharField(max_length=500, blank=True, default="", help_text="Logo shown at the top of the mobile menu; blank = the brand mark.")
+    mobile_menu_show_catalogue = models.BooleanField(default=True, help_text="Show the Download Catalogue button in the mobile menu.")
+    mobile_menu_show_contact = models.BooleanField(default=True, help_text="Show the Call Us / Email Us buttons in the mobile menu.")
+    mobile_menu_effect = models.CharField(max_length=8, default="liquid", help_text="plain, glass, liquid or image.")
+    mobile_menu_overlay = models.CharField(max_length=3, default="60", help_text="Darkness (0-90) of the overlay on a background image.")
+    mobile_menu_layout = models.CharField(max_length=6, default="list", help_text="list or tiles.")
+    applications_mobile_layout = models.CharField(max_length=10, default="grid2", help_text="/applications on phones: grid2, grid1 or grid1zoom.")
+    mobile_menu_motion = models.CharField(max_length=6, default="normal", help_text="Liquid gradient speed: off, slow, normal or fast.")
+    site_mode = models.CharField(max_length=12, default="off", help_text="off, coming_soon or maintenance.")
+    site_mode_launch_at = models.CharField(max_length=16, blank=True, default="", help_text="YYYY-MM-DDTHH:MM, India time.")
+    site_mode_title = models.CharField(max_length=200, blank=True, default="")
+    site_mode_message = models.TextField(blank=True, default="")
+    site_mode_show_timer = models.BooleanField(default=True)
+    site_mode_auto_open = models.BooleanField(default=True, help_text="Coming soon: open the site by itself when the timer ends.")
+    site_mode_bypass_key = models.CharField(max_length=40, default="sanish-preview", help_text="Open the site anyway with /?preview=<key>.")
+    mobile_menu_show_social = models.BooleanField(default=True, help_text="Show the social icons at the bottom of the mobile menu.")
+
+    FOOTER_ITEMS = ("newsletter", "apps", "social")
+
+    @property
+    def footer_order_list(self):
+        """Saved order, limited to known keys, with any missing key appended so nothing can vanish."""
+        keys = [k for k in (self.footer_order or "").split(",") if k in self.FOOTER_ITEMS]
+        keys = list(dict.fromkeys(keys))
+        return keys + [k for k in self.FOOTER_ITEMS if k not in keys]
     footer_newsletter_text = models.CharField(max_length=300, blank=True,
         default="Subscribe for new collections, design inspiration, and exclusive dealer offers.")
 
@@ -338,3 +384,26 @@ class NavLink(models.Model):
 
     def __str__(self):
         return f"[{self.get_group_display()}] {self.label}"
+
+
+class PageSEO(models.Model):
+    """Per-page SEO (title, description, share image, noindex) for the fixed pages of the website - home, listings,
+    About, Contact... Blank fields fall back to the defaults written in the website code, so clearing a value is safe.
+    Products and blog posts keep their own SEO fields on their edit screens."""
+
+    path             = models.CharField(max_length=300, unique=True, help_text='Page address, e.g. "/" or "/laminates"')
+    label            = models.CharField(max_length=120, help_text="Name shown in the CMS")
+    meta_title       = models.CharField(max_length=200, blank=True, help_text="Browser tab / Google title. Aim for 50-60 characters.")
+    meta_description = models.CharField(max_length=400, blank=True, help_text="Google snippet. Aim for 150-160 characters.")
+    og_image         = models.CharField(max_length=500, blank=True, help_text="Image shown when the page is shared (WhatsApp, LinkedIn...). 1200x630 works best.")
+    noindex          = models.BooleanField(default=False, help_text="Ask Google not to list this page.")
+    position         = models.PositiveIntegerField(default=0)
+    updated          = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "path"]
+        verbose_name = "Page SEO"
+        verbose_name_plural = "Page SEO"
+
+    def __str__(self):
+        return f"{self.label} ({self.path})"

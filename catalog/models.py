@@ -44,6 +44,7 @@ class ProductAttributeOption(models.Model):
     attribute = models.CharField(max_length=20, choices=ATTRIBUTE_CHOICES)
     value     = models.CharField(max_length=60)
     position  = models.PositiveIntegerField(default=0)
+    swatch    = models.CharField(max_length=9, blank=True, help_text="Colour dot shown in the website filter, e.g. #4A6FA5 (used by the Colour option).")
 
     class Meta:
         ordering = ["attribute", "position", "id"]

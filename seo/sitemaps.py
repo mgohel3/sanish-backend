@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from catalog.models import Category, Collection, Product
 from pages.models import CityPage
@@ -15,7 +17,33 @@ CATEGORY_SLUG_TO_ROUTE = {
 }
 
 
-class ProductSitemap(Sitemap):
+class LiveSitemap(Sitemap):
+    """Entries always point at the live public domain (SITE_URL), never at whichever host the request came in on
+    (so the staging copy of the sitemap lists the same canonical URLs the pages declare)."""
+    protocol = "https"
+
+    def get_urls(self, page=1, site=None, protocol=None):
+        domain = getattr(settings, "SITE_DOMAIN", "sanishlaminate.com")
+        return super().get_urls(page=page, site=SimpleNamespace(domain=domain, name=domain), protocol="https")
+
+
+class StaticPagesSitemap(LiveSitemap):
+    changefreq = "monthly"
+    priority = 0.7
+    PATHS = ["/", "/collection", "/laminates", "/louvers", "/asa-sheets", "/products", "/applications", "/about-us",
+             "/find-a-dealer", "/contact-us", "/events", "/rewards", "/faq", "/blog", "/privacy-policy", "/terms-conditions"]
+
+    def items(self):
+        return self.PATHS
+
+    def location(self, item):
+        return item
+
+    def priority(self, item):  # noqa: F811 - per-item override of the class default
+        return 1.0 if item == "/" else 0.7
+
+
+class ProductSitemap(LiveSitemap):
     changefreq = "weekly"
     priority   = 0.8
 
@@ -35,7 +63,7 @@ class ProductSitemap(Sitemap):
         return f"/products/{cat}/{col}/{obj.slug}"
 
 
-class CategorySitemap(Sitemap):
+class CategorySitemap(LiveSitemap):
     changefreq = "monthly"
     priority   = 0.6
 
@@ -49,7 +77,7 @@ class CategorySitemap(Sitemap):
         return f"/{CATEGORY_SLUG_TO_ROUTE[obj.slug]}"
 
 
-class CollectionSitemap(Sitemap):
+class CollectionSitemap(LiveSitemap):
     """Deliberately empty for now. A collection isn't its own page — it's a
     `?collection=<slug>` filter on its category's listing page (see
     sanish-next's collectionHref()), and that slug mapping (i) isn't the
@@ -72,7 +100,7 @@ class CollectionSitemap(Sitemap):
         return f"/collection/{obj.slug}"
 
 
-class CityPageSitemap(Sitemap):
+class CityPageSitemap(LiveSitemap):
     changefreq = "weekly"
     priority   = 0.9
 
@@ -80,13 +108,13 @@ class CityPageSitemap(Sitemap):
         return CityPage.objects.filter(status="published")
 
     def location(self, obj):
-        return f"/{obj.slug}/"
+        return f"/{obj.slug}"
 
     def lastmod(self, obj):
         return obj.updated
 
 
-class BlogSitemap(Sitemap):
+class BlogSitemap(LiveSitemap):
     changefreq = "weekly"
     priority   = 0.7
 
@@ -94,7 +122,7 @@ class BlogSitemap(Sitemap):
         return BlogPost.objects.filter(status="published")
 
     def location(self, obj):
-        return f"/blog/{obj.slug}/"
+        return f"/blog/{obj.slug}"
 
     def lastmod(self, obj):
         return obj.updated

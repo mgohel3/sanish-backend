@@ -4,7 +4,7 @@ from dashboard.views.home import HomeView
 from dashboard.views.products import (
     ProductListView, ProductCreateView, ProductEditView, ProductDeleteView,
     ProductBulkDeleteView, ProductBulkStatusView, ProductPreviewView, ProductExportView, ProductImportView,
-    AttributeOptionAddView, AttributeOptionDeleteView, AttributeOptionReorderView,
+    AttributeOptionAddView, AttributeOptionDeleteView, AttributeOptionReorderView, ColourOptionsView,
 )
 from dashboard.views.categories import (
     CategoryListView, CategoryCreateView, CategoryEditView, CategoryDeleteView,
@@ -16,7 +16,7 @@ from dashboard.views.city_pages import (
     BulkImportView,
     PageTemplateListView, PageTemplateCreateView, PageTemplateEditView,
 )
-from dashboard.views.seo_views import GlobalSEOView, RedirectListView, SchemaGeneratorView, SiteSettingsView, ThemeSettingsView
+from dashboard.views.seo_views import GlobalSEOView, PageSEOView, RedirectListView, SchemaGeneratorView, SiteModeView, SiteSettingsView, ThemeSettingsView
 from dashboard.views.blog import (
     BlogPostListView, BlogPostCreateView, BlogPostEditView,
     BlogPostDeleteView, BlogPostBulkDeleteView, BlogCategoryListView, BlogPostPreviewView,
@@ -45,7 +45,7 @@ from dashboard.views.forms import (
 from dashboard.views.menus import (
     MenuListView, MenuCreateView, MenuEditView, MenuDeleteView,
     MenuItemListView, MenuItemReorderView, MenuItemCreateView,
-    MenuItemEditView, MenuItemDeleteView,
+    MenuItemEditView, MenuItemDeleteView, MenuItemToggleView,
 )
 from dashboard.views.applications import (
     ApplicationCategoryListView, ApplicationCategoryCreateView,
@@ -91,6 +91,7 @@ urlpatterns = [
     path("products/<int:pk>/preview/", ProductPreviewView.as_view(), name="product_preview"),
     path("products/bulk-delete/",      ProductBulkDeleteView.as_view(), name="product_bulk_delete"),
     path("products/bulk-status/",      ProductBulkStatusView.as_view(), name="product_bulk_status"),
+    path("products/colours/",                            ColourOptionsView.as_view(),          name="colour_options"),
     path("products/attributes/<str:attribute>/add/",     AttributeOptionAddView.as_view(),     name="attribute_option_add"),
     path("products/attributes/<str:attribute>/delete/",  AttributeOptionDeleteView.as_view(),  name="attribute_option_delete"),
     path("products/attributes/<str:attribute>/reorder/", AttributeOptionReorderView.as_view(), name="attribute_option_reorder"),
@@ -121,9 +122,11 @@ urlpatterns = [
 
     # SEO
     path("seo/",               GlobalSEOView.as_view(),    name="seo_global"),
+    path("seo/pages/",         PageSEOView.as_view(),      name="seo_pages"),
     path("seo/redirects/",     RedirectListView.as_view(), name="seo_redirects"),
     path("seo/schema/",        SchemaGeneratorView.as_view(), name="seo_schema"),
     path("seo/site-settings/", SiteSettingsView.as_view(), name="site_settings"),
+    path("seo/site-mode/", SiteModeView.as_view(), name="site_mode"),
     path("theme/",             ThemeSettingsView.as_view(), name="theme_settings"),
 
     # Blog
@@ -195,6 +198,7 @@ urlpatterns = [
     path("menus/<slug:slug>/create/",   MenuItemCreateView.as_view(),  name="menu_item_create"),
     path("menus/<slug:slug>/<int:pk>/",         MenuItemEditView.as_view(),   name="menu_item_edit"),
     path("menus/<slug:slug>/<int:pk>/delete/",  MenuItemDeleteView.as_view(), name="menu_item_delete"),
+    path("menus/<slug:slug>/<int:pk>/toggle/",  MenuItemToggleView.as_view(), name="menu_item_toggle"),
     path("menus/<slug:slug>/<int:parent_pk>/children/",          MenuItemListView.as_view(),    name="menu_item_children"),
     path("menus/<slug:slug>/<int:parent_pk>/children/reorder/",  MenuItemReorderView.as_view(), name="menu_item_children_reorder"),
     path("menus/<slug:slug>/<int:parent_pk>/children/create/",   MenuItemCreateView.as_view(),  name="menu_item_child_create"),
